@@ -22,8 +22,6 @@
 #include "stb_image.h"
 
 
-#define RANDOM_FLOAT ((float)rand() / RAND_MAX)
-
 static void error_callback(int error, const char* description)
 {
     fputs(description, stderr);
@@ -40,28 +38,19 @@ static void error_callback(int error, const char* description)
 
 //bool mouse_down = false;
 //bool mouse_right_down = false;
-
-const int screen_width = 1270;
-const int screen_height = 720;
-const std::string CHUNK_VERTEX_SHADER = std::string("../src/shaders/chunkvs.vs");
-const std::string CHUNK_FRAGMENT_SHADER = std::string("../src/shaders/chunkfs.fs");
 	
 //double yscroll = 0;
 //bool keys[256] = {false};
 //
 //bool spressed = false;
 
-int main(void)
-{
-//	glm::ivec3 a(1, 2, 3);
-//	glm::ivec3 b(1, 3, 5);
-//	glm::ivec3 t = glm::abs(a - b) == glm::ivec3(1);
-//	printf("%d %d %d \n", t.x, t.y, t.z);
-//	
-//	char gb;
-//	scanf("%c", &gb);
-//	
-//	return 0;
+int opengl_context_scope(GLFWwindow *window);
+
+const int screen_width = 1270;
+const int screen_height = 720;
+	
+int main(void){
+	
 	
 	srand(time(NULL));
 	GLFWwindow* window;
@@ -80,6 +69,31 @@ int main(void)
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
+	
+	opengl_context_scope(window);
+	
+    glfwTerminate();
+	
+	return 0;
+}
+
+int opengl_context_scope(GLFWwindow *window)
+{
+//	glm::ivec3 a(1, 2, 3);
+//	glm::ivec3 b(1, 3, 5);
+//	glm::ivec3 t = glm::abs(a - b) == glm::ivec3(1);
+//	printf("%d %d %d \n", t.x, t.y, t.z);
+//	
+//	char gb;
+//	scanf("%c", &gb);
+//
+//	return 0;
+	
+	
+	const std::string CHUNK_VERTEX_SHADER = std::string("../src/shaders/chunkvs.vs");
+	const std::string CHUNK_FRAGMENT_SHADER = std::string("../src/shaders/chunkfs.fs");
+
+	
 	
 	// Setting params struct and callbacks.
 	
@@ -117,21 +131,6 @@ int main(void)
 	
 	glEnable(GL_DEPTH_TEST);
 	
-	
-	int tw, th, tchannels;
-	unsigned char *tex_ptr = stbi_load("../texture.png", &tw, &th, &tchannels, 0);
-	
-	if(tex_ptr == NULL){
-		printf("Failed to load textures!\n");
-		
-		glfwDestroyWindow(window);
-		glfwTerminate();
-		
-		return 0;
-	}else{
-		printf("texture params: %d, %d, %d\n", tw, th, tchannels);
-	}
-	
 	FontMesh fontmesh1 = {0};
 	if(initText(fontmesh1, "../font.png", "../src/shaders/text.vs", "../src/shaders/text.fs", glm::ortho(0.0f, static_cast<float>(screen_width), 0.0f, static_cast<float>(screen_height))) != 0){
 		printf("Initialization of text failed.\n");
@@ -142,29 +141,14 @@ int main(void)
 		return 0;
 	}
 	
-//	Mesh baseMesh = Mesh();
-//	baseMesh.init_shaders("../src/shaders/chunkvs.vs", "../src/shaders/chunkfs.fs");
-	
-//	struct shaderParams baseMeshShaderParams = baseMesh.getShaderParams();
-	struct shaderParams chunkShaderParams = getShaderParams(
+	shaderParams chunkShaderParams = getShaderParams(
 		getShaderProgram(
 			getShaderFromFile(CHUNK_VERTEX_SHADER, ShaderType::VERTEX),
 			getShaderFromFile(CHUNK_FRAGMENT_SHADER, ShaderType::FRAGMENT)
 			)
 		);
+	unsigned int textures = loadTexture(std::string("../texture.png"));
 	
-	unsigned int textures;
-	glGenTextures(1, &textures);
-	glBindTexture(GL_TEXTURE_2D, textures);
-//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tw, th, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_ptr);
-	glGenerateMipmap(GL_TEXTURE_2D);
-	
-	stbi_image_free(tex_ptr);
-	
-//	glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 100.0f);
 	glm::mat4 projection = glm::perspective(glm::radians(55.0f), static_cast<float>(screen_width) / screen_height, 0.1f, 1000.0f);
 	
 	glm::mat4 *view;
@@ -208,7 +192,7 @@ int main(void)
 	
 //	std::thread t;
 	
-	char textBuffer[200] = "";
+	char textBuffer[2000] = {};
 	
 	// Cursor
 	//
@@ -222,23 +206,7 @@ int main(void)
 		
 	// cube data
 	std::vector<float> vertices;
-// {
-//		-1, -1, 0, 0, 0, 0,
-//		-1, 1, 0, 0, 1, 0,
-//		1, -1, 0, 1, 0, 0
-//		};
-	std::vector<unsigned int> v_data;//{1, 1, 1, 1, 1, 1, 1, 1, 1};
-//	for(int z = -1; z < 1; z += 2){
-//		for(int y = -1; y < 1; y += 2){
-//			for(int x = -1; x < 1; x += 2){
-////				vertices.emplace_back(x, y, z);
-//				vertices.push_back(x);
-//				vertices.push_back(y);
-//				vertices.push_back(z);
-//			}
-//		}
-//	}
-	
+	std::vector<unsigned int> v_data;
 	
 	// Vertives for a square composed of two triangles
 	float square[12] {
@@ -251,9 +219,6 @@ int main(void)
 		1.0f, -1.0f
 	};
 	
-//	float texture[12] {
-//		
-//	};
 	const float cursor_size_mul = 0.5f;
 
 	// Generating vertices for a cube from 2d squares
@@ -283,15 +248,20 @@ int main(void)
 		}
 	}
 		
-	Mesh cursorMesh;
-	cursorMesh.initVao(vertices, v_data);
-	cursorMesh.setShaderParams(cursorShaderParams);
-	cursorMesh.set_mats_pointers(&projection, view);
-	cursorMesh.setTexturesId(textures);
+//	Mesh cursorMesh;
+//	cursorMesh.initVao(vertices, v_data);
+//	cursorMesh.setShaderParams(cursorShaderParams);
+//	cursorMesh.set_mats_pointers(&projection, view);
+//	cursorMesh.setTexturesId(textures);
 //	cursorMesh.model = glm::translate(glm::mat4(1.0f), glm::vec3(this->worldOffset));
 	//
 	// Cursor end
 	
+	
+	//
+	//	Memory segmentation is probably in mesh's destructor. (Need's move constructor/operator).
+	//	https://www.khronos.org/opengl/wiki/Common_Mistakes#The_Object_Oriented_Language_Problem
+	//
     while (!glfwWindowShouldClose(window))
     {
 		wl.update(kamera.get_pos());
@@ -314,18 +284,18 @@ int main(void)
 		glm::vec3 kameraPos = kamera.get_pos();
 		sprintf(textBuffer, "cameraPos: x: %.02f, y: %.02f, z: %.02f oio", kameraPos.x, kameraPos.y, kameraPos.z);
 		renderText(fontmesh1, std::string(textBuffer), 20, 50, 0.5);
-		
+//		
 		glm::vec3 kameraFront = kamera.get_front();
 		sprintf(textBuffer, "cameraFront: x: %.02f, y: %.02f, z: %.02f", kameraFront.x, kameraFront.y, kameraFront.z);
 		renderText(fontmesh1, std::string(textBuffer), 20, 20, 0.5);
 		
-		controls.cursor_pos = wl.collideRay(kameraPos, kameraFront, 7);
-		sprintf(textBuffer, "cursor  : x: %02d, y: %02d, z: %02d", controls.cursor_pos.x, controls.cursor_pos.y, controls.cursor_pos.z);
-		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
+//		controls.cursor_pos = wl.collideRay(kameraPos, kameraFront, 7);
+		sprintf(textBuffer, "cursor  : x: %02d, y: %02d, z: %02d ", controls.cursor_pos.x, controls.cursor_pos.y, controls.cursor_pos.z);
+//		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
 		
-		cursorMesh.model = glm::translate(glm::mat4(1.0f), glm::vec3(controls.cursor_pos) + glm::vec3(0.5f));
+//		cursorMesh.model = glm::translate(glm::mat4(1.0f), glm::vec3(controls.cursor_pos) + glm::vec3(0.5f));
 		
-		cursorMesh.draw();
+//		cursorMesh.draw();
 		
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -335,8 +305,8 @@ int main(void)
 //		time++;
     }
 	
-    glfwDestroyWindow(window);
-    glfwTerminate();
+	glDeleteTextures(1, &textures);
+//    glfwDestroyWindow(window);
 	
     return 0;
 }

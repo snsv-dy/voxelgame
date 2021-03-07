@@ -116,38 +116,38 @@ int getShaderProgram(int vs, int fs){
 	return shaderProgram;
 }
 
-//chunkCoords toChunkCoords(glm::ivec3 cord, int chunkSize){
-//	glm::ivec3 chpos;
-//	glm::ivec3 dpos;
-//	if(cord.x >= 0){
-//		chpos.x = cord.x / chunkSize;
-//		dpos.x = cord.x % chunkSize;
-//	}else{
-//		int mx = (-cord.x - 1);
-//		chpos.x = -(mx / chunkSize + 1);
-//		dpos.x = -(mx % chunkSize) + chunkSize - 1;
-//	}
-//	
-//	if(cord.y >= 0){
-//		chpos.y = cord.y / chunkSize;
-//		dpos.y = cord.y % chunkSize;
-//	}else{
-//		int my = (-cord.y - 1);
-//		chpos.y = -(my / chunkSize + 1);
-//		dpos.y = -(my % chunkSize) + chunkSize - 1;
-//	}
-//	
-//	if(cord.z >= 0){
-//		chpos.z = cord.z / chunkSize;
-//		dpos.z = cord.z % chunkSize;
-//	}else{
-//		int mz = (-cord.z - 1);
-//		chpos.z = -(mz / chunkSize + 1);
-//		dpos.z = -(mz % chunkSize) + chunkSize - 1;
-//	}
-//	
-//	return {chpos, dpos};
-//}
+unsigned int loadTexture(const std::string& filename){
+	unsigned int a, b;
+	return loadTexture(filename, a, b);
+}
+
+unsigned int loadTexture(const std::string& filename, unsigned int& width, unsigned int& height){
+	int w, h, channels;
+	
+	unsigned char *tex_ptr = stbi_load(filename.c_str(), &w, &h, &channels, 0);
+	
+	if(tex_ptr == NULL){
+//		printf("Failed to load texture: \"%s\"!\n", filename);
+		
+		return 0;
+	}
+	
+	width = w;
+	height = h;
+	
+	unsigned int texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_ptr);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	
+	stbi_image_free(tex_ptr);
+	
+	return texture;
+}
 
 std::tuple<glm::ivec3, glm::ivec3> toChunkCoords(const glm::ivec3& position, const int& chunkSize){
 	glm::ivec3 chunk_index;

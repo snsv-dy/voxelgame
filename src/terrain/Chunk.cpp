@@ -90,7 +90,7 @@ Chunk& Chunk::operator=(Chunk&& t){
 	return *this;
 }
 
-Chunk::Chunk(glm::mat4 *projection, glm::mat4 *view, unsigned int& textureId, shaderParams &shParams, glm::ivec3 offset, WorldLoader *loaderPtr, char* data, int data_offset){
+Chunk::Chunk(const unsigned int& model_location, glm::ivec3 offset, WorldLoader *loaderPtr, char* data, int data_offset){
 	parentLoader = loaderPtr;
 	float fchunkSize = (float)chunkSize;
 	this->worldOffset = offset * this->size;//glm::vec3(offset.x * fchunkSize, offset.y * fchunkSize, offset.z * fchunkSize);
@@ -135,9 +135,10 @@ Chunk::Chunk(glm::mat4 *projection, glm::mat4 *view, unsigned int& textureId, sh
 	
 	this->init_data();
 	
-	this->mesh->setShaderParams(shParams);
-	mesh->set_mats_pointers(projection, view);
-	mesh->setTexturesId(textureId);
+//	this->mesh->setShaderParams(shParams);
+//	mesh->set_mats_pointers(projection, view);
+//	mesh->setTexturesId(textureId);
+	mesh->setModelLocation(model_location);
 	mesh->model = glm::translate(glm::mat4(1.0f), glm::vec3(this->worldOffset));//glm::vec3(offset.x * fchunkSize, offset.y * fchunkSize, offset.z * fchunkSize));
 	
 }

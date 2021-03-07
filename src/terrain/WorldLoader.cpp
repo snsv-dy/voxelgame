@@ -15,18 +15,24 @@ void WorldLoader::draw(glm::vec3 cameraPos){
 	glm::ivec3 chunkPos;
 	std::tie(chunkPos, std::ignore) = toChunkCoords(cameraPos, WorldLoader::chunkSize);
 	
-//	glm::ivec3 off = glm::ivec3(cameraPos.x, cameraPos.y, cameraPos.z);
 	glm::ivec3 off = glm::ivec3(0.0);
 	chunkPos.y = 0;
+	
+	glBindTexture(GL_TEXTURE_2D, textures);
+	
+	glUseProgram(shParams.program);
+	glUniformMatrix4fv(shParams.projection, 1, GL_FALSE, glm::value_ptr(*projection));
+	glUniformMatrix4fv(shParams.view, 1, GL_FALSE, glm::value_ptr(*view));
+	
 	for(off.z = -radius + chunkPos.z; off.z <= radius + chunkPos.z; off.z++){
 		for(off.y = -radius + chunkPos.y; off.y <= radius + chunkPos.y; off.y++){
 			for(off.x = -radius + chunkPos.x; off.x <= radius + chunkPos.x; off.x++){
-//				if(chunks.find(off) != chunks.end()){
-//					chunks[off].draw();
-//				}
-				try{
-					chunks.at(off).draw();
-				}catch(std::out_of_range &e){}
+				
+				if(auto chunk_iter = chunks.find(off); chunk_iter != chunks.end()){
+					auto& chunk = chunk_iter->second;
+//					glUniformMatrix4fv(shParams.view, 1, GL_FALSE, glm::value_ptr(chunk.mesh));
+					chunk.draw();
+				}
 			}
 		}
 	}
@@ -96,7 +102,7 @@ void WorldLoader::update(glm::vec3 cameraPos){
 							char* chunk_data = region.getData();
 							int data_offset = region.getChunkOffset(pos * chunkSize);
 //							Chunk t(projection, view, textures, shParams, pos, this, chunk_data, data_offset);
-							chunks[pos] = Chunk(projection, view, textures, shParams, pos, this, chunk_data, data_offset);
+							chunks[pos] = Chunk(shParams.model, pos, this, chunk_data, data_offset);
 						}
 					}
 				}
@@ -131,7 +137,7 @@ void WorldLoader::update(glm::vec3 cameraPos){
 								int data_offset = region.getChunkOffset(pos * chunkSize);
 //								Chunk t(projection, view, textures, shParams, pos, this, chunk_data, data_offset);
 		//						t.setLoader(this);
-								chunks[pos] = Chunk(projection, view, textures, shParams, pos, this, chunk_data, data_offset);;
+								chunks[pos] = Chunk(shParams.model, pos, this, chunk_data, data_offset);;
 							}
 						}
 					}

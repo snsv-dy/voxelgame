@@ -13,7 +13,7 @@ CurrentFileName        :=
 CurrentFilePath        :=
 CurrentFileFullPath    :=
 User                   :=Jacek
-Date                   :=06/03/21
+Date                   :=07/03/21
 CodeLitePath           :=/home/jacek/.codelite
 LinkerName             :=/usr/bin/g++
 SharedObjectLinkerName :=/usr/bin/g++ -shared -fPIC
@@ -60,8 +60,8 @@ AS       := /usr/bin/as
 ## User defined environment variables
 ##
 CodeLiteDir:=/usr/share/codelite
-Objects0=$(IntermediateDirectory)/src_utilities_fonts.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_terrain_WorldLoader.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_objects_Mesh.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_glad.c$(ObjectSuffix) $(IntermediateDirectory)/src_utilities_basic_util.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_main.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_objects_Cursor.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_utilities_controls.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_terrain_Terrain.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_terrain_Region.cpp$(ObjectSuffix) \
-	$(IntermediateDirectory)/src_terrain_Chunk.cpp$(ObjectSuffix) 
+Objects0=$(IntermediateDirectory)/src_utilities_Shader.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_utilities_fonts.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_terrain_WorldLoader.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_objects_Mesh.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_glad.c$(ObjectSuffix) $(IntermediateDirectory)/src_utilities_basic_util.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_main.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_objects_Cursor.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_utilities_controls.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_terrain_Terrain.cpp$(ObjectSuffix) \
+	$(IntermediateDirectory)/src_terrain_Region.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_terrain_Chunk.cpp$(ObjectSuffix) 
 
 
 
@@ -92,6 +92,12 @@ PreBuild:
 ##
 ## Objects
 ##
+$(IntermediateDirectory)/src_utilities_Shader.cpp$(ObjectSuffix): src/utilities/Shader.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_utilities_Shader.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_utilities_Shader.cpp$(DependSuffix) -MM src/utilities/Shader.cpp
+	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/jacek/cprograms/minestruggle/minestruggle/src/utilities/Shader.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_utilities_Shader.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/src_utilities_Shader.cpp$(PreprocessSuffix): src/utilities/Shader.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_utilities_Shader.cpp$(PreprocessSuffix) src/utilities/Shader.cpp
+
 $(IntermediateDirectory)/src_utilities_fonts.cpp$(ObjectSuffix): src/utilities/fonts.cpp
 	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_utilities_fonts.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_utilities_fonts.cpp$(DependSuffix) -MM src/utilities/fonts.cpp
 	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/jacek/cprograms/minestruggle/minestruggle/src/utilities/fonts.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_utilities_fonts.cpp$(ObjectSuffix) $(IncludePath)

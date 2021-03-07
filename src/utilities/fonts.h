@@ -1,7 +1,8 @@
 #ifndef _FONTS_H_
 #define _FONTS_H_
 
-#include "stb_image.h"
+//#define STB_IMAGE_IMPLEMENTATION
+//#include "stb_image.h"
 
 #include <glad/glad.h>
 #include "basic_util.h"

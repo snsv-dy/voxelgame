@@ -7,6 +7,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "stb_image.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <tuple>
@@ -35,10 +37,13 @@ unsigned int getShaderFromFile(const std::string& filename, const ShaderType& ty
 int getShaderProgram(int vs, int fs);
 shaderParams getShaderParams(unsigned int program);
 	
-typedef struct{
-	glm::ivec3 chPos;
-	glm::ivec3 inPos;
-} chunkCoords;
+unsigned int loadTexture(const std::string& filename, unsigned int& width, unsigned int& height);
+unsigned int loadTexture(const std::string& filename);
+	
+//typedef struct{
+//	glm::ivec3 chPos;
+//	glm::ivec3 inPos;
+//} chunkCoords;
 
 //chunkCoords toChunkCoords(glm::ivec3 cord, int chunkSize);
 std::tuple<glm::ivec3, glm::ivec3> toChunkCoords(const glm::ivec3& cord, const int& chunkSize);

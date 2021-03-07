@@ -52,7 +52,7 @@ public:
 	
 	Chunk() =default;
 //	Chunk(glm::mat4 *projection, glm::mat4 *view, unsigned int textureId, shaderParams &shParams, glm::ivec3 offset, WorldLoader *loaderPtr, std::shared_ptr<char[]> data, int data_offset);
-	Chunk(glm::mat4 *projection, glm::mat4 *view, unsigned int& textureId, shaderParams &shParams, glm::ivec3 offset, WorldLoader *loaderPtr, char* data, int data_offset);
+	Chunk(const unsigned int& model_location, glm::ivec3 offset, WorldLoader *loaderPtr, char* data, int data_offset);
 	Chunk& operator=(Chunk&& t);
 	
 	Chunk(Chunk const &) =delete;

@@ -104,25 +104,15 @@ int initText(FontMesh& fontParams, std::string fontTexturePath, std::string vert
 	// Loading texture atlas
 	//
 	
-	int tw, th, tchannels;
-	unsigned char *tex_ptr = stbi_load(fontTexturePath.c_str(), &tw, &th, &tchannels, 0);
+	unsigned int width, height;
+	fontParams.texture = loadTexture(fontTexturePath, width, height);
 	
-	if(tex_ptr == NULL){		
+	if(fontParams.texture == 0){
 		return 1;
 	}
 	
-	glGenTextures(1, &fontParams.texture);
-	glBindTexture(GL_TEXTURE_2D, fontParams.texture);
-//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tw, th, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_ptr);
-	glGenerateMipmap(GL_TEXTURE_2D);
-	
-	stbi_image_free(tex_ptr);
-	
-	fontParams.textureWidth = static_cast<float>(tw);
-	fontParams.textureHeight = static_cast<float>(th);
+	fontParams.textureWidth = static_cast<float>(width);
+	fontParams.textureHeight = static_cast<float>(height);
 	
 	//
 	// Loading shaders
