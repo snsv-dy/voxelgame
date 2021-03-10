@@ -64,12 +64,11 @@ void mouse_callback(GLFWwindow* window, int button, int action, int mods){
 //		mouse_down = button == GLFW_MOUSE_BUTTON_LEFT;
 //		mouse_right_down = button == GLFW_MOUSE_BUTTON_RIGHT;
 		if(controls->world_loader != nullptr){
-			BlockAction action = BlockAction::PLACE;
-			
-			if(button == GLFW_MOUSE_BUTTON_LEFT)
-				action = BlockAction::DESTROY;
-			
-			controls->world_loader->updateTerrain(controls->cursor_pos, action);
+			if(button == GLFW_MOUSE_BUTTON_LEFT){
+				controls->world_loader->updateTerrain(controls->cursor_pos, BlockAction::DESTROY);
+			}else{
+				controls->world_loader->updateTerrain(controls->prev_cursor_pos, BlockAction::PLACE);
+			}
 		}
 		
 	}else if(action == GLFW_RELEASE){

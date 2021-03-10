@@ -7,6 +7,16 @@
 #include <glm/glm.hpp>
 #include "Camera.h"
 
+enum class BlockSide{
+	FRONT,
+	TOP,
+	RIGHT,
+	BOTTOM,
+	LEFT,
+	BACK,
+	NONE
+};
+
 struct ControlsStruct{
 	double last_mx, last_my;
 	Camera &kamera;
@@ -16,6 +26,8 @@ struct ControlsStruct{
 	
 	const double mouse_speed;
 	glm::ivec3 cursor_pos;
+	glm::ivec3 prev_cursor_pos;
+	
 	WorldLoader *world_loader;
 };
 

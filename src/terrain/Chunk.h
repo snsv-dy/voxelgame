@@ -33,8 +33,8 @@ private:
 	glm::ivec3 worldOffset = glm::ivec3(0);
 	WorldLoader *parentLoader = nullptr;
 	void init_data();
-	void update_data();
 public:
+	void update_data();
 	
 //	glm::ivec3 getOffset(){
 //		return this->gridOffset;

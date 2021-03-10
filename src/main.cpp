@@ -109,6 +109,8 @@ int opengl_context_scope(GLFWwindow *window)
 		
 		.mouse_speed = 1.5,
 		.cursor_pos = glm::ivec3(0),
+		.prev_cursor_pos = glm::ivec3(0),
+		
 		.world_loader = nullptr
 	};
 	
@@ -182,13 +184,15 @@ int opengl_context_scope(GLFWwindow *window)
 //	glBindTexture(GL_TEXTURE_2D, textures);
 //	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 
+	// Shopping list:
+	//
 	// Terrain generation in separate thread
 	// Displaying text on screen for debug (1/2) (2 - Writing text from functions in other files, than this.)
 	// Terrain genereation using perlin noise
 	// Terrain compression when saving?
 	// Frustrum culling
-	// Możesz też rozwinąć wtyczkę od youtube dl'a
-	// Mesh używa destruktora przed zainicjalizowaniem buforów. (Default constructor probably)
+	// Make handling cursor nicer.
+	// 2d Hud
 	
 //	std::thread t;
 	
@@ -219,7 +223,7 @@ int opengl_context_scope(GLFWwindow *window)
 		1.0f, -1.0f
 	};
 	
-	const float cursor_size_mul = 0.5f;
+	const float cursor_size_mul = 0.505f;
 
 	// Generating vertices for a cube from 2d squares
 	for(float side = -1.0f; side < 2.0f; side += 2.0f){
@@ -248,20 +252,15 @@ int opengl_context_scope(GLFWwindow *window)
 		}
 	}
 		
-//	Mesh cursorMesh;
-//	cursorMesh.initVao(vertices, v_data);
-//	cursorMesh.setShaderParams(cursorShaderParams);
-//	cursorMesh.set_mats_pointers(&projection, view);
+	Mesh cursorMesh;
+	cursorMesh.initVao(vertices, v_data);
+	cursorMesh.setModelLocation(cursorShaderParams.model);
+////	cursorMesh.setShaderParams(cursorShaderParams);
+////	cursorMesh.set_mats_pointers(&projection, view);
 //	cursorMesh.setTexturesId(textures);
 //	cursorMesh.model = glm::translate(glm::mat4(1.0f), glm::vec3(this->worldOffset));
 	//
 	// Cursor end
-	
-	
-	//
-	//	Memory segmentation is probably in mesh's destructor. (Need's move constructor/operator).
-	//	https://www.khronos.org/opengl/wiki/Common_Mistakes#The_Object_Oriented_Language_Problem
-	//
     while (!glfwWindowShouldClose(window))
     {
 		wl.update(kamera.get_pos());
@@ -289,13 +288,29 @@ int opengl_context_scope(GLFWwindow *window)
 		sprintf(textBuffer, "cameraFront: x: %.02f, y: %.02f, z: %.02f", kameraFront.x, kameraFront.y, kameraFront.z);
 		renderText(fontmesh1, std::string(textBuffer), 20, 20, 0.5);
 		
-//		controls.cursor_pos = wl.collideRay(kameraPos, kameraFront, 7);
-		sprintf(textBuffer, "cursor  : x: %02d, y: %02d, z: %02d ", controls.cursor_pos.x, controls.cursor_pos.y, controls.cursor_pos.z);
-//		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
+//		glm::ivec3 c_pos;
 		
-//		cursorMesh.model = glm::translate(glm::mat4(1.0f), glm::vec3(controls.cursor_pos) + glm::vec3(0.5f));
+		std::tie(controls.cursor_pos, controls.prev_cursor_pos) = wl.collideRay(kameraPos, kameraFront, 7);
+//		controls.cursor_pos = c_pos;
 		
-//		cursorMesh.draw();
+		sprintf(textBuffer, "cursor  : x: %2d, y: %2d, z: %2d ", controls.cursor_pos.x, controls.cursor_pos.y, controls.cursor_pos.z);
+		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
+		
+		sprintf(textBuffer, "prev cursor  : x: %2d, y: %2d, z: %2d ", controls.prev_cursor_pos.x, controls.prev_cursor_pos.y, controls.prev_cursor_pos.z);
+		renderText(fontmesh1, std::string(textBuffer), 20, 90, 0.5);
+		
+		// Cursor drawing
+		glBindTexture(GL_TEXTURE_2D, textures);
+		glUseProgram(cursorShaderParams.program);
+		glUniformMatrix4fv(cursorShaderParams.projection, 1, GL_FALSE, glm::value_ptr(projection));
+		glUniformMatrix4fv(cursorShaderParams.view, 1, GL_FALSE, glm::value_ptr(*view));
+		cursorMesh.model = glm::translate(glm::mat4(1.0f), glm::vec3(controls.cursor_pos) + glm::vec3(0.5f));
+//		
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		cursorMesh.draw();
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		// End of cursor drawing
+		
 		
         glfwSwapBuffers(window);
         glfwPollEvents();

@@ -229,7 +229,6 @@ void Region::genChunk(int x, int y, int z){
 }
 
 void Region::generate(){
-	printf("WTF?\n");
 	for(int z = 0; z < reg_size; z++){
 		for(int y = 0; y < reg_size; y++){
 			for(int x = 0; x < reg_size; x++){

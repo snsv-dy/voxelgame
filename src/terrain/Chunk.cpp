@@ -104,40 +104,8 @@ Chunk::Chunk(const unsigned int& model_location, glm::ivec3 offset, WorldLoader 
 	this->data = data;
 	this->data_offset = data_offset;
 	
-	// AO DEBUG
-//	if(offset != glm::ivec3(0, 0, 0)){
-//		this->data = nullptr;
-//	}else{
-//		for(int z = 0; z < size; z++){
-//			for(int y = 0; y < size; y++){
-//				for(int x = 0; x < size; x++){
-//					this->data[z * size_cubed + y * size * size + x] = terrain(x, y, z);
-//				}
-//			}
-//		}
-//	}
-	// AO DEBUG
-	
-//	Region& containingRegion = parentLoader->getRegion(worldOffset.x, worldOffset.y, worldOffset.z);
-//	if(containingRegion.type != NULL_REGION)
-//		this->data = containingRegion.getChunk(worldOffset.x, worldOffset.y, worldOffset.z);
-//	else
-//		this->data = NULL;
-//	this->data = 
-	
-//	if(asociatedRegion.get() != NULL){
-//		// this should be changed to coordinates within the chunk instead of global.
-//		this->data = asociatedRegion->getChunk(worldOffset.x, worldOffset.y, worldOffset.z);
-////		printf("data get [%d %d %d] %p\n", offset.x, offset.y, offset.z, this->data);
-//	}else{
-////		printf("data nul [%d %d %d]\n", offset.x, offset.y, offset.z);
-//	}
-	
 	this->init_data();
 	
-//	this->mesh->setShaderParams(shParams);
-//	mesh->set_mats_pointers(projection, view);
-//	mesh->setTexturesId(textureId);
 	mesh->setModelLocation(model_location);
 	mesh->model = glm::translate(glm::mat4(1.0f), glm::vec3(this->worldOffset));//glm::vec3(offset.x * fchunkSize, offset.y * fchunkSize, offset.z * fchunkSize));
 	
@@ -153,8 +121,8 @@ void Chunk::changeBlock(const glm::ivec3& data_pos, BlockAction& action){
 	
 	if(action == BlockAction::DESTROY)
 		data[data_offset + arr_index] = 0;
-	else
-		data[data_offset + arr_index] = 2;
+	else if(data[data_offset + arr_index] == 0)
+		data[data_offset + arr_index] = 3;
 	
 	update_data();
 }

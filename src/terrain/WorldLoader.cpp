@@ -38,19 +38,38 @@ void WorldLoader::draw(glm::vec3 cameraPos){
 	}
 }
 
-glm::ivec3 WorldLoader::collideRay(const glm::vec3& origin, const glm::vec3& direction, const int& range){
-	float range_mul = 0.5f;
+std::tuple<glm::ivec3, glm::ivec3> WorldLoader::collideRay(const glm::vec3& origin, const glm::vec3& direction, const int& range){
+	float step = 0.1f;
+	float range_mul = step;
+	int n = (int)((float)range / step);
+	glm::ivec3 prev_pos {0};
 	glm::ivec3 int_pos {0};
-	for(int i = 0; i < range + range; i++, range_mul += 0.5f){
+	for(int i = 0; i < n; i++, range_mul += 0.1f){
 //		glm::ivec3 chunk_pos;
 //		std::tie(chunk_pos, std::ignore) = toChunkCoords(origin + direction * range_mul, WorldLoader::chunkSize);
-		int_pos = origin + direction * range_mul;
+		glm::vec3 pos = origin + direction * range_mul;
+		int_pos = pos;
+		
+//		int mx = (-value - 1);
+//		chunk_index = -(mx / chunkSize + 1);
+		if(pos.x < 0){
+			int_pos.x -= 1;
+		}
+		if(pos.y < 0){
+			int_pos.y -= 1;
+		}
+		if(pos.z < 0){
+			int_pos.z -= 1;
+		}
+		
 		if(provider.valueAt(int_pos.x, int_pos.y, int_pos.z) != 0){
 			break;
 		}
+		
+		prev_pos = int_pos;
 	}
 	
-	return int_pos;
+	return std::make_tuple(int_pos, prev_pos);
 }
 
 void WorldLoader::updateTerrain(const glm::ivec3 &pos, BlockAction action){
@@ -60,9 +79,45 @@ void WorldLoader::updateTerrain(const glm::ivec3 &pos, BlockAction action){
 	if(auto c = chunks.find(chunk_pos); c != chunks.end()){
 		Chunk& chunk = c->second;
 		
-		printf("Removing block %2d %2d %2d, from chunk %2d %2d %2d\n", chunk_pos.x, chunk_pos.y, chunk_pos.z, in_chunk_pos.x, in_chunk_pos.y, in_chunk_pos.z);
-		
 		chunk.changeBlock(in_chunk_pos, action);
+		
+		// Not enough adjacent chunks are updated. ( Check -1 0/1 -1 cursor position)
+		
+		// I tried to make it not ugly, but in the end it didn't even matter. :<
+		glm::ivec3 update_positions[3];
+		bool update_condition[3] {false};
+		
+		if(in_chunk_pos.x == 0){
+			update_positions[0] = chunk_pos - glm::ivec3(1, 0, 0);
+			update_condition[0] = true;
+		}else if(in_chunk_pos.x == Chunk::size - 1){
+			update_positions[0] = chunk_pos + glm::ivec3(1, 0, 0);
+			update_condition[0] = true;
+		}
+		
+		if(in_chunk_pos.y == 0){
+			update_positions[1] = chunk_pos + glm::ivec3(0, 1, 0);
+			update_condition[1] = true;
+		}else if(in_chunk_pos.y == Chunk::size - 1){
+			update_positions[1] = chunk_pos - glm::ivec3(0, 1, 0);
+			update_condition[1] = true;
+		}
+		
+		if(in_chunk_pos.z == 0){
+			update_positions[2] = chunk_pos - glm::ivec3(0, 0, 1);
+			update_condition[2] = true;
+		}else if(in_chunk_pos.z == Chunk::size - 1){
+			update_positions[2] = chunk_pos + glm::ivec3(0, 0, 1);
+			update_condition[2] = true;
+		}
+		
+		for(int i = 0; i < 3; i++){
+			if(update_condition[i]){
+				if(auto c = chunks.find(update_positions[i]); c != chunks.end()){
+					c->second.update_data();
+				}
+			}
+		}
 	}
 }
 
