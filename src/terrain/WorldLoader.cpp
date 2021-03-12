@@ -80,6 +80,8 @@ void WorldLoader::updateTerrain(const glm::ivec3 &pos, BlockAction action){
 		Chunk& chunk = c->second;
 		
 		chunk.changeBlock(in_chunk_pos, action);
+		Region& containing_region = provider.getRegion(pos);
+		containing_region.modified = true;
 		
 		// Not enough adjacent chunks are updated. ( Check -1 0/1 -1 cursor position)
 		
@@ -139,7 +141,8 @@ void WorldLoader::update(glm::vec3 cameraPos){
 	std::tie(chpos, std::ignore) = toChunkCoords(cameraPos, 16);
 	
 	if(last_camera_pos != chpos || first){
-		provider.update(cameraPos);
+//		provider.update(cameraPos);
+		provider.update(chpos);
 		
 		glm::ivec3 change = chpos - last_camera_pos;
 		glm::ivec3 abs_change = glm::abs(change);

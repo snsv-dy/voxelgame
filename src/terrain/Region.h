@@ -48,11 +48,13 @@ private:
 	void load();
 	void save();
 public:
-	inline static const std::string directory = std::string("../world2");
-	static const int reg_size = 5;
+	inline static const std::string directory = std::string("../world3");
+	static const int reg_size = 8;
 	static const int chunk_size = 16;
-	static const unsigned int region_size = chunk_size * 5;//worldProvider::regionSize;
+	static const unsigned int region_size = chunk_size * reg_size;//worldProvider::regionSize;
 	static const unsigned int data_size = region_size * region_size * region_size;
+	
+	bool modified = false;
 	
 	glm::ivec3 position = glm::ivec3(0);
 	
@@ -66,6 +68,8 @@ public:
 	const std::vector<glm::ivec3>& getLoadedChunks();
 	int getChunkOffset(glm::ivec3 pos);
 	char* getData();
+	
+	~Region();
 	
 private:
 	char data[data_size];

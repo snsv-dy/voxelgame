@@ -123,8 +123,6 @@ void Chunk::changeBlock(const glm::ivec3& data_pos, BlockAction& action){
 		data[data_offset + arr_index] = 0;
 	else if(data[data_offset + arr_index] == 0)
 		data[data_offset + arr_index] = 3;
-	
-	printf("No draw %d %d\n", fullOrEmpty, doNotDraw);
 
 	update_data();
 }

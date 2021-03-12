@@ -179,6 +179,7 @@ int opengl_context_scope(GLFWwindow *window)
 	// 2d Hud
 	// Lighting
 	// Physics
+	// Mesh/Chunk allocator? (reusing vertex buffers)
 	// 
 	
 	
