@@ -13,7 +13,7 @@ CurrentFileName        :=
 CurrentFilePath        :=
 CurrentFileFullPath    :=
 User                   :=Jacek
-Date                   :=10/03/21
+Date                   :=12/03/21
 CodeLitePath           :=/home/jacek/.codelite
 LinkerName             :=/usr/bin/g++
 SharedObjectLinkerName :=/usr/bin/g++ -shared -fPIC
@@ -60,8 +60,8 @@ AS       := /usr/bin/as
 ## User defined environment variables
 ##
 CodeLiteDir:=/usr/share/codelite
-Objects0=$(IntermediateDirectory)/src_utilities_fonts.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_terrain_Region.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_main.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_objects_Cursor.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_terrain_Chunk.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_utilities_Shader.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_glad.c$(ObjectSuffix) $(IntermediateDirectory)/src_utilities_basic_util.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_terrain_Terrain.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_objects_Mesh.cpp$(ObjectSuffix) \
-	$(IntermediateDirectory)/src_terrain_WorldLoader.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_utilities_controls.cpp$(ObjectSuffix) 
+Objects0=$(IntermediateDirectory)/src_utilities_fonts.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_utilities_controls.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_main.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_objects_Cursor.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_terrain_Chunk.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_utilities_Shader.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_glad.c$(ObjectSuffix) $(IntermediateDirectory)/src_utilities_basic_util.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_terrain_Region.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_objects_Mesh.cpp$(ObjectSuffix) \
+	$(IntermediateDirectory)/src_terrain_WorldLoader.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_terrain_Terrain.cpp$(ObjectSuffix) 
 
 
 
@@ -98,11 +98,11 @@ $(IntermediateDirectory)/src_utilities_fonts.cpp$(ObjectSuffix): src/utilities/f
 $(IntermediateDirectory)/src_utilities_fonts.cpp$(PreprocessSuffix): src/utilities/fonts.cpp
 	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_utilities_fonts.cpp$(PreprocessSuffix) src/utilities/fonts.cpp
 
-$(IntermediateDirectory)/src_terrain_Region.cpp$(ObjectSuffix): src/terrain/Region.cpp
-	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_terrain_Region.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_terrain_Region.cpp$(DependSuffix) -MM src/terrain/Region.cpp
-	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/jacek/cprograms/minestruggle/minestruggle/src/terrain/Region.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_terrain_Region.cpp$(ObjectSuffix) $(IncludePath)
-$(IntermediateDirectory)/src_terrain_Region.cpp$(PreprocessSuffix): src/terrain/Region.cpp
-	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_terrain_Region.cpp$(PreprocessSuffix) src/terrain/Region.cpp
+$(IntermediateDirectory)/src_utilities_controls.cpp$(ObjectSuffix): src/utilities/controls.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_utilities_controls.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_utilities_controls.cpp$(DependSuffix) -MM src/utilities/controls.cpp
+	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/jacek/cprograms/minestruggle/minestruggle/src/utilities/controls.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_utilities_controls.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/src_utilities_controls.cpp$(PreprocessSuffix): src/utilities/controls.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_utilities_controls.cpp$(PreprocessSuffix) src/utilities/controls.cpp
 
 $(IntermediateDirectory)/src_main.cpp$(ObjectSuffix): src/main.cpp
 	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_main.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_main.cpp$(DependSuffix) -MM src/main.cpp
@@ -140,11 +140,11 @@ $(IntermediateDirectory)/src_utilities_basic_util.cpp$(ObjectSuffix): src/utilit
 $(IntermediateDirectory)/src_utilities_basic_util.cpp$(PreprocessSuffix): src/utilities/basic_util.cpp
 	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_utilities_basic_util.cpp$(PreprocessSuffix) src/utilities/basic_util.cpp
 
-$(IntermediateDirectory)/src_terrain_Terrain.cpp$(ObjectSuffix): src/terrain/Terrain.cpp
-	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_terrain_Terrain.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_terrain_Terrain.cpp$(DependSuffix) -MM src/terrain/Terrain.cpp
-	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/jacek/cprograms/minestruggle/minestruggle/src/terrain/Terrain.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_terrain_Terrain.cpp$(ObjectSuffix) $(IncludePath)
-$(IntermediateDirectory)/src_terrain_Terrain.cpp$(PreprocessSuffix): src/terrain/Terrain.cpp
-	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_terrain_Terrain.cpp$(PreprocessSuffix) src/terrain/Terrain.cpp
+$(IntermediateDirectory)/src_terrain_Region.cpp$(ObjectSuffix): src/terrain/Region.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_terrain_Region.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_terrain_Region.cpp$(DependSuffix) -MM src/terrain/Region.cpp
+	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/jacek/cprograms/minestruggle/minestruggle/src/terrain/Region.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_terrain_Region.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/src_terrain_Region.cpp$(PreprocessSuffix): src/terrain/Region.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_terrain_Region.cpp$(PreprocessSuffix) src/terrain/Region.cpp
 
 $(IntermediateDirectory)/src_objects_Mesh.cpp$(ObjectSuffix): src/objects/Mesh.cpp
 	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_objects_Mesh.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_objects_Mesh.cpp$(DependSuffix) -MM src/objects/Mesh.cpp
@@ -158,11 +158,11 @@ $(IntermediateDirectory)/src_terrain_WorldLoader.cpp$(ObjectSuffix): src/terrain
 $(IntermediateDirectory)/src_terrain_WorldLoader.cpp$(PreprocessSuffix): src/terrain/WorldLoader.cpp
 	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_terrain_WorldLoader.cpp$(PreprocessSuffix) src/terrain/WorldLoader.cpp
 
-$(IntermediateDirectory)/src_utilities_controls.cpp$(ObjectSuffix): src/utilities/controls.cpp
-	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_utilities_controls.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_utilities_controls.cpp$(DependSuffix) -MM src/utilities/controls.cpp
-	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/jacek/cprograms/minestruggle/minestruggle/src/utilities/controls.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_utilities_controls.cpp$(ObjectSuffix) $(IncludePath)
-$(IntermediateDirectory)/src_utilities_controls.cpp$(PreprocessSuffix): src/utilities/controls.cpp
-	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_utilities_controls.cpp$(PreprocessSuffix) src/utilities/controls.cpp
+$(IntermediateDirectory)/src_terrain_Terrain.cpp$(ObjectSuffix): src/terrain/Terrain.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_terrain_Terrain.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_terrain_Terrain.cpp$(DependSuffix) -MM src/terrain/Terrain.cpp
+	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/jacek/cprograms/minestruggle/minestruggle/src/terrain/Terrain.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_terrain_Terrain.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/src_terrain_Terrain.cpp$(PreprocessSuffix): src/terrain/Terrain.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_terrain_Terrain.cpp$(PreprocessSuffix) src/terrain/Terrain.cpp
 
 
 -include $(IntermediateDirectory)/*$(DependSuffix)

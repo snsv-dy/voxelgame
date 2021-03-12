@@ -11,6 +11,7 @@
 //#incldue "basic_util.h"
 #include "../utilities/basic_util.h"
 //#include "terrain/Terrain.h"
+#include "PerlinNoise.hpp"
 
 // https://stackoverflow.com/questions/13061979/shared-ptr-to-an-array-should-it-be-used
 template< typename T >

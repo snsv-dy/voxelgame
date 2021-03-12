@@ -117,99 +117,22 @@ void Region::genChunk(int x, int y, int z){
 	
 	glm::ivec3 worldOffset = glm::ivec3(x * chunk_size, y * chunk_size, z * chunk_size);
 	worldOffset += position * reg_size * chunk_size;
-	//
-	const double threshold = 0.3;
 	
-//	const double frequency = 400.0;
-//	const double frequency2 = 100.0;
+	// Old method for generating available in previous commits.
 	
-//	std::vector<double> frequency_increments;
-	std::vector<double> frequency{100.0, 30.0};
+	glm::vec3 world_pos_f = glm::vec3(worldOffset);
+	glm::vec3 local_pos = glm::vec3(0.0f);
 	
-	std::vector<FrequencyParams> frequency_divided;
-	
-	for(auto t : frequency){
-		FrequencyParams p{glm::vec3(0.0), t, 1.0 / t};
-		frequency_divided.push_back(p);
-	}
-	
-//	double value = perlin.noise3D(x / frequency, y / frequency, z / frequency);
-
-//	double frequency_increment = 1.0 / frequency;
-//	double frequency_inc2 = 1.0 / frequency2;
-//	
-//	double z_frequency_divided = worldOffset.z / frequency;
-//	double z_param2 = worldOffset.z / frequency2;
-	/*
-	for(FrequencyParams& t : frequency_divided){
-		t.position.z = worldOffset.z / t.frequency;
-	}
-	
-	for(int z = 0; z < chunk_size; z++){
+	siv::PerlinNoise perlin(1234);
+	for(int z = 0; z < chunk_size; z++, local_pos.z++){
 		int zoff = z * chunk_squared;
-//		double y_frequency_divided = worldOffset.y / frequency;
-//		double y_param2 = worldOffset.y / frequency2;
-		for(FrequencyParams& t : frequency_divided){
-			t.position.y = worldOffset.y / t.frequency;
-		}
+		local_pos.y = 0.0f;
 		
-		for(int y = 0; y < chunk_size; y++){
+		for(int y = 0; y < chunk_size; y++, local_pos.y++){
 			int yoff = y * chunk_size;
-//			double x_frequency_divided = worldOffset.x / frequency;
-//			double x_param2 = worldOffset.x / frequency2;
-			
-			for(FrequencyParams& t : frequency_divided){
-				t.position.x = worldOffset.x / t.frequency;
-			}
-			for(int x = 0; x < chunk_size; x++){
-//				data[dataoffset + zoff + yoff + x] = terrainAt(x + worldOffset.x, y + worldOffset.y, z + worldOffset.z);
-				double dvalue = 1.0;
-				bool first = true;
-				for(FrequencyParams& t : frequency_divided){
-					if(first){
-						dvalue = perlin.noise3D_0_1(t.position.x, t.position.y, t.position.z);
-						first = false;
-					}else{
-						dvalue *= 1.0 - perlin.noise3D_0_1(t.position.x, t.position.y, t.position.z);
-					}
-				}
-				
-//				double dvalue2 = perlin.noise3D_0_1(x_param2, y_param2, z_param2);
-//				dvalue *= 1.0 + dvalue2;
-//				char value = (dvalue > threshold || dvalue < -threshold) * 1;
-				char value = (dvalue > threshold || (y + worldOffset.y) < 1) * 1;
-				data[dataoffset + zoff + yoff + x] = value;
-//				data.get()[dataoffset + zoff + yoff + x] = terrain(x + worldOffset.x, y + worldOffset.y, z + worldOffset.z);
-//				*(data.get() + dataoffset + zoff + yoff + x) = terrain(x + worldOffset.x, y + worldOffset.y, z + worldOffset.z);
-//					data[dataoffset + zoff + yoff + x] = terrain(x, y, z);
-//				x_frequency_divided += frequency_increment;
-//				x_param2 += frequency_inc2;
-				for(FrequencyParams& t : frequency_divided){
-					t.position.x +=t.frequency_inc;
-				}
-			}
-//			y_frequency_divided += frequency_increment;
-//			y_param2 += frequency_inc2;
-			for(FrequencyParams& t : frequency_divided){
-				t.position.y += t.frequency_inc;
-			}
-		}
-//		z_frequency_divided += frequency_increment;
-//		z_param2 += frequency_inc2;
-		for(FrequencyParams& t : frequency_divided){
-			t.position.z += t.frequency_inc;
-		}
-		for(FrequencyParams& t : frequency_divided){
-		t.position.z = worldOffset.z / t.frequency;
-	}*/
-	
-	for(int z = 0; z < chunk_size; z++){
-		int zoff = z * chunk_squared;
-//		
-		for(int y = 0; y < chunk_size; y++){
-			int yoff = y * chunk_size;
+			local_pos.x = 0.0f;
 //			
-			for(int x = 0; x < chunk_size; x++){
+			for(int x = 0; x < chunk_size; x++, local_pos.x++){
 //				data[dataoffset + zoff + yoff + x] = terrainAt(x + worldOffset.x, y + worldOffset.y, z + worldOffset.z);
 				double dvalue = 1.0;
 				bool first = true;
@@ -217,12 +140,34 @@ void Region::genChunk(int x, int y, int z){
 //				char value = abs(x % 8) <= 8;
 				int Y = worldOffset.y + y;
 				int X = worldOffset.x + x;
-				if(X < 0) X = -X;
+//				if(X < 0) X = -X;
 				int Z = worldOffset.z + z;
-				if(Z < 0) Z = -Z;
+//				if(Z < 0) Z = -Z;
 //				char value = ((Y) <= abs( ( (X+8) % 16) - 8)) + 16 && ((Y) <= abs((Z+8) % 16 - 8)) + 16 && ((Y) >= -abs( ( (X+8) % 16) - 8)) + 16 && ((Y) >= -abs((Z+8) % 16 - 8)) + 16;
 
-				data[dataoffset + zoff + yoff + x] = terrainballs2(X, Y, Z);
+//				data[dataoffset + zoff + yoff + x] = terrainballs2(X, Y, Z);
+				glm::vec3 fpos = (world_pos_f + local_pos) / glm::vec3(10.0f);
+				
+				float cave = perlin.noise3D_0_1(fpos.x, fpos.y, fpos.z);
+				#define MOUNTAIN_SCALE 40.0f
+				#define MOUNTAIN_DISTANCE 2.0f
+				float mountain = perlin.noise2D_0_1(fpos.x / MOUNTAIN_DISTANCE, fpos.z / MOUNTAIN_DISTANCE) * MOUNTAIN_SCALE;
+				#define THRESHOLD 0.5f
+				#define GROUND_LEVEL 20
+				char ival = 0;
+				int ypos = worldOffset.y + y;
+				if((ypos) < (GROUND_LEVEL + mountain) && !(cave > THRESHOLD && (ypos < GROUND_LEVEL + 10))){
+					ival = 1;
+					if(ypos < GROUND_LEVEL){
+						ival = 3;
+					}
+				}
+//				char ival = 1;
+//				if ( (cave > THRESHOLD || (worldOffset.y > GROUND_LEVEL && mountain <= THRESHOLD) )){
+//					ival = 0;
+//				}
+				
+				data[dataoffset + zoff + yoff + x] = ival;
 			}
 		}
 	}

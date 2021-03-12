@@ -51,26 +51,30 @@ void Mesh::initVao(std::vector<float>& data, std::vector<unsigned int>& int_data
 }
 
 void Mesh::updateVao(std::vector<float>& data, std::vector<unsigned int>& int_data){
-	glBindVertexArray(this->VAO);
-	
-	glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
-	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), data.data(), GL_STATIC_DRAW);
-	
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
-	glEnableVertexAttribArray(0);
-	
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-	
-	glBindBuffer(GL_ARRAY_BUFFER, this->VBO_INT);
-	glBufferData(GL_ARRAY_BUFFER, int_data.size() * sizeof(int), int_data.data(), GL_STATIC_DRAW);
-	glVertexAttribIPointer(2, 1, GL_INT, 1 * sizeof(int), (void *)0);
-	glEnableVertexAttribArray(2);
-	
-	glBindVertexArray(0);
-	
-	this->vertices_count = data.size() / 6;
-	this->buffers_set = true;
+	if(!buffers_set){
+		initVao(data, int_data);
+	}else{
+		glBindVertexArray(this->VAO);
+		
+		glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
+		glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), data.data(), GL_STATIC_DRAW);
+		
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
+		glEnableVertexAttribArray(0);
+		
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
+		glEnableVertexAttribArray(1);
+		
+		glBindBuffer(GL_ARRAY_BUFFER, this->VBO_INT);
+		glBufferData(GL_ARRAY_BUFFER, int_data.size() * sizeof(int), int_data.data(), GL_STATIC_DRAW);
+		glVertexAttribIPointer(2, 1, GL_INT, 1 * sizeof(int), (void *)0);
+		glEnableVertexAttribArray(2);
+		
+		glBindVertexArray(0);
+		
+		this->vertices_count = data.size() / 6;
+	//	this->buffers_set = true;
+	}
 }
 
 Mesh::~Mesh()

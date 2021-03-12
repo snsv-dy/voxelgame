@@ -11,6 +11,8 @@
 #include "utilities/basic_util.h"
 
 #include "objects/Mesh.h"
+#include "objects/Cursor.hpp"
+
 #include "terrain/Terrain.h"
 #include "src/terrain/WorldLoader.h"
 #include "src/terrain/Chunk.h"
@@ -18,6 +20,7 @@
 #include "utilities/Camera.h"
 #include "utilities/fonts.h"
 #include "utilities/controls.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -161,29 +164,10 @@ int opengl_context_scope(GLFWwindow *window)
 	view = kamera.get_view();
 	cameraPos = kamera.get_pos();
 	
-//	float rotation_speed = 0.2f;
-	unsigned int time = 0;
-	
-	
-//	BasicObject2 basic_obj2;
-//	basic_obj2.set_view_projection(&projection, view);
-	
-//	float extrusion_speed = 0.005f;
-	
-	
-//	int selected_object = -1;
-//	bool splated = false;
-	
-//	Chunk ch(&projection, view, textures, baseMesh.getShaderParams());
-//	Chunk ch2(&projection, view, textures, baseMesh.getShaderParams(), glm::vec3(-16, 0, 0));
-	
 	WorldLoader wl(&projection, view, textures, chunkShaderParams);
 	
 	controls.world_loader = &wl;
 	
-//	glBindTexture(GL_TEXTURE_2D, textures);
-//	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-
 	// Shopping list:
 	//
 	// Terrain generation in separate thread
@@ -193,85 +177,19 @@ int opengl_context_scope(GLFWwindow *window)
 	// Frustrum culling
 	// Make handling cursor nicer.
 	// 2d Hud
+	// Lighting
+	// Physics
+	// 
 	
-//	std::thread t;
+	
+	Cursor cursor(controls.cursor_pos);
 	
 	char textBuffer[2000] = {};
-	
-	// Cursor
-	//
-	
-	shaderParams cursorShaderParams = getShaderParams(
-		getShaderProgram(
-			getShaderFromFile(CHUNK_VERTEX_SHADER, ShaderType::VERTEX),
-			getShaderFromFile(CHUNK_FRAGMENT_SHADER, ShaderType::FRAGMENT)
-			)
-		);
-		
-	// cube data
-	std::vector<float> vertices;
-	std::vector<unsigned int> v_data;
-	
-	// Vertives for a square composed of two triangles
-	float square[12] {
-		-1.0f, -1.0f,
-		-1.0f, 1.0f,
-		1.0f, -1.0f,
-		
-		-1.0f, 1.0f,
-		1.0f, 1.0f,
-		1.0f, -1.0f
-	};
-	
-	const float cursor_size_mul = 0.505f;
-
-	// Generating vertices for a cube from 2d squares
-	for(float side = -1.0f; side < 2.0f; side += 2.0f){
-		for(int norm = 0; norm < 3; norm++){
-			int t = (norm + 1) % 3;
-			int bt = (norm + 2) % 3;
-			
-			for(int i = 0; i < 12; i += 2){
-				float vec[3];
-				vec[norm] = side * cursor_size_mul;
-				vec[t] = square[i] * cursor_size_mul;
-				vec[bt] = square[i + 1] * cursor_size_mul;
-				
-				vertices.push_back(vec[0]);
-				vertices.push_back(vec[1]);
-				vertices.push_back(vec[2]);
-				
-				vertices.push_back(square[i]);
-				vertices.push_back(square[i + 1]);
-				vertices.push_back(0.0f);
-				
-				v_data.push_back(0x101);
-				v_data.push_back(0x101);
-				v_data.push_back(0x101);
-			}
-		}
-	}
-		
-	Mesh cursorMesh;
-	cursorMesh.initVao(vertices, v_data);
-	cursorMesh.setModelLocation(cursorShaderParams.model);
-////	cursorMesh.setShaderParams(cursorShaderParams);
-////	cursorMesh.set_mats_pointers(&projection, view);
-//	cursorMesh.setTexturesId(textures);
-//	cursorMesh.model = glm::translate(glm::mat4(1.0f), glm::vec3(this->worldOffset));
-	//
-	// Cursor end
     while (!glfwWindowShouldClose(window))
     {
 		wl.update(kamera.get_pos());
 		
 		int debugkeys = processInput(window);
-//		if(debugkeys & 1){
-//			wl.remeshAll();
-//		}
-//		if(debugkeys & 2){
-//			wl.debug(kamera.get_pos());
-//		}
 		
 		kamera.updateView();
 		
@@ -300,28 +218,15 @@ int opengl_context_scope(GLFWwindow *window)
 		renderText(fontmesh1, std::string(textBuffer), 20, 90, 0.5);
 		
 		// Cursor drawing
-		glBindTexture(GL_TEXTURE_2D, textures);
-		glUseProgram(cursorShaderParams.program);
-		glUniformMatrix4fv(cursorShaderParams.projection, 1, GL_FALSE, glm::value_ptr(projection));
-		glUniformMatrix4fv(cursorShaderParams.view, 1, GL_FALSE, glm::value_ptr(*view));
-		cursorMesh.model = glm::translate(glm::mat4(1.0f), glm::vec3(controls.cursor_pos) + glm::vec3(0.5f));
-//		
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		cursorMesh.draw();
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		cursor.draw(projection, view);
 		// End of cursor drawing
 		
 		
         glfwSwapBuffers(window);
         glfwPollEvents();
-//		
-		
-//		
-//		time++;
     }
 	
 	glDeleteTextures(1, &textures);
-//    glfwDestroyWindow(window);
 	
     return 0;
 }
