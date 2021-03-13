@@ -38,12 +38,13 @@ void WorldLoader::draw(glm::vec3 cameraPos){
 	}
 }
 
-std::tuple<glm::ivec3, glm::ivec3> WorldLoader::collideRay(const glm::vec3& origin, const glm::vec3& direction, const int& range){
+std::tuple<glm::ivec3, glm::ivec3, region_dtype> WorldLoader::collideRay(const glm::vec3& origin, const glm::vec3& direction, const int& range){
 	float step = 0.1f;
 	float range_mul = step;
 	int n = (int)((float)range / step);
 	glm::ivec3 prev_pos {0};
 	glm::ivec3 int_pos {0};
+	region_dtype last_block = 0;
 	for(int i = 0; i < n; i++, range_mul += 0.1f){
 //		glm::ivec3 chunk_pos;
 //		std::tie(chunk_pos, std::ignore) = toChunkCoords(origin + direction * range_mul, WorldLoader::chunkSize);
@@ -62,14 +63,15 @@ std::tuple<glm::ivec3, glm::ivec3> WorldLoader::collideRay(const glm::vec3& orig
 			int_pos.z -= 1;
 		}
 		
-		if(provider.valueAt(int_pos.x, int_pos.y, int_pos.z) != 0){
+		last_block = provider.valueAt(int_pos.x, int_pos.y, int_pos.z);
+		if(block_type(last_block) != 0){
 			break;
 		}
 		
 		prev_pos = int_pos;
 	}
 	
-	return std::make_tuple(int_pos, prev_pos);
+	return std::make_tuple(int_pos, prev_pos, last_block);
 }
 
 void WorldLoader::updateTerrain(const glm::ivec3 &pos, BlockAction action){
@@ -123,7 +125,7 @@ void WorldLoader::updateTerrain(const glm::ivec3 &pos, BlockAction action){
 	}
 }
 
-char WorldLoader::valueAt(int x, int y, int z){
+region_dtype WorldLoader::valueAt(int x, int y, int z){
 	return provider.valueAt(x, y, z);
 
 	return false;
@@ -157,7 +159,7 @@ void WorldLoader::update(glm::vec3 cameraPos){
 							
 							Region& region = provider.getRegion(pos * chunkSize);
 //							std::shared_ptr<char[]> chunk_data = region.getData();
-							char* chunk_data = region.getData();
+							region_dtype* chunk_data = region.getData();
 							int data_offset = region.getChunkOffset(pos * chunkSize);
 //							Chunk t(projection, view, textures, shParams, pos, this, chunk_data, data_offset);
 							chunks[pos] = Chunk(shParams.model, pos, this, chunk_data, data_offset);
@@ -191,7 +193,7 @@ void WorldLoader::update(glm::vec3 cameraPos){
 								
 								Region& region = provider.getRegion(pos * chunkSize);
 //								std::shared_ptr<char[]> chunk_data = region.getData();
-								char* chunk_data = region.getData();
+								region_dtype* chunk_data = region.getData();
 								int data_offset = region.getChunkOffset(pos * chunkSize);
 //								Chunk t(projection, view, textures, shParams, pos, this, chunk_data, data_offset);
 		//						t.setLoader(this);

@@ -90,7 +90,7 @@ Chunk& Chunk::operator=(Chunk&& t){
 	return *this;
 }
 
-Chunk::Chunk(const unsigned int& model_location, glm::ivec3 offset, WorldLoader *loaderPtr, char* data, int data_offset){
+Chunk::Chunk(const unsigned int& model_location, glm::ivec3 offset, WorldLoader *loaderPtr, region_dtype* data, int data_offset){
 	parentLoader = loaderPtr;
 	float fchunkSize = (float)chunkSize;
 	this->worldOffset = offset * this->size;//glm::vec3(offset.x * fchunkSize, offset.y * fchunkSize, offset.z * fchunkSize);
@@ -119,11 +119,12 @@ void Chunk::draw(){
 void Chunk::changeBlock(const glm::ivec3& data_pos, BlockAction& action){
 	int arr_index = data_pos.z * (size * size) + data_pos.y * size + data_pos.x;
 	
-	if(action == BlockAction::DESTROY)
-		data[data_offset + arr_index] = 0;
-	else if(data[data_offset + arr_index] == 0)
-		data[data_offset + arr_index] = 3;
-
+	if(action == BlockAction::DESTROY){
+		data[data_offset + arr_index] &= 0xff00;
+	}else if(block_type(data[data_offset + arr_index]) == 0){
+		data[data_offset + arr_index] |= 3;
+	}
+	
 	update_data();
 }
 
@@ -149,7 +150,7 @@ void Chunk::init_data(){
 	}
 }
 
-char Chunk::valueAt(const glm::ivec3& pos){
+region_dtype Chunk::valueAt(const glm::ivec3& pos){
 	if(data == nullptr)
 		return 0;
 	
@@ -170,6 +171,13 @@ char Chunk::valueAt(const glm::ivec3& pos){
 }
 
 inline int calculate_ao(int side1, int side2, int corner){
+	side1 = block_type(side1) != 0;
+	side2 = block_type(side2) != 0;
+	corner = block_type(corner) != 0;
+//	side1 = block_type(side1);
+//	side2 = block_type(side2);
+//	corner = block_type(corner);
+	
 	if(side1 && side2)
 		return 0;
 		
@@ -187,6 +195,8 @@ inline void add_vertex(std::vector<float>& vertices, std::vector<unsigned int>& 
 	properties.push_back(prop); 
 }
 
+// Sun intensity can be attribute in shader
+
 // https://0fps.net/2012/06/30/meshing-in-a-minecraft-game/
 // https://github.com/AThilenius/greedy_meshing/blob/master/greedy_meshing.ts
 std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData(){
@@ -197,7 +207,8 @@ std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData()
 		return std::make_tuple(ret, int_ret);
 	}
 	
-	char mask[size][size];
+	region_dtype mask[size][size];
+	region_dtype mask_with_light[size][size];
 	char ao_mask[size + 1][size + 1];
 	
 	int randd = rand() & 3; 
@@ -223,13 +234,18 @@ std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData()
 				for(cursor[biTan] = 0; cursor[biTan] < size; cursor[biTan]++){
 					for(cursor[tan] = 0; cursor[tan] < size; cursor[tan]++){
 	//					
-						char valueHere = valueAt(cursor);
+						region_dtype valueHereWithLight = valueAt(cursor);
+						region_dtype valueHere = block_type(valueHereWithLight);
+						
 //						char valueHere = valueAt(cursor) * randd;
 						
-						if(valueHere && !valueAt(cursor - normal)){
+						if(valueHere != 0 && !block_type(valueAt(cursor - normal))){
+//						if(valueHere != 0 && !valueAt(cursor - normal)){
 							mask[cursor[biTan]][cursor[tan]] = valueHere;
+							mask_with_light[cursor[biTan]][cursor[tan]] = valueHereWithLight;
 						}else{
 							mask[cursor[biTan]][cursor[tan]] = 0;
+							mask_with_light[cursor[biTan]][cursor[tan]] = valueHereWithLight;
 						}
 					}
 				}
@@ -263,7 +279,7 @@ std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData()
 							corner[tan] -= 1;
 							corner[biTan] -= 1;
 							
-							ao_mask[y][x] = calculate_ao(valueAt(left) != 0, valueAt(up) != 0, valueAt(corner) != 0);
+							ao_mask[y][x] = calculate_ao(valueAt(left), valueAt(up), valueAt(corner));
 						}
 						
 						if(ao_mask[y][x + 1] == -1){ // v1
@@ -279,7 +295,7 @@ std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData()
 							corner[tan] += 1;
 							corner[biTan] -= 1;
 							
-							ao_mask[y][x + 1] = calculate_ao(valueAt(left) != 0, valueAt(up) != 0, valueAt(corner) != 0);
+							ao_mask[y][x + 1] = calculate_ao(valueAt(left), valueAt(up), valueAt(corner));
 						}
 						
 						if(ao_mask[y + 1][x] == -1){ // v2
@@ -295,7 +311,7 @@ std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData()
 							corner[tan] -= 1;
 							corner[biTan] += 1;
 							
-							ao_mask[y + 1][x] = calculate_ao(valueAt(left) != 0, valueAt(up) != 0, valueAt(corner) != 0);
+							ao_mask[y + 1][x] = calculate_ao(valueAt(left), valueAt(up), valueAt(corner));
 						}
 						
 						if(ao_mask[y + 1][x + 1] == -1){ // v3
@@ -311,7 +327,7 @@ std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData()
 							corner[tan] += 1;
 							corner[biTan] += 1;
 							
-							ao_mask[y + 1][x + 1] = calculate_ao(valueAt(left) != 0, valueAt(up) != 0, valueAt(corner) != 0);
+							ao_mask[y + 1][x + 1] = calculate_ao(valueAt(left), valueAt(up), valueAt(corner));
 						}
 					}
 				}
@@ -323,8 +339,8 @@ std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData()
 							continue;
 						}
 						
-						char blockType = mask[y][x]; // używane do sprawdzania, czy następny blok jest tego samego typu
-						char aoVal[4] = {
+						region_dtype blockType = mask[y][x]; // używane do sprawdzania, czy następny blok jest tego samego typu
+						short aoVal[4] = {
 							ao_mask[y][x],
 							ao_mask[y][x + 1],
 							ao_mask[y + 1][x],
@@ -334,7 +350,7 @@ std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData()
 						int width = 1;
 //						for(int tx = x + 1; tx < size && mask[y][tx] == blockType; ){
 						for(int tx = x + 1; tx < size && mask[y][tx] == blockType; ){
-//							break;
+							break;
 							if(ao_mask[y][tx] != aoVal[0] || ao_mask[y][tx + 1] != aoVal[1] || ao_mask[y + 1][tx] != aoVal[2] || ao_mask[y + 1][tx + 1] != aoVal[3])
 								break;
 							tx++, width++;
@@ -343,7 +359,7 @@ std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData()
 						int height = 1;
 						bool valid = true;
 						for(int ty = y + 1; ty < size && valid; ty++){
-//							break;
+							break;
 							for(int tx = x; tx < x + width; tx++){
 								if((mask[ty][tx] != blockType)){
 									valid = false;
@@ -388,7 +404,7 @@ std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData()
 						//
 						// texId structure 
 						// ????????|????????|??????aat|bbbbbbbb
-						// ????????|fordebug|??????aat|bbbbbbbb
+						// Light   |fordebug|??????aat|bbbbbbbb
 						// b - block type
 						// t - does this vertex belong to a top side (should be changed to distinguish all sides)
 						// a - ambient occlusion value
@@ -396,8 +412,9 @@ std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData()
 						if(top){
 							texid |= 0x100;
 						}
+						texid |= ((mask_with_light[y][x] & 0xff00)) << 16;
 						
-						texid |= (y << 4 | x) << 16;
+						texid |= (y << 4 | x) << 16; // debugging info
 						
 						int ao[4] = {
 							ao_mask[y][x] << 9,

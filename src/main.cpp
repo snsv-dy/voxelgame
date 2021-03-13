@@ -200,7 +200,7 @@ int opengl_context_scope(GLFWwindow *window)
 		wl.draw(kamera.get_pos());
 //		
 		glm::vec3 kameraPos = kamera.get_pos();
-		sprintf(textBuffer, "cameraPos: x: %.02f, y: %.02f, z: %.02f oio", kameraPos.x, kameraPos.y, kameraPos.z);
+		sprintf(textBuffer, "cameraPos: x: %.02f, y: %.02f, z: %.02f", kameraPos.x, kameraPos.y, kameraPos.z);
 		renderText(fontmesh1, std::string(textBuffer), 20, 50, 0.5);
 //		
 		glm::vec3 kameraFront = kamera.get_front();
@@ -208,14 +208,14 @@ int opengl_context_scope(GLFWwindow *window)
 		renderText(fontmesh1, std::string(textBuffer), 20, 20, 0.5);
 		
 //		glm::ivec3 c_pos;
-		
-		std::tie(controls.cursor_pos, controls.prev_cursor_pos) = wl.collideRay(kameraPos, kameraFront, 7);
+		region_dtype block_under_cursor;
+		std::tie(controls.cursor_pos, controls.prev_cursor_pos, block_under_cursor) = wl.collideRay(kameraPos, kameraFront, 7);
 //		controls.cursor_pos = c_pos;
 		
 		sprintf(textBuffer, "cursor  : x: %2d, y: %2d, z: %2d ", controls.cursor_pos.x, controls.cursor_pos.y, controls.cursor_pos.z);
 		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
 		
-		sprintf(textBuffer, "prev cursor  : x: %2d, y: %2d, z: %2d ", controls.prev_cursor_pos.x, controls.prev_cursor_pos.y, controls.prev_cursor_pos.z);
+		sprintf(textBuffer, "block under cursor: [%d, %d]", block_under_cursor & 0xff, block_under_cursor >> 8);
 		renderText(fontmesh1, std::string(textBuffer), 20, 90, 0.5);
 		
 		// Cursor drawing

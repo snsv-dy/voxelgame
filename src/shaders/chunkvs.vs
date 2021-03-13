@@ -36,6 +36,7 @@ void main()
 	// CORRECT ONE 
 	ao_test = (float( (intval >> 9) & 3) / 3.0f) * (2.0f / 3.0f) + 0.3f;
 	
+	
 	int ao_color = intval >> 9;
 	ao_color &= 3;
 	

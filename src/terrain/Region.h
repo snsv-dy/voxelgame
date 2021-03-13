@@ -21,6 +21,10 @@ struct array_deleter{
 	}
 };
 
+typedef unsigned short region_dtype;
+#define block_type(x) ((x) & 0xff)
+#define block_light(x) ((x) >> 8)
+
 enum class RegionType{
 	NULL_REGION,
 	NORMAL_REGION
@@ -49,7 +53,7 @@ private:
 	void save();
 public:
 	inline static const std::string directory = std::string("../world3");
-	static const int reg_size = 8;
+	static const int reg_size = 4;
 	static const int chunk_size = 16;
 	static const unsigned int region_size = chunk_size * reg_size;//worldProvider::regionSize;
 	static const unsigned int data_size = region_size * region_size * region_size;
@@ -64,15 +68,15 @@ public:
 	Region()=default;
 	Region(glm::ivec3 pos);
 	
-	const char valueAt(int x, int y, int z);
+	const region_dtype valueAt(int x, int y, int z);
 	const std::vector<glm::ivec3>& getLoadedChunks();
 	int getChunkOffset(glm::ivec3 pos);
-	char* getData();
+	region_dtype* getData();
 	
 	~Region();
 	
 private:
-	char data[data_size];
+	region_dtype data[data_size];
 };
 
 #endif // REGION_H

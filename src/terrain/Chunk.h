@@ -24,7 +24,7 @@ private:
 	bool fullOrEmpty = false; // indicates if the chunk is full or empty, so that we don't have to loop 6 x size^2 to find out there aren't any quads
 	bool doNotDraw = false;
 	
-	char *data = nullptr;
+	region_dtype *data = nullptr;
 	int data_offset = 0; // offset in data pointer, that indicates start of this chunk's data.
 	
 	std::unique_ptr<Mesh> mesh = nullptr;
@@ -52,14 +52,14 @@ public:
 	
 	Chunk() =default;
 //	Chunk(glm::mat4 *projection, glm::mat4 *view, unsigned int textureId, shaderParams &shParams, glm::ivec3 offset, WorldLoader *loaderPtr, std::shared_ptr<char[]> data, int data_offset);
-	Chunk(const unsigned int& model_location, glm::ivec3 offset, WorldLoader *loaderPtr, char* data, int data_offset);
+	Chunk(const unsigned int& model_location, glm::ivec3 offset, WorldLoader *loaderPtr, region_dtype* data, int data_offset);
 	Chunk& operator=(Chunk&& t);
 	
 	Chunk(Chunk const &) =delete;
 	Chunk& operator=(Chunk const &) =delete;
 	
 	void draw();
-	char valueAt(const glm::ivec3& pos);
+	region_dtype valueAt(const glm::ivec3& pos);
 	void changeBlock(const glm::ivec3& data_pos, BlockAction& action);
 	
 	~Chunk();

@@ -89,17 +89,17 @@ Region::Region(glm::ivec3 pos){
 //	fileName = "-1.0.-1.reg";
 	std::ifstream file_exists(directory + "/" + fileName);
 	
-//	generate();
-		if(!file_exists.good()){
-			// generate region
-			generate();
-//			save();
-//			fileName = "-1.0.-1.reg";
+	generate();
+//		if(!file_exists.good()){
+//			// generate region
+//			generate();
+////			save();
+////			fileName = "-1.0.-1.reg";
+////			load();
+//		}else{
+//			// load region
 //			load();
-		}else{
-			// load region
-			load();
-		}
+//		}
 	
 }
 
@@ -123,13 +123,17 @@ void Region::genChunk(int x, int y, int z){
 	glm::vec3 world_pos_f = glm::vec3(worldOffset);
 	glm::vec3 local_pos = glm::vec3(0.0f);
 	
-	for(int z = 0; z < chunk_size; z++){
+	
+	siv::PerlinNoise perlin(1234);
+	for(int z = 0; z < chunk_size; z++, local_pos.z++){
 		int zoff = z * chunk_squared;
-//		
-		for(int y = 0; y < chunk_size; y++){
+		local_pos.y = 0.0f;
+		
+		for(int y = 0; y < chunk_size; y++, local_pos.y++){
 			int yoff = y * chunk_size;
+			local_pos.x = 0.0f;
 //			
-			for(int x = 0; x < chunk_size; x++){
+			for(int x = 0; x < chunk_size; x++, local_pos.x++){
 //				data[dataoffset + zoff + yoff + x] = terrainAt(x + worldOffset.x, y + worldOffset.y, z + worldOffset.z);
 				double dvalue = 1.0;
 				bool first = true;
@@ -141,62 +145,45 @@ void Region::genChunk(int x, int y, int z){
 				int Z = worldOffset.z + z;
 				if(Z < 0) Z = -Z;
 //				char value = ((Y) <= abs( ( (X+8) % 16) - 8)) + 16 && ((Y) <= abs((Z+8) % 16 - 8)) + 16 && ((Y) >= -abs( ( (X+8) % 16) - 8)) + 16 && ((Y) >= -abs((Z+8) % 16 - 8)) + 16;
-
-				data[dataoffset + zoff + yoff + x] = terrainballs2(X, Y, Z);
-			}
-		}
-	}
-	
-//	siv::PerlinNoise perlin(1234);
-//	for(int z = 0; z < chunk_size; z++, local_pos.z++){
-//		int zoff = z * chunk_squared;
-//		local_pos.y = 0.0f;
-//		
-//		for(int y = 0; y < chunk_size; y++, local_pos.y++){
-//			int yoff = y * chunk_size;
-//			local_pos.x = 0.0f;
-////			
-//			for(int x = 0; x < chunk_size; x++, local_pos.x++){
-////				data[dataoffset + zoff + yoff + x] = terrainAt(x + worldOffset.x, y + worldOffset.y, z + worldOffset.z);
-//				double dvalue = 1.0;
-//				bool first = true;
-//				
-////				char value = abs(x % 8) <= 8;
-//				int Y = worldOffset.y + y;
-//				int X = worldOffset.x + x;
-//				if(X < 0) X = -X;
-//				int Z = worldOffset.z + z;
-//				if(Z < 0) Z = -Z;
-////				char value = ((Y) <= abs( ( (X+8) % 16) - 8)) + 16 && ((Y) <= abs((Z+8) % 16 - 8)) + 16 && ((Y) >= -abs( ( (X+8) % 16) - 8)) + 16 && ((Y) >= -abs((Z+8) % 16 - 8)) + 16;
-//
-//				data[dataoffset + zoff + yoff + x] = terrainballs2(X, Y, Z);
-//				continue;
-//				
-//				glm::vec3 fpos = (world_pos_f + local_pos) / glm::vec3(10.0f);
-//				
-//				float cave = perlin.noise3D_0_1(fpos.x, fpos.y, fpos.z);
+				
+//				region_dtype light_value = (rand() & 0xf) << 8;//(rand() & 0xf) << 8;
+				region_dtype light_value = 14 << 8;
+				if(X < 16 && Z < 16 && (X + Z < 15))
+					light_value = ((X + Z) & 0xf) << 8;//(rand() & 0xf) << 8;
+				
+				data[dataoffset + zoff + yoff + x] = terrainballs2(X, Y, Z) | light_value;
+//				data[dataoffset + zoff + yoff + x] = light_value;// | light_value;
+				continue;
+				
+				
+				glm::vec3 fpos = (world_pos_f + local_pos) / glm::vec3(10.0f);
+				
 //				#define MOUNTAIN_SCALE 40.0f
 //				#define MOUNTAIN_DISTANCE 2.0f
 //				float mountain = perlin.noise2D_0_1(fpos.x / MOUNTAIN_DISTANCE, fpos.z / MOUNTAIN_DISTANCE) * MOUNTAIN_SCALE;
-//				#define THRESHOLD 0.5f
-//				#define GROUND_LEVEL 20
-//				char ival = 0;
-//				int ypos = worldOffset.y + y;
-//				if((ypos) < (GROUND_LEVEL + mountain) && !(cave > THRESHOLD && (ypos < GROUND_LEVEL + 10))){
-//					ival = 1;
-//					if(ypos < GROUND_LEVEL){
-//						ival = 3;
-//					}
+				#define THRESHOLD 0.5f
+				#define GROUND_LEVEL 30
+				char ival = 0;
+				int ypos = worldOffset.y + y;
+				if(ypos <= GROUND_LEVEL){
+					float cave = perlin.noise3D_0_1(fpos.x, fpos.y, fpos.z);
+	//				if((ypos) < (GROUND_LEVEL + mountain) && !(cave > THRESHOLD && (ypos < GROUND_LEVEL + 10))){
+					if(cave < THRESHOLD){
+						ival = 1;
+						if(ypos < GROUND_LEVEL / 2){
+							ival = 3;
+						}
+					}
+				}
+//				char ival = 1;
+//				if ( (cave > THRESHOLD || (worldOffset.y > GROUND_LEVEL && mountain <= THRESHOLD) )){
+//					ival = 0;
 //				}
-////				char ival = 1;
-////				if ( (cave > THRESHOLD || (worldOffset.y > GROUND_LEVEL && mountain <= THRESHOLD) )){
-////					ival = 0;
-////				}
-//				
-//				data[dataoffset + zoff + yoff + x] = ival;
-//			}
-//		}
-//	}
+				
+				data[dataoffset + zoff + yoff + x] = ival;
+			}
+		}
+	}
 }
 
 void Region::generate(){
@@ -213,7 +200,7 @@ void Region::load(){
 	std::ifstream f;
 	f.open(directory + "/" + fileName, std::ios::in);
 	if(f.good()){
-		f.read(data, data_size);
+		f.read((char *)data, data_size * sizeof(region_dtype));
 //		for(int i = 0; i < data_size; i += rand() & 7)
 //			if(data[i])
 //				data[i] = rand() & 3;
@@ -229,7 +216,7 @@ void Region::save(){
 	std::ofstream f;
 	f.open(directory + "/" + fileName, std::ios::out);
 	if(f.good()){
-		f.write(data, data_size);
+		f.write((char *)data, data_size * sizeof(region_dtype));
 		printf("F saved\n");
 		f.close();
 	}else{
@@ -237,7 +224,7 @@ void Region::save(){
 	}
 }
 
-const char Region::valueAt(int x, int y, int z){
+const region_dtype Region::valueAt(int x, int y, int z){
 	int chunk_cubed = chunk_size * chunk_size * chunk_size;
 //		
 	int cx = (x / chunk_size) * (chunk_cubed) + x % chunk_size;
@@ -277,7 +264,7 @@ int Region::getChunkOffset(glm::ivec3 pos){
 	return index;
 }
 
-char* Region::getData(){
+region_dtype* Region::getData(){
 	return this->data;
 }
 

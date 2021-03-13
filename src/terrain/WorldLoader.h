@@ -32,9 +32,9 @@ public:
 	const int chunkSize = 16;
 	
 	void update(glm::vec3 cameraPos);
-	char valueAt(int x, int y, int z);
+	region_dtype valueAt(int x, int y, int z);
 	void draw(glm::vec3 cameraPos);
-	std::tuple<glm::ivec3, glm::ivec3> collideRay(const glm::vec3& origin, const glm::vec3& direction, const int& range);
+	std::tuple<glm::ivec3, glm::ivec3, region_dtype> collideRay(const glm::vec3& origin, const glm::vec3& direction, const int& range);
 	void updateTerrain(const glm::ivec3 &pos, BlockAction action);
 //	void insertBlock(const glm::ivec3 &pos);
 };

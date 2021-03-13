@@ -76,7 +76,7 @@ public:
 			}
 			
 			glm::ivec3 player_region;
-			std::tie(player_region, std::ignore) = toChunkCoords(pos, 8); // 8 = CHUNKS IN REGION, LITERAL VALUE MAY BE SOURCE OF BUGS HERE!!!
+			std::tie(player_region, std::ignore) = toChunkCoords(pos, 4); // 8 = CHUNKS IN REGION, LITERAL VALUE MAY BE SOURCE OF BUGS HERE!!!
 			
 			printf("Regions beg\n");
 		
@@ -147,7 +147,7 @@ public:
 		return regp.type != RegionType::NULL_REGION && regp.getChunkOffset(glm::ivec3(pos.x, pos.y, pos.z)) != -1; // TEMP
 	}
 	
-	char valueAt(int x, int y, int z){
+	region_dtype valueAt(int x, int y, int z){
 		glm::ivec3 chpos, dpos;
 		std::tie(chpos, dpos) = toChunkCoords(glm::ivec3(x, y, z), regionSize);
 		
