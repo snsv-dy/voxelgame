@@ -60,7 +60,7 @@ public:
 	
 	void draw();
 	region_dtype valueAt(const glm::ivec3& pos);
-	void changeBlock(const glm::ivec3& data_pos, BlockAction& action);
+	void changeBlock(const int& block_type, const glm::ivec3& data_pos, BlockAction& action);
 	
 	~Chunk();
 };

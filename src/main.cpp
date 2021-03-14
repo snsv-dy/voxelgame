@@ -114,7 +114,9 @@ int opengl_context_scope(GLFWwindow *window)
 		.cursor_pos = glm::ivec3(0),
 		.prev_cursor_pos = glm::ivec3(0),
 		
-		.world_loader = nullptr
+		.world_loader = nullptr,
+		.block_key_pressed = false,
+		.placing_block_type = 3
 	};
 	
 	glfwSetWindowUserPointer(window, &controls);
@@ -180,6 +182,7 @@ int opengl_context_scope(GLFWwindow *window)
 	// Lighting
 	// Physics
 	// Mesh/Chunk allocator? (reusing vertex buffers)
+	// Make greedy meshing work with lightning
 	// 
 	
 	

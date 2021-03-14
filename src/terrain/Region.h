@@ -7,6 +7,7 @@
 #include <fstream>
 #include <memory>
 #include <vector>
+#include <queue>
 //#include "vec3Comp.h"
 //#incldue "basic_util.h"
 #include "../utilities/basic_util.h"
@@ -59,6 +60,7 @@ public:
 	static const unsigned int data_size = region_size * region_size * region_size;
 	
 	bool modified = false;
+	bool brand_new = false; // Not loaded from disk, generated using generate(), needs to calculate world light. Change name of this
 	
 	glm::ivec3 position = glm::ivec3(0);
 	
@@ -68,6 +70,7 @@ public:
 	Region()=default;
 	Region(glm::ivec3 pos);
 	
+	void calculateSunlight();
 	const region_dtype valueAt(int x, int y, int z);
 	const std::vector<glm::ivec3>& getLoadedChunks();
 	int getChunkOffset(glm::ivec3 pos);
@@ -77,6 +80,9 @@ public:
 	
 private:
 	region_dtype data[data_size];
+	void propagateLight(std::vector<glm::ivec3>& queue);
+	bool is_near_light(int x, int z, int mask[chunk_size][chunk_size]);
+	std::vector<glm::ivec3>  calculateSunInChunk(int gx, int gy, int gz, int mask[chunk_size][chunk_size]);
 };
 
 #endif // REGION_H

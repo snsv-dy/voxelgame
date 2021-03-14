@@ -39,6 +39,21 @@ int processInput(GLFWwindow* window){
 	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 		
+	if(!controls->block_key_pressed){
+		controls->block_key_pressed = true;
+		if(glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS){
+			controls->placing_block_type = 1;
+		}else if(glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS){
+			controls->placing_block_type = 2;
+		}else if(glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS){
+			controls->placing_block_type = 3;
+		}
+	}else{
+		if(glfwGetKey(window, GLFW_KEY_1) == GLFW_RELEASE || glfwGetKey(window, GLFW_KEY_2) == GLFW_RELEASE || glfwGetKey(window, GLFW_KEY_3) == GLFW_RELEASE){
+			controls->block_key_pressed = false;
+		}
+	}
+	
 	if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		controls->kamera.walk(controls->kamera.FRONT);
 	if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -65,9 +80,9 @@ void mouse_callback(GLFWwindow* window, int button, int action, int mods){
 //		mouse_right_down = button == GLFW_MOUSE_BUTTON_RIGHT;
 		if(controls->world_loader != nullptr){
 			if(button == GLFW_MOUSE_BUTTON_LEFT){
-				controls->world_loader->updateTerrain(controls->cursor_pos, BlockAction::DESTROY);
+				controls->world_loader->updateTerrain(0, controls->cursor_pos, BlockAction::DESTROY);
 			}else{
-				controls->world_loader->updateTerrain(controls->prev_cursor_pos, BlockAction::PLACE);
+				controls->world_loader->updateTerrain(controls->placing_block_type, controls->prev_cursor_pos, BlockAction::PLACE);
 			}
 		}
 		

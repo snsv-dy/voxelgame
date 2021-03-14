@@ -74,14 +74,14 @@ std::tuple<glm::ivec3, glm::ivec3, region_dtype> WorldLoader::collideRay(const g
 	return std::make_tuple(int_pos, prev_pos, last_block);
 }
 
-void WorldLoader::updateTerrain(const glm::ivec3 &pos, BlockAction action){
+void WorldLoader::updateTerrain(const int& block_type, const glm::ivec3 &pos, BlockAction action){
 	glm::ivec3 chunk_pos, in_chunk_pos;
 	std::tie(chunk_pos, in_chunk_pos) = toChunkCoords(pos, WorldLoader::chunkSize);
 	
 	if(auto c = chunks.find(chunk_pos); c != chunks.end()){
 		Chunk& chunk = c->second;
 		
-		chunk.changeBlock(in_chunk_pos, action);
+		chunk.changeBlock(block_type, in_chunk_pos, action);
 		Region& containing_region = provider.getRegion(pos);
 		containing_region.modified = true;
 		
@@ -143,11 +143,12 @@ void WorldLoader::update(glm::vec3 cameraPos){
 	std::tie(chpos, std::ignore) = toChunkCoords(cameraPos, 16);
 	
 	if(last_camera_pos != chpos || first){
-//		provider.update(cameraPos);
 		provider.update(chpos);
 		
 		glm::ivec3 change = chpos - last_camera_pos;
 		glm::ivec3 abs_change = glm::abs(change);
+		
+		int highest_y;
 		
 		if(abs_change.x > 1 || abs_change.y > 1 || abs_change.z > 1 || first){
 			for(int z = -radius; z <= radius; z++){

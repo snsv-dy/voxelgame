@@ -29,6 +29,9 @@ struct ControlsStruct{
 	glm::ivec3 prev_cursor_pos;
 	
 	WorldLoader *world_loader;
+	
+	bool block_key_pressed;
+	int placing_block_type;
 };
 
 void mouse_cursor_callback(GLFWwindow *window, double xpos, double ypos);

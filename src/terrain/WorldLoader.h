@@ -35,7 +35,7 @@ public:
 	region_dtype valueAt(int x, int y, int z);
 	void draw(glm::vec3 cameraPos);
 	std::tuple<glm::ivec3, glm::ivec3, region_dtype> collideRay(const glm::vec3& origin, const glm::vec3& direction, const int& range);
-	void updateTerrain(const glm::ivec3 &pos, BlockAction action);
+	void updateTerrain(const int& block_type, const glm::ivec3 &pos, BlockAction action);
 //	void insertBlock(const glm::ivec3 &pos);
 };
 

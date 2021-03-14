@@ -147,13 +147,13 @@ void Region::genChunk(int x, int y, int z){
 //				char value = ((Y) <= abs( ( (X+8) % 16) - 8)) + 16 && ((Y) <= abs((Z+8) % 16 - 8)) + 16 && ((Y) >= -abs( ( (X+8) % 16) - 8)) + 16 && ((Y) >= -abs((Z+8) % 16 - 8)) + 16;
 				
 //				region_dtype light_value = (rand() & 0xf) << 8;//(rand() & 0xf) << 8;
-				region_dtype light_value = 14 << 8;
-				if(X < 16 && Z < 16 && (X + Z < 15))
-					light_value = ((X + Z) & 0xf) << 8;//(rand() & 0xf) << 8;
+				region_dtype light_value = 0xf00;
+//				if(X < 16 && Z < 16 && (X + Z < 15))
+//					light_value = ((X + Z) & 0xf) << 8;//(rand() & 0xf) << 8;
 				
-				data[dataoffset + zoff + yoff + x] = terrainballs2(X, Y, Z) | light_value;
+//				data[dataoffset + zoff + yoff + x] = terrainballs2(X, Y, Z) | light_value;
 //				data[dataoffset + zoff + yoff + x] = light_value;// | light_value;
-				continue;
+//				continue;
 				
 				
 				glm::vec3 fpos = (world_pos_f + local_pos) / glm::vec3(10.0f);
@@ -180,7 +180,7 @@ void Region::genChunk(int x, int y, int z){
 //					ival = 0;
 //				}
 				
-				data[dataoffset + zoff + yoff + x] = ival;
+				data[dataoffset + zoff + yoff + x] = ival | light_value;
 			}
 		}
 	}
@@ -194,6 +194,131 @@ void Region::generate(){
 			}
 		}
 	}
+	
+	brand_new = true;
+}
+
+bool Region::is_near_light(int x, int z, int mask[chunk_size][chunk_size]){
+	const int csm1 = chunk_size - 1;
+	
+	if(x < csm1 && mask[z][x+1] == 0){
+		return true;
+	}
+	
+	if(z < csm1 && mask[z+1][x] == 0){
+		return true;
+	}
+	
+	if(x > 0 && mask[z][x-1] == 0){
+		return true;
+	}
+	
+	if(z > 0 && mask[z-1][x] == 0){
+		return true;
+	}
+	
+	return false;
+}
+
+std::vector<glm::ivec3> Region::calculateSunInChunk(int gx, int gy, int gz, int mask[chunk_size][chunk_size]){
+	int chunk_cubed = chunk_size * chunk_size * chunk_size;
+	int chunk_squared = chunk_size * chunk_size;
+	
+	int dataoffset = gx * chunk_cubed + (reg_size - gy - 1) * (chunk_cubed * reg_size) + gz * (chunk_cubed * reg_size * reg_size);
+	if(gy == 0){
+		for(int z = 0; z < chunk_size; z++){
+			for(int x = 0; x < chunk_size; x++){
+				mask[z][x] = 0;
+			}
+		}
+	}
+	
+	std::vector<glm::ivec3> spread_queue;
+		
+	for(int y = chunk_size - 1; y >= 0; y--){
+//	for(int y = 0; y < chunk_size; y++){
+		for(int z = 0; z < chunk_size; z++){
+			for(int x = 0; x < chunk_size; x++){
+				int index = z * chunk_size * chunk_size + y * chunk_size + x;
+				region_dtype& block = data[dataoffset + index];
+				block &= 0xff | mask[z][x];
+				if((block & 0xff) != 0){
+					mask[z][x] = 0xf00;
+				}
+//				data[dataoffset + index] &= (0xff | (y << 8));
+//				continue;
+//				if( gy == 0 && y == 0){ // this is prolly the top of the world
+//				if(y == 15 && gy == 0){ // this is prolly the top of the world
+//					data[dataoffset + index] &= 0x00ff;
+//					if((data[dataoffset + index] & 0xff) == 0){
+//						int index_below = z * chunk_size * chunk_size + (y - 1) * chunk_size + x;
+//						data[dataoffset + index_below] &= 0xff; // Memory segmentation might be here (block below).
+//					}
+//						
+//				}//block_type(data[dataoffset + index]) == 0 && 
+//				else if(data[dataoffset + index] == 0 && !(y == 0 && gy == reg_size - 1)){
+//					if(y == 0){
+//						int tdataoffset = gx * chunk_cubed + (reg_size - gy - 2) * (chunk_cubed * reg_size) + gz * (chunk_cubed * reg_size * reg_size);
+//						data[tdataoffset + z * chunk_size * chunk_size + (chunk_size - 1) * chunk_size + x] &= 0x00ff; // Memory segmentation might be here (block below).
+//					}else{
+//						data[dataoffset + index - chunk_size ] &= 0x00ff; // Memory segmentation might be here (block below).
+//					}
+////					data[dataoffset + index - chunk_size ] &= 0x00ff; // Memory segmentation might be here (block below).
+////					printf("miau\n");
+//				}else if(data[dataoffset + index] == 0){}
+			}
+		}
+		
+		for(int z = 0; z < chunk_size; z++){
+			for(int x = 0; x < chunk_size; x++){
+				int index = z * chunk_size * chunk_size + y * chunk_size + x;
+				region_dtype& block = data[dataoffset + index];
+				if(mask[z][x] == 0xf00 && (block & 0xff) == 0 &&
+					is_near_light(x, z, mask)
+				){
+//					printf("miał\n");
+					block &= 0xff;// | mask[z][x];
+					block |= 0x100;
+					spread_queue.push_back(glm::ivec3(x + gx * chunk_size, y + gy * chunk_size, z + gz * chunk_size));
+				}
+			}
+		}
+	}
+	
+	return spread_queue;
+}
+
+void Region::propagateLight(std::vector<glm::ivec3>& queue){
+	std::vector<glm::ivec3> new_queue;
+	while(queue.size() > 0){
+		const glm::ivec3& pos = queue.back();
+		queue.pop_back();
+		
+		
+		// push other poses to 
+	}
+}
+
+void Region::calculateSunlight(){
+//	int chunk_cubed = chunk_size * chunk_size * chunk_size;
+//	int chunk_squared = chunk_size * chunk_size;
+	
+//	int dataoffset = x * chunk_cubed + y * (chunk_cubed * reg_size) + z * (chunk_cubed * reg_size * reg_size);
+	
+	int mask[chunk_size][chunk_size] = {0};
+	
+	std::vector<glm::ivec3> spread_queue;
+	
+	for(int z = 0; z < reg_size; z++){
+		for(int x = 0; x < reg_size; x++){
+			for(int y = 0; y < reg_size; y++){
+				std::vector<glm::ivec3> tqueue = calculateSunInChunk(x, y, z, mask);
+				spread_queue.insert(spread_queue.end(), tqueue.begin(), tqueue.end());
+			}
+		}
+	}
+	
+	brand_new = false;
 }
 
 void Region::load(){
@@ -244,7 +369,7 @@ const region_dtype Region::valueAt(int x, int y, int z){
 int Region::getChunkOffset(glm::ivec3 pos){
 	
 	// odejmij od współrzędnych position * chsize * regsize
-	bool print = pos.z < 0;
+//	bool print = pos.z < 0;
 	
 	pos -= position * static_cast<int>(region_size);
 	

@@ -84,6 +84,8 @@ public:
 				i->second.removeable = true;
 			}
 			
+			std::vector<glm::ivec3> new_regions;
+			
 			for(int z = -radius; z < radius; z++){
 				for(int x = -radius; x < radius; x++){
 					
@@ -94,6 +96,8 @@ public:
 						reg_it->second.removeable = false;
 					}else{
 						regions[position] = Region(position);
+						new_regions.push_back(position);
+						
 						printf("New region %2d %2d %2d\n", position.x, position.y, position.z);
 					}
 				}
@@ -110,6 +114,16 @@ public:
 					
 					regions.erase(i);
 				}
+			}
+			
+			if(firstLoop){
+//				for(glm::ivec3& reg_pos : new_regions){
+//					if(auto it = regions.find(reg_pos); it != regions.end() && it->second.brand_new){
+					if(auto it = regions.find(glm::ivec3(0)); it != regions.end() && it->second.brand_new){
+						Region& region = it->second;
+						region.calculateSunlight();
+					}
+//				}
 			}
 			
 			firstLoop = false;
