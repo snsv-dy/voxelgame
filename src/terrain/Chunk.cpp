@@ -207,6 +207,7 @@ std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData()
 		return std::make_tuple(ret, int_ret);
 	}
 	
+	region_dtype prev_layer[size][size];
 	region_dtype mask[size][size];
 	region_dtype mask_with_light[size][size];
 	char ao_mask[size + 1][size + 1];
@@ -229,6 +230,23 @@ std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData()
 //				int cursor[3] = {0, 0, 0};
 				glm::ivec3 cursor(0);
 				cursor[norm] = slice;
+				
+				// Creating mask of previous layer to take into account light.
+//				if(slice > 0){ // Lookup from other blocks isn't too noticable (in fps when using single thread), 
+								// but could be done more smarter if it would become a problem with performance.
+					glm::ivec3 prev_cursor = cursor - normal;
+					for(prev_cursor[biTan] = 0; prev_cursor[biTan] < size; prev_cursor[biTan]++){
+						for(prev_cursor[tan] = 0; prev_cursor[tan] < size; prev_cursor[tan]++){
+							prev_layer[prev_cursor[biTan]][prev_cursor[tan]] = valueAt(prev_cursor);
+						}
+					}
+//				}else{
+//					for(int i = 0; i < size; i++){
+//						for(int j = 0; j < size; j++){
+//							prev_layer[i][j] = 0x0f00;
+//						}
+//					}
+//				}
 				
 				// Creating mask of current layer
 				for(cursor[biTan] = 0; cursor[biTan] < size; cursor[biTan]++){
@@ -412,7 +430,7 @@ std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData()
 						if(top){
 							texid |= 0x100;
 						}
-						texid |= ((mask_with_light[y][x] & 0xff00)) << 16;
+						texid |= ((prev_layer[y][x] & 0xff00)) << 16;
 						
 						texid |= (y << 4 | x) << 16; // debugging info
 						

@@ -183,6 +183,8 @@ int opengl_context_scope(GLFWwindow *window)
 	// Physics
 	// Mesh/Chunk allocator? (reusing vertex buffers)
 	// Make greedy meshing work with lightning
+	// Change light handling, remove option allowing block to have light. Block sides should have thier light values calculated depending
+	// 	on values of empty block near them.
 	// 
 	
 	
