@@ -26,6 +26,11 @@ typedef unsigned short region_dtype;
 #define block_type(x) ((x) & 0xff)
 #define block_light(x) ((x) >> 8)
 
+struct propagateParam{ // change to something with light (will be also useful when propagating light emited by blocks)
+	glm::ivec3 position;
+	region_dtype light_value;
+};
+
 enum class RegionType{
 	NULL_REGION,
 	NORMAL_REGION
@@ -52,6 +57,7 @@ private:
 	void generate();
 	void load();
 	void save();
+
 public:
 	inline static const std::string directory = std::string("../world3");
 	static const int reg_size = 4;
@@ -71,7 +77,7 @@ public:
 	Region(glm::ivec3 pos);
 	
 	void calculateSunlight();
-	const region_dtype valueAt(int x, int y, int z);
+	const region_dtype& valueAt(int x, int y, int z);
 	const std::vector<glm::ivec3>& getLoadedChunks();
 	int getChunkOffset(glm::ivec3 pos);
 	region_dtype* getData();
@@ -80,9 +86,9 @@ public:
 	
 private:
 	region_dtype data[data_size];
-	void propagateLight(std::vector<glm::ivec3>& queue);
+	void propagateLight(std::vector<propagateParam>& queue);
 	bool is_near_light(int x, int z, int mask[chunk_size][chunk_size]);
-	std::vector<glm::ivec3>  calculateSunInChunk(int gx, int gy, int gz, int mask[chunk_size][chunk_size]);
+	std::vector<propagateParam>  calculateSunInChunk(int gx, int gy, int gz, int mask[chunk_size][chunk_size]);
 };
 
 #endif // REGION_H

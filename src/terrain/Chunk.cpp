@@ -234,6 +234,7 @@ std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData()
 				// Creating mask of previous layer to take into account light.
 //				if(slice > 0){ // Lookup from other blocks isn't too noticable (in fps when using single thread), 
 								// but could be done more smarter if it would become a problem with performance.
+								// There could be a function in world provider or Region to return a slice of a chunk.
 					glm::ivec3 prev_cursor = cursor - normal;
 					for(prev_cursor[biTan] = 0; prev_cursor[biTan] < size; prev_cursor[biTan]++){
 						for(prev_cursor[tan] = 0; prev_cursor[tan] < size; prev_cursor[tan]++){

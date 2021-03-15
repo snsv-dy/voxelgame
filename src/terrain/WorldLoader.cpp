@@ -145,6 +145,11 @@ void WorldLoader::update(glm::vec3 cameraPos){
 	if(last_camera_pos != chpos || first){
 		provider.update(chpos);
 		
+//		last_camera_pos = chpos;
+//		
+//		first = false;
+//		return;
+		
 		glm::ivec3 change = chpos - last_camera_pos;
 		glm::ivec3 abs_change = glm::abs(change);
 		

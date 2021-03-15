@@ -220,7 +220,7 @@ bool Region::is_near_light(int x, int z, int mask[chunk_size][chunk_size]){
 	return false;
 }
 
-std::vector<glm::ivec3> Region::calculateSunInChunk(int gx, int gy, int gz, int mask[chunk_size][chunk_size]){
+std::vector<propagateParam> Region::calculateSunInChunk(int gx, int gy, int gz, int mask[chunk_size][chunk_size]){
 	int chunk_cubed = chunk_size * chunk_size * chunk_size;
 	int chunk_squared = chunk_size * chunk_size;
 	
@@ -233,7 +233,7 @@ std::vector<glm::ivec3> Region::calculateSunInChunk(int gx, int gy, int gz, int 
 		}
 	}
 	
-	std::vector<glm::ivec3> spread_queue;
+	std::vector<propagateParam> spread_queue;
 		
 	for(int y = chunk_size - 1; y >= 0; y--){
 //	for(int y = 0; y < chunk_size; y++){
@@ -241,10 +241,10 @@ std::vector<glm::ivec3> Region::calculateSunInChunk(int gx, int gy, int gz, int 
 			for(int x = 0; x < chunk_size; x++){
 				int index = z * chunk_size * chunk_size + y * chunk_size + x;
 				region_dtype& block = data[dataoffset + index];
-				block &= 0xff | mask[z][x];
 				if((block & 0xff) != 0){
 					mask[z][x] = 0xf00;
 				}
+				block &= 0xff | mask[z][x];
 //				data[dataoffset + index] &= (0xff | (y << 8));
 //				continue;
 //				if( gy == 0 && y == 0){ // this is prolly the top of the world
@@ -269,6 +269,7 @@ std::vector<glm::ivec3> Region::calculateSunInChunk(int gx, int gy, int gz, int 
 			}
 		}
 		
+		// jeżeli y > 0 to można ustawić te wartości dla warstwy poprzedniej w pętli wyżej.
 		for(int z = 0; z < chunk_size; z++){
 			for(int x = 0; x < chunk_size; x++){
 				int index = z * chunk_size * chunk_size + y * chunk_size + x;
@@ -277,9 +278,14 @@ std::vector<glm::ivec3> Region::calculateSunInChunk(int gx, int gy, int gz, int 
 					is_near_light(x, z, mask)
 				){
 //					printf("miał\n");
-					block &= 0xff;// | mask[z][x];
-					block |= 0x100;
-					spread_queue.push_back(glm::ivec3(x + gx * chunk_size, y + gy * chunk_size, z + gz * chunk_size));
+//					block &= 0xff;// | mask[z][x];
+//					block |= 0xf00;
+					spread_queue.push_back(
+						(struct propagateParam){
+							.position = glm::ivec3(x + gx * chunk_size, y + (reg_size - gy - 1) * chunk_size, z + gz * chunk_size),
+							.light_value = 0x100
+						}
+					);
 				}
 			}
 		}
@@ -288,14 +294,81 @@ std::vector<glm::ivec3> Region::calculateSunInChunk(int gx, int gy, int gz, int 
 	return spread_queue;
 }
 
-void Region::propagateLight(std::vector<glm::ivec3>& queue){
-	std::vector<glm::ivec3> new_queue;
-	while(queue.size() > 0){
-		const glm::ivec3& pos = queue.back();
-		queue.pop_back();
+void Region::propagateLight(std::vector<propagateParam>& queue){
+	int size_in_blocks = reg_size * chunk_size;
+	
+	std::vector<propagateParam> old_queue = queue;
+	std::vector<propagateParam> new_queue;
+	while(old_queue.size() > 0){
+//		printf("AAAAAA\n");
+		for(const propagateParam& param : old_queue){
+	//		const propagateParam& param = old_queue.back();
+			const glm::ivec3& pos = param.position;
+	//		old_queue.pop_back();
+			
+			// don't propagate to other chunks yet.
+			if( (pos.x < 0 || pos.x >= size_in_blocks) ||
+				(pos.y < 0 || pos.y >= size_in_blocks) ||
+				(pos.z < 0 || pos.z >= size_in_blocks)){
+					continue;
+				}
+				
+			// VALUE AT
+			const int chunk_cubed = chunk_size * chunk_size * chunk_size;
+		//		
+			int cx = (pos.x / chunk_size) * (chunk_cubed) + pos.x % chunk_size;
+			int cy = (pos.y / chunk_size) * (chunk_cubed * reg_size) + ((pos.y % (chunk_size))) * chunk_size;
+			int cz = (pos.z / chunk_size) * (chunk_cubed * (reg_size * reg_size)) + ((pos.z % chunk_size)) * (chunk_size * chunk_size);
+			
+			unsigned int pos_v = cx + cy + cz;
+			
+		//		unsigned int pos = z * (region_size * region_size) + y * region_size + x;
+			if(pos_v > data_size || pos_v < 0){
+				continue;
+			}
+			
+			// VALUE AT
+			
+			region_dtype block = data[pos_v];//valueAt(pos.x, pos.y, pos.z);
+	//		region_dtype block = 0;
+			if( param.light_value == 0xf || (block & 0xff) != 0 || (block & 0xf00) <= param.light_value){
+//				printf("e %d %x %x\n", (block & 0xff) != 0, (block & 0xf00), param.light_value);
+				continue;
+			}
+//			printf("asd\n");
+				
+			data[pos_v] &= 0xff;
+			data[pos_v] |= param.light_value;
+	//		
+			propagateParam next_poses[6];
+			for(int i = 0; i < 6; i++){ 
+				next_poses[i].position = pos;
+				next_poses[i].light_value = param.light_value + 0x100;
+			}
+	//		
+			next_poses[2].position.x -= 1;
+			next_poses[3].position.x += 1;
+			
+			next_poses[0].position.y -= 1;
+			next_poses[1].position.y += 1;
+			
+			next_poses[4].position.z -= 1;
+			next_poses[5].position.z += 1;
+	//		
+			for(int i = 0; i < 6; i++)
+				new_queue.push_back(next_poses[i]);
+				
+//			printf("heh\n");
+//			new_queue.insert(new_queue.end(), next_poses, next_poses + 6);
+//			
+			// push other poses to 
+
+		}
 		
-		
-		// push other poses to 
+		old_queue.clear();
+//		printf("new queue len: %d\n", new_queue.size());
+		old_queue = new_queue;
+		new_queue.clear();
 	}
 }
 
@@ -307,16 +380,21 @@ void Region::calculateSunlight(){
 	
 	int mask[chunk_size][chunk_size] = {0};
 	
-	std::vector<glm::ivec3> spread_queue;
+	std::vector<propagateParam> spread_queue;
 	
 	for(int z = 0; z < reg_size; z++){
 		for(int x = 0; x < reg_size; x++){
+			// init mask here 
 			for(int y = 0; y < reg_size; y++){
-				std::vector<glm::ivec3> tqueue = calculateSunInChunk(x, y, z, mask);
+				std::vector<propagateParam> tqueue = calculateSunInChunk(x, y, z, mask);
 				spread_queue.insert(spread_queue.end(), tqueue.begin(), tqueue.end());
 			}
 		}
 	}
+	printf("propagate queue len: %d\n", spread_queue.size());
+	
+	propagateLight(spread_queue);
+	
 	
 	brand_new = false;
 }
@@ -349,8 +427,8 @@ void Region::save(){
 	}
 }
 
-const region_dtype Region::valueAt(int x, int y, int z){
-	int chunk_cubed = chunk_size * chunk_size * chunk_size;
+const region_dtype& Region::valueAt(int x, int y, int z){
+	const int chunk_cubed = chunk_size * chunk_size * chunk_size;
 //		
 	int cx = (x / chunk_size) * (chunk_cubed) + x % chunk_size;
 	int cy = (y / chunk_size) * (chunk_cubed * reg_size) + ((y % (chunk_size))) * chunk_size;

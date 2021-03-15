@@ -54,8 +54,15 @@ const int screen_height = 720;
 	
 int main(void){
 	
+//	int t = 0xf00;
+//	while(t != 0){
+//		printf("%x\n", t);
+//		t -= 0x100;
+//	}
+//	
+//	return 0;
 	
-	srand(time(NULL));
+//	srand(time(NULL));
 	GLFWwindow* window;
 	glfwSetErrorCallback(error_callback);
 	if (!glfwInit())
@@ -183,8 +190,7 @@ int opengl_context_scope(GLFWwindow *window)
 	// Physics
 	// Mesh/Chunk allocator? (reusing vertex buffers)
 	// Make greedy meshing work with lightning
-	// Change light handling, remove option allowing block to have light. Block sides should have thier light values calculated depending
-	// 	on values of empty block near them.
+	// Change .h files to .hpp
 	// 
 	
 	
