@@ -220,7 +220,7 @@ bool Region::is_near_light(int x, int z, int mask[chunk_size][chunk_size]){
 	return false;
 }
 
-std::vector<propagateParam> Region::calculateSunInChunk(int gx, int gy, int gz, int mask[chunk_size][chunk_size]){
+std::list<propagateParam> Region::calculateSunInChunk(int gx, int gy, int gz, int mask[chunk_size][chunk_size]){
 	int chunk_cubed = chunk_size * chunk_size * chunk_size;
 	int chunk_squared = chunk_size * chunk_size;
 	
@@ -233,7 +233,7 @@ std::vector<propagateParam> Region::calculateSunInChunk(int gx, int gy, int gz, 
 		}
 	}
 	
-	std::vector<propagateParam> spread_queue;
+	std::list<propagateParam> spread_queue;
 		
 	for(int y = chunk_size - 1; y >= 0; y--){
 //	for(int y = 0; y < chunk_size; y++){
@@ -275,7 +275,7 @@ std::vector<propagateParam> Region::calculateSunInChunk(int gx, int gy, int gz, 
 				int index = z * chunk_size * chunk_size + y * chunk_size + x;
 				region_dtype& block = data[dataoffset + index];
 				if(mask[z][x] == 0xf00 && (block & 0xff) == 0 &&
-					is_near_light(x, z, mask)
+					is_near_light(x, z, mask) // TU TRZEBA DODAĆ DO OUTSIDE QUEUE JESZCZE, BO ZA MAŁO ŚWIATEŁ PRZECHODZI POMIĘDZY REGIONAMI.
 				){
 //					printf("miał\n");
 //					block &= 0xff;// | mask[z][x];
@@ -294,51 +294,98 @@ std::vector<propagateParam> Region::calculateSunInChunk(int gx, int gy, int gz, 
 	return spread_queue;
 }
 
-void Region::propagateLight(std::vector<propagateParam>& queue){
+//inline region_dtype& mutable_valueAt(const glm::ivec3& pos, region_dtype data[], int data_size){
+//	const int chunk_cubed = chunk_size * chunk_size * chunk_size;
+//	//		
+//		int cx = (pos.x / chunk_size) * (chunk_cubed) + pos.x % chunk_size;
+//		int cy = (pos.y / chunk_size) * (chunk_cubed * reg_size) + ((pos.y % (chunk_size))) * chunk_size;
+//		int cz = (pos.z / chunk_size) * (chunk_cubed * (reg_size * reg_size)) + ((pos.z % chunk_size)) * (chunk_size * chunk_size);
+//		
+//		unsigned int pos_v = cx + cy + cz;
+//		
+//	//		unsigned int pos = z * (region_size * region_size) + y * region_size + x;
+//		if(pos_v > data_size || pos_v < 0){
+////			continue;
+//		}
+//		
+//		// VALUE AT
+//		
+//		region_dtype block = data[pos_v];//valueAt(pos.x, pos.y, pos.z);
+//}
+
+std::list<propagateParam> Region::propagateLight(std::list<propagateParam>& queue){
 	int size_in_blocks = reg_size * chunk_size;
 	
-	std::vector<propagateParam> old_queue = queue;
-	std::vector<propagateParam> new_queue;
-	while(old_queue.size() > 0){
-//		printf("AAAAAA\n");
-		for(const propagateParam& param : old_queue){
-	//		const propagateParam& param = old_queue.back();
+//	std::vector<propagateParam> old_queue = queue;
+	std::list<propagateParam> outside_updates;
+	
+	while(!queue.empty()){
+			const propagateParam param = queue.front();//back();
+			queue.pop_front();
+			
+			if(param.light_value == 0xf){
+				continue;
+			}
+			
 			const glm::ivec3& pos = param.position;
 	//		old_queue.pop_back();
 			
-			// don't propagate to other chunks yet.
+//			bool not_here = false;
+//			glm::ivec3 other_region_pos = position;
+//			if( pos.x < 0){
+//				not_here = true;
+//				other_region_pos.x -= 1;
+//			} else if( pos.x >= size_in_blocks){
+//				not_here = true;
+//				other_region_pos.x += 1;
+//			}
+//			
+////			if( pos.y < 0){
+////				not_here = true;
+////				other_region_pos.y -= 1;
+////			} else if( pos.y >= size_in_blocks){
+////				not_here = true;
+////				other_region_pos.y += 1;
+////			}
+//			
+//			if( pos.z < 0){
+//				not_here = true;
+//				other_region_pos.z -= 1;
+//			} else if( pos.z >= size_in_blocks){
+//				not_here = true;
+//				other_region_pos.z += 1;
+//			}
+			
+//			if(not_here){
+//				
+//				
+//				continue;
+//			}
+			
 			if( (pos.x < 0 || pos.x >= size_in_blocks) ||
 				(pos.y < 0 || pos.y >= size_in_blocks) ||
 				(pos.z < 0 || pos.z >= size_in_blocks)){
+					// Append global position for ease of thinking.
+				
+					outside_updates.push_back((struct propagateParam){
+						.position = glm::ivec3(
+											pos.x + position.x * reg_size, 
+											pos.y + position.y * reg_size, 
+											pos.z + position.z * reg_size
+										),
+						.light_value = param.light_value
+					});
 					continue;
 				}
 				
-			// VALUE AT
-			const int chunk_cubed = chunk_size * chunk_size * chunk_size;
-		//		
-			int cx = (pos.x / chunk_size) * (chunk_cubed) + pos.x % chunk_size;
-			int cy = (pos.y / chunk_size) * (chunk_cubed * reg_size) + ((pos.y % (chunk_size))) * chunk_size;
-			int cz = (pos.z / chunk_size) * (chunk_cubed * (reg_size * reg_size)) + ((pos.z % chunk_size)) * (chunk_size * chunk_size);
+			region_dtype& block = valueAt(pos.x, pos.y, pos.z);
 			
-			unsigned int pos_v = cx + cy + cz;
-			
-		//		unsigned int pos = z * (region_size * region_size) + y * region_size + x;
-			if(pos_v > data_size || pos_v < 0){
-				continue;
-			}
-			
-			// VALUE AT
-			
-			region_dtype block = data[pos_v];//valueAt(pos.x, pos.y, pos.z);
-	//		region_dtype block = 0;
-			if( param.light_value == 0xf || (block & 0xff) != 0 || (block & 0xf00) <= param.light_value){
+			if( (block & 0xff) != 0 || (block & 0xf00) <= param.light_value){
 //				printf("e %d %x %x\n", (block & 0xff) != 0, (block & 0xf00), param.light_value);
 				continue;
 			}
-//			printf("asd\n");
-				
-			data[pos_v] &= 0xff;
-			data[pos_v] |= param.light_value;
+			block &= 0xff;
+			block |= param.light_value;
 	//		
 			propagateParam next_poses[6];
 			for(int i = 0; i < 6; i++){ 
@@ -356,47 +403,39 @@ void Region::propagateLight(std::vector<propagateParam>& queue){
 			next_poses[5].position.z += 1;
 	//		
 			for(int i = 0; i < 6; i++)
-				new_queue.push_back(next_poses[i]);
+				queue.push_back(next_poses[i]);
 				
-//			printf("heh\n");
 //			new_queue.insert(new_queue.end(), next_poses, next_poses + 6);
-//			
-			// push other poses to 
-
-		}
-		
-		old_queue.clear();
-//		printf("new queue len: %d\n", new_queue.size());
-		old_queue = new_queue;
-		new_queue.clear();
 	}
+	
+	return outside_updates;
 }
 
-void Region::calculateSunlight(){
-//	int chunk_cubed = chunk_size * chunk_size * chunk_size;
-//	int chunk_squared = chunk_size * chunk_size;
-	
-//	int dataoffset = x * chunk_cubed + y * (chunk_cubed * reg_size) + z * (chunk_cubed * reg_size * reg_size);
-	
+std::list<propagateParam> Region::calculateSunlight(){
 	int mask[chunk_size][chunk_size] = {0};
 	
-	std::vector<propagateParam> spread_queue;
+	std::list<propagateParam> spread_queue;
 	
 	for(int z = 0; z < reg_size; z++){
 		for(int x = 0; x < reg_size; x++){
 			// init mask here 
 			for(int y = 0; y < reg_size; y++){
-				std::vector<propagateParam> tqueue = calculateSunInChunk(x, y, z, mask);
+				std::list<propagateParam> tqueue = calculateSunInChunk(x, y, z, mask);
 				spread_queue.insert(spread_queue.end(), tqueue.begin(), tqueue.end());
 			}
 		}
 	}
 	printf("propagate queue len: %d\n", spread_queue.size());
 	
-	propagateLight(spread_queue);
-	
+	std::list<propagateParam> outside_lights = propagateLight(spread_queue);
 	
 	brand_new = false;
+	
+	return outside_lights;
+}
+
+void Region::propagatePendingLight(){ // merge with above function ?
+	propagateLight(pending_lights);
 }
 
 void Region::load(){
@@ -427,7 +466,7 @@ void Region::save(){
 	}
 }
 
-const region_dtype& Region::valueAt(int x, int y, int z){
+region_dtype& Region::valueAt(int x, int y, int z){
 	const int chunk_cubed = chunk_size * chunk_size * chunk_size;
 //		
 	int cx = (x / chunk_size) * (chunk_cubed) + x % chunk_size;
@@ -438,7 +477,7 @@ const region_dtype& Region::valueAt(int x, int y, int z){
 	
 //		unsigned int pos = z * (region_size * region_size) + y * region_size + x;
 	if(pos > data_size || pos < 0){
-		return 0;
+		return ref0;
 	}
 	
 	return data[pos];

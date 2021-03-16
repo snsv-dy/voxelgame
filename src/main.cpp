@@ -7,6 +7,7 @@
 #include <thread>
 #include <sstream>
 #include <string>
+#include <list>
 
 #include "utilities/basic_util.h"
 
@@ -54,11 +55,13 @@ const int screen_height = 720;
 	
 int main(void){
 	
-//	int t = 0xf00;
-//	while(t != 0){
-//		printf("%x\n", t);
-//		t -= 0x100;
+//	std::list<int> t {1, 2, 3, 4, 5, 6, 7};
+//	std::list<int>::iterator it = t.begin();
+//	
+//	while(it != t.end()){
+//		
 //	}
+//	
 //	
 //	return 0;
 	

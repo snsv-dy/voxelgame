@@ -26,7 +26,7 @@ class worldProvider{
 	
 public:
 	static const int chunkSize = 16;
-	static const int regionN = Region::reg_size;
+	static constexpr int regionN = Region::reg_size;
 	static constexpr int regionSize = regionN * chunkSize; // Region size in single blocks, not in chunks.
 	static const int regionHeight = regionN * chunkSize;
 	
@@ -46,6 +46,8 @@ public:
 	
 	glm::ivec3 last_pos = glm::ivec3(0);
 	
+	std::list<propagateParam> pending_light_updates;
+	
 	// Return chunk poses to remove
 	// Pos position in chunk coordinates
 	std::vector<glm::ivec3> update(glm::ivec3 pos){
@@ -58,7 +60,7 @@ public:
 		
 		last_pos = pos;
 		
-		printf("Provider move: %2d %2d\n", xmoved, zmoved);
+//		printf("Provider move: %2d %2d\n", xmoved, zmoved);
 		
 		if(abs(xmoved) >= move_required || abs(zmoved) >= move_required || firstLoop){
 			if(abs(xmoved) >= move_required){
@@ -96,6 +98,7 @@ public:
 						reg_it->second.removeable = false;
 					}else{
 						regions[position] = Region(position);
+						
 						new_regions.push_back(position);
 						
 						printf("New region %2d %2d %2d\n", position.x, position.y, position.z);
@@ -116,14 +119,54 @@ public:
 				}
 			}
 			
-			if(firstLoop){
-//				for(glm::ivec3& reg_pos : new_regions){
-//					if(auto it = regions.find(reg_pos); it != regions.end() && it->second.brand_new){
-					if(auto it = regions.find(glm::ivec3(0)); it != regions.end() && it->second.brand_new){
+//			if(firstLoop){
+//				printf("Making sun\n");
+				for(glm::ivec3& reg_pos : new_regions){
+					if(auto it = regions.find(reg_pos); it != regions.end() && it->second.brand_new){
+//					if(auto it = regions.find(glm::ivec3(0)); it != regions.end() && it->second.brand_new){
 						Region& region = it->second;
-						region.calculateSunlight();
+						std::list<propagateParam> remaining_lights = region.calculateSunlight();
+						pending_light_updates.insert(pending_light_updates.end(), remaining_lights.begin(), remaining_lights.end());
 					}
-//				}
+				}
+				
+			// Maybye it was a better idea to lookup if there is some light coming from the sides every time a new region is created,
+			// because keeping this huge list for regions that may be generated some time in the future, could take too much memory.
+			// And these chunks may never be generated.
+			
+			std::list<propagateParam>::iterator pend_iter = pending_light_updates.begin();
+//			for(propagateParam& p : pending_light_updates){
+			while(pend_iter != pending_light_updates.end()){
+				propagateParam& p = *pend_iter;
+				
+				glm::ivec3 reg_pos, in_reg_pos;
+				std::tie(reg_pos, in_reg_pos) = toChunkCoords(p.position, this->regionN);
+				
+				if(auto it = regions.find(reg_pos); it != regions.end()){
+					Region& region = it->second;
+					
+					propagateParam param;
+					param.light_value = p.light_value;
+					param.position = in_reg_pos;
+					
+					region.pending_lights.push_back(param);
+					
+					pend_iter = pending_light_updates.erase(pend_iter);
+//					remove p somehow;
+				}else{
+					pend_iter++;
+				}
+			}
+			
+			for(auto& it : regions){
+				Region& region = it.second;
+				region.propagatePendingLight();
+			}
+//				printf("Sun made\n");
+//			}
+
+			if(firstLoop){
+				printf("Pending lights len: %d\n", pending_light_updates.size());
 			}
 			
 			firstLoop = false;
