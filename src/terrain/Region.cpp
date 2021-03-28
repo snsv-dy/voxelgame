@@ -195,6 +195,10 @@ void Region::generate(){
 		}
 	}
 	
+//	for(int s = 0; s < 6; s++){
+//		for(int z = 0; z < chunk_size
+//	}
+	
 	brand_new = true;
 }
 
@@ -313,6 +317,74 @@ std::list<propagateParam> Region::calculateSunInChunk(int gx, int gy, int gz, in
 //		region_dtype block = data[pos_v];//valueAt(pos.x, pos.y, pos.z);
 //}
 
+// Order: 0 - left, 1 - front, 2 - right, 3 - back, 4 - top, 5 - bottom.
+void Region::addToOutputList(glm::ivec3 pos, const region_dtype& light){
+	const int size_in_blocks = reg_size * chunk_size;
+	
+	if(pos.x < 0){
+		pos.x = size_in_blocks;
+		
+		light_output[0].push_back(
+			(struct propagateParam){
+//				.region_pos = pos - glm::ivec3(),
+				.position = pos,
+				.light_value = light
+			}
+		);
+	}else if(pos.x >= size_in_blocks){
+		pos.x = 0;
+		
+		light_output[2].push_back(
+			(struct propagateParam){
+				.position = pos,
+				.light_value = light
+			}
+		);
+	}
+	
+	if(pos.y < 0){
+		pos.y = size_in_blocks;
+		
+		light_output[5].push_back(
+			(struct propagateParam){
+				.position = pos,
+				.light_value = light
+			}
+		);
+	}else if(pos.y >= size_in_blocks){
+		pos.y = 0;
+		
+		light_output[4].push_back(
+			(struct propagateParam){
+				.position = pos,
+				.light_value = light
+			}
+		);
+	}
+	
+	if(pos.z < 0){
+		pos.z = size_in_blocks;
+		
+		light_output[3].push_back(
+			(struct propagateParam){
+				.position = pos,
+				.light_value = light
+			}
+		);
+	}else if(pos.z >= size_in_blocks){
+		pos.z = 0;
+		
+		light_output[1].push_back(
+			(struct propagateParam){
+				.position = pos,
+				.light_value = light
+			}
+		);
+	}
+	
+	
+}
+
 std::list<propagateParam> Region::propagateLight(std::list<propagateParam>& queue){
 	int size_in_blocks = reg_size * chunk_size;
 	
@@ -366,15 +438,15 @@ std::list<propagateParam> Region::propagateLight(std::list<propagateParam>& queu
 				(pos.y < 0 || pos.y >= size_in_blocks) ||
 				(pos.z < 0 || pos.z >= size_in_blocks)){
 					// Append global position for ease of thinking.
-				
-					outside_updates.push_back((struct propagateParam){
-						.position = glm::ivec3(
-											pos.x + position.x * reg_size, 
-											pos.y + position.y * reg_size, 
-											pos.z + position.z * reg_size
-										),
-						.light_value = param.light_value
-					});
+				addToOutputList(pos, param.light_value);
+//					outside_updates.push_back((struct propagateParam){
+//						.position = glm::ivec3(
+//											pos.x + position.x * reg_size, 
+//											pos.y + position.y * reg_size, 
+//											pos.z + position.z * reg_size
+//										),
+//						.light_value = param.light_value
+//					});
 					continue;
 				}
 				
@@ -411,6 +483,36 @@ std::list<propagateParam> Region::propagateLight(std::list<propagateParam>& queu
 	return outside_updates;
 }
 
+// side 0 - 1 (begin, end)
+// norm 0 - 2 (x, y, z)
+std::array<region_dtype, Region::chunk_size * Region::chunk_size> Region::getChunkSide(glm::ivec3 pos, int norm, int side){
+	int chunk_cubed = chunk_size * chunk_size * chunk_size;
+//	int chunk_squared = chunk_size * chunk_size;
+	
+	int data_offset = pos.x * chunk_cubed + pos.y * (chunk_cubed * reg_size) + pos.z * (chunk_cubed * reg_size * reg_size);
+	
+	std::array<region_dtype, chunk_size * chunk_size> ret;
+	
+	int tan = (norm + 1) % 3;
+	int biTan = (norm + 2) % 3;
+	
+	glm::ivec3 normal(0);
+	normal[norm] = side;
+	
+	glm::ivec3 cursor(0);
+	cursor[norm] = (chunk_size - 1) * side; // or chunk_size - 1
+	
+	int x = 0, y = 0;
+	for(cursor[biTan] = 0; cursor[biTan] < chunk_size; cursor[biTan]++, y++){
+		for(cursor[tan] = 0; cursor[tan] < chunk_size; cursor[tan]++, x++){
+			int index = cursor.x + cursor.y * chunk_size + cursor.z * chunk_size * chunk_size;
+			ret[y * chunk_size + x] = data[data_offset + index];
+		}
+	}
+	
+	return ret;
+}
+
 std::list<propagateParam> Region::calculateSunlight(){
 	int mask[chunk_size][chunk_size] = {0};
 	
@@ -425,9 +527,38 @@ std::list<propagateParam> Region::calculateSunlight(){
 			}
 		}
 	}
+	
+//	for(int side = 0; side < 2; side++){
+//		for(int norm = 0; norm < 3; norm++){
+//			int tan = (norm + 1) % 3;
+//			int biTan = (norm + 2) % 3;
+//			
+//			glm::ivec3 cursor(0);
+//			cursor[norm] = (chunk_size - 1) * side; // or chunk_size - 1
+//			
+//			int x = 0, y = 0;
+//			for(cursor[biTan] = 0; cursor[biTan] < reg_size; cursor[biTan]++, y++){
+//				for(cursor[tan] = 0; cursor[tan] < reg_size; cursor[tan]++, x++){
+////					int chunk_cubed = chunk_size * chunk_size * chunk_size;
+//					int chunk_squared = chunk_size * chunk_size;
+//
+//					int side_offset = x * chunk_squared + y * (chunk_squared * reg_size);
+////					int index = cursor.x + cursor.y * chunk_size + cursor.z * chunk_size * chunk_size;
+////					ret[y * chunk_size + x] = data[data_offset + index];
+//					std::array<region_dtype, chunk_size * chunk_size> chunk_side = getChunkSide(cursor, norm, side);
+//					for(int i = 0; i < chunk_size; i++){
+//						for(int j = 0; j < chunk_size; j++){
+//							light_output[side * 3 + norm][side_offset + i * chunk_size + j] = chunk_side[i * chunk_size + j];
+//						}
+//					}
+//				}
+//			}
+//		}
+//	}
+	
 	printf("propagate queue len: %d\n", spread_queue.size());
 	
-	std::list<propagateParam> outside_lights = propagateLight(spread_queue);
+	std::list<propagateParam> outside_lights;// = propagateLight(spread_queue);
 	
 	brand_new = false;
 	

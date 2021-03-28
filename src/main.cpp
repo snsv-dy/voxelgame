@@ -61,7 +61,15 @@ int main(void){
 //	while(it != t.end()){
 //		
 //	}
+
+//	glm::all(glm::lessThan(a, b));
+//	glm::ivec3 a(1.0f, 2.0f, 3.0f);
+//	glm::ivec3 b(1.0f, 2.0f, 4.0f);
+//	glm::ivec3 res = glm::lessThan(a, b);
 //	
+//	printf("%d %d %d\n", res.x, res.y, res.z);
+//	printf("%d\n", glm::any(glm::lessThan(a, b)));
+////	glm::less
 //	
 //	return 0;
 	
@@ -192,8 +200,9 @@ int opengl_context_scope(GLFWwindow *window)
 	// Lighting
 	// Physics
 	// Mesh/Chunk allocator? (reusing vertex buffers)
-	// Make greedy meshing work with lightning
-	// Change .h files to .hpp
+	// Make greedy meshing work with lightning!
+	// Change .h files to .hpp*
+	// Split worldProvider to 2 files.
 	// 
 	
 	

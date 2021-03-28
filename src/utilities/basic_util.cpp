@@ -190,3 +190,9 @@ bool compareVec3::operator()(const glm::ivec3 &a, const glm::ivec3 &b) const{
 	if(a.y != b.y) return a.y < b.y;
 	return a.x < b.x;
 }
+
+
+
+bool compareVec::operator()(const glm::ivec3 &a, const glm::ivec3 &b) const{
+	return glm::any(glm::lessThan(a, b));
+}

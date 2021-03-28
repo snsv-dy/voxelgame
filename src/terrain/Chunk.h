@@ -20,7 +20,7 @@ private:
 		glm::vec2(0.0f, 1.0f)
 	};
 	
-	glm::ivec3 gridOffset = glm::ivec3(0);
+	glm::ivec3 gridOffset = glm::ivec3(0); // Change name if possible.
 	bool fullOrEmpty = false; // indicates if the chunk is full or empty, so that we don't have to loop 6 x size^2 to find out there aren't any quads
 	bool doNotDraw = false;
 	
@@ -33,6 +33,8 @@ private:
 	glm::ivec3 worldOffset = glm::ivec3(0);
 	WorldLoader *parentLoader = nullptr;
 	void init_data();
+	
+	
 public:
 	void update_data();
 	
@@ -43,12 +45,14 @@ public:
 	static const int size = 16;
 	static const int chunkSize = 16;
 	static constexpr int size_cubed = size * size * size;
+	static constexpr int size_squared = size * size;
 	
 //	char data[chunkSize][chunkSize][chunkSize];
 	
+	std::array<region_dtype, size_squared> getBottomLayer();
+	std::list<propagateParam> sunlightPass(int mask[size][size]);
 	
 //	Mesh mesh;
-	
 	
 	Chunk() =default;
 //	Chunk(glm::mat4 *projection, glm::mat4 *view, unsigned int textureId, shaderParams &shParams, glm::ivec3 offset, WorldLoader *loaderPtr, std::shared_ptr<char[]> data, int data_offset);
@@ -61,6 +65,8 @@ public:
 	void draw();
 	region_dtype valueAt(const glm::ivec3& pos);
 	void changeBlock(const int& block_type, const glm::ivec3& data_pos, BlockAction& action);
+	
+	std::tuple<region_dtype*, int> giveData();
 	
 	~Chunk();
 };

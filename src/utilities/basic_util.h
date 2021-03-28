@@ -53,4 +53,8 @@ struct compareVec3{
 	bool operator()(const glm::ivec3 &a, const glm::ivec3 &b) const;
 };
 
+struct compareVec{
+	bool operator()(const glm::ivec3 &a, const glm::ivec3 &b) const;
+};
+
 #endif

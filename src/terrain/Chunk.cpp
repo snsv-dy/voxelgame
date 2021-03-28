@@ -104,7 +104,7 @@ Chunk::Chunk(const unsigned int& model_location, glm::ivec3 offset, WorldLoader 
 	this->data = data;
 	this->data_offset = data_offset;
 	
-	this->init_data();
+//	this->init_data();
 	
 	mesh->setModelLocation(model_location);
 	mesh->model = glm::translate(glm::mat4(1.0f), glm::vec3(this->worldOffset));//glm::vec3(offset.x * fchunkSize, offset.y * fchunkSize, offset.z * fchunkSize));
@@ -148,6 +148,72 @@ void Chunk::init_data(){
 	if(floatdata.size() > 0){
 		this->mesh->initVao(floatdata, intdata);
 	}
+}
+
+std::array<region_dtype, Chunk::size_squared> Chunk::getBottomLayer(){
+	std::array<region_dtype, size_squared> bottom;
+	
+	const int y = size - 1;
+	for(int z = 0, arr_z = 0; z < size; z++, arr_z += size){
+		for(int x = 0; x < size; x++){
+			
+			int arr_index = z * (size * size) + y * size + x;
+			bottom[arr_z + x] = data[data_offset + arr_index];
+		}
+	}
+	
+	return bottom;
+}
+
+// Teraz propagation pomiędzy chunkami.
+std::list<propagateParam> Chunk::sunlightPass(int mask[size][size]){
+	std::list<propagateParam> spread_queue;
+	
+	for(int y = size - 1; y >= 0; y--){
+		for(int z = 0; z < size; z++){
+			for(int x = 0; x < size; x++){
+				
+				int index = z * size * size + y * size + x;
+				region_dtype& block = data[data_offset + index];
+				
+				if((block & 0xff) != 0){
+					mask[z][x] = 0xf00;
+				}
+				
+				block &= 0xff | mask[z][x];
+			}
+		}
+	
+		// jeżeli y > 0 to można ustawić te wartości dla warstwy poprzedniej w pętli wyżej.
+		for(int z = 0; z < size; z++){
+			for(int x = 0; x < size; x++){
+				int index = z * size * size + y * size + x;
+				region_dtype& block = data[data_offset + index];
+				if(mask[z][x] == 0 && (block & 0xff) == 0){
+					glm::ivec3 base = gridOffset * size + glm::ivec3(x, y, z);
+					glm::ivec3 new_poses[6] = {
+						base + glm::ivec3(-1, 0, 0),
+						base + glm::ivec3(1, 0, 0),
+						base + glm::ivec3(0, -1, 0),
+						base + glm::ivec3(0, 1, 0),
+						base + glm::ivec3(0, 0, -1),
+						base + glm::ivec3(0, 0, 1)
+					};
+					
+					for(int i = 0; i < 6; i++){
+						spread_queue.push_back(
+							(struct propagateParam){
+								.position = new_poses[i],
+								.light_value = 0x100
+							}
+						);
+					}
+				}
+			}
+		}
+	}
+	
+	return spread_queue;
 }
 
 region_dtype Chunk::valueAt(const glm::ivec3& pos){
@@ -477,6 +543,10 @@ std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData()
 	fullOrEmpty = ret.size() == 0;
 	
 	return std::make_tuple(ret, int_ret);
+}
+
+std::tuple<region_dtype*, int> Chunk::giveData(){
+	return std::tuple<region_dtype*, int>(data, data_offset);
 }
 
 Chunk::~Chunk(){
