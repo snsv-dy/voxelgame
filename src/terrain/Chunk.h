@@ -10,6 +10,14 @@
 
 class WorldLoader;
 
+
+enum class Direction {
+	LEFT,
+	RIGHT,
+	FRONT, 	// Front is end of the array (z = 15)
+	BACK	// Back is beginning of the array (z = 0)
+};
+
 class Chunk{
 private:
 	
@@ -65,6 +73,11 @@ public:
 	void draw();
 	region_dtype valueAt(const glm::ivec3& pos);
 	void changeBlock(const int& block_type, const glm::ivec3& data_pos, BlockAction& action);
+	
+	std::list<propagateParam> getEmmitedLightFromSide(Direction side); // Returns list with lights to propagate outside of the chunk in the direction passed by param.
+	
+	std::array<region_dtype, size * size> getSide(Direction side);
+	std::array<region_dtype, size * size> getSide(int direction, int side);
 	
 	std::tuple<region_dtype*, int> giveData();
 	

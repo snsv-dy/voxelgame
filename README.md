@@ -1,7 +1,7 @@
 # voxelgame
 Game engine written in c++ focused on handling voxel terrain.
 
-<img src="screen1.png" width="49%" /> <img src="screen2.png" width="49%" />
+<img src="screen3.jpg"/>
 
 ## Acknowledgements / Libraries
 * https://learnopengl.com/

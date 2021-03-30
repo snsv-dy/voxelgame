@@ -258,7 +258,7 @@ void WorldLoader::update(glm::vec3 cameraPos){
 								chunks[pos] = Chunk(shParams.model, pos, this, chunk_data, data_offset);
 								light_needed.insert(glm::ivec3(pos.x, 0, pos.z));
 								chunks_to_update.insert(pos);
-//								chunks[pos].update_data();
+								chunks[pos].update_data();
 //								if( y > highest_y){
 //									highest_y = y;
 //								}
@@ -270,7 +270,7 @@ void WorldLoader::update(glm::vec3 cameraPos){
 					}
 				}
 				
-//				printf("Light needed: %d\n", light_needed.size());
+				printf("Light needed: %d\n", light_needed.size());
 				for(const glm::ivec3& pos : light_needed){
 					std::list<propagateParam> tpropagate = updateSunlightInColumn(pos.x, pos.z);
 					lights_to_propagate.insert(lights_to_propagate.end(), tpropagate.begin(), tpropagate.end());
@@ -287,6 +287,7 @@ void WorldLoader::update(glm::vec3 cameraPos){
 						it->second.update_data();
 					}
 				}
+//here
 //					
 //					cursor[norm] = 0;
 //					for(cursor[biTan] = -radius; cursor[biTan] <= radius; cursor[biTan]++){
@@ -332,6 +333,28 @@ void WorldLoader::update(glm::vec3 cameraPos){
 		first = false;
 	}
 }
+//
+//enum class direction {
+//	LEFT,
+//	RIGHT,
+//	FRONT,
+//	BACK
+//};
+
+struct DirAndSide{
+	glm::ivec3 position;
+	Direction face;
+};
+
+// Direction to get position of an adjecent chunk.
+DirAndSide directions[4] {
+	{glm::ivec3(-1, 0, 0), Direction::RIGHT},
+	{glm::ivec3(1, 0, 0), Direction::LEFT},
+	{glm::ivec3(0, 0, 1), Direction::FRONT},
+	{glm::ivec3(0, 0, -1), Direction::BACK}
+};
+
+
 
 std::list<propagateParam> WorldLoader::updateSunlightInColumn(int x, int z){
 	glm::ivec3 top = last_camera_pos;
@@ -359,6 +382,27 @@ std::list<propagateParam> WorldLoader::updateSunlightInColumn(int x, int z){
 				
 				std::list<propagateParam> tpropagate = ch.sunlightPass(mask);
 				lights_to_propagate.insert(lights_to_propagate.end(), tpropagate.begin(), tpropagate.end());
+				
+				// Get light coming from adjecent chunks
+				for(const DirAndSide& dir : directions){
+					if(auto it = chunks.find(dir.position + top); it != chunks.end()){
+//						auto side = it->second.getSide(dir.face);
+						std::list<propagateParam> side_emit = it->second.getEmmitedLightFromSide(dir.face);
+						// check 3, 0, 0
+						if(top.x == 3 && top.y == 0 && top.z == 0 && dir.face == Direction::RIGHT){
+							glm::ivec3 from = dir.position + top;
+							printf("Propagation from [%d %d %d]\n", from.x, from.y, from.z);
+							for(const propagateParam& p : side_emit){
+								printf("pos [%d %d %d], light: 0x%x\n", p.position.x, p.position.y, p.position.z, p.light_value);
+								
+							}
+//							printf("les goo: %d from (%d %d %d) -> (%d %d %d)\n", side_emit.size(), from.x, from.y, from.z, top.x, top.y, top.z);
+						}
+						lights_to_propagate.insert(lights_to_propagate.end(), side_emit.begin(), side_emit.end());
+//						std::array<region_dtype, Chunk::size * Chunk::size> side;
+					}
+				}
+					
 			}else{
 				break;
 			}

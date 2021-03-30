@@ -241,6 +241,11 @@ int opengl_context_scope(GLFWwindow *window)
 		sprintf(textBuffer, "block under cursor: [%d, %d]", block_under_cursor & 0xff, block_under_cursor >> 8);
 		renderText(fontmesh1, std::string(textBuffer), 20, 90, 0.5);
 		
+		glm::ivec3 chpos;
+		std::tie(chpos, std::ignore) = toChunkCoords(controls.cursor_pos, 16);
+		sprintf(textBuffer, "chunk cursor: x: %2d, y: %2d, z: %2d ", chpos.x, chpos.y, chpos.z);
+		renderText(fontmesh1, std::string(textBuffer), 20, 110, 0.5);
+		
 		// Cursor drawing
 		cursor.draw(projection, view);
 		// End of cursor drawing

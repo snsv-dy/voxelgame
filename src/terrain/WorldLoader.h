@@ -29,7 +29,7 @@ class WorldLoader
 public:
 	WorldLoader(glm::mat4 *projection, glm::mat4 *view, unsigned int textures, struct shaderParams params);
 	
-	const int radius = 2;
+	const int radius = 4;
 	const int unloadRadius = (radius * 2);
 	const int unloadRadiusSquared = unloadRadius*unloadRadius;
 	const int chunkSize = 16;

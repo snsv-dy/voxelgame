@@ -549,6 +549,103 @@ std::tuple<region_dtype*, int> Chunk::giveData(){
 	return std::tuple<region_dtype*, int>(data, data_offset);
 }
 
+std::list<propagateParam> Chunk::getEmmitedLightFromSide(Direction side){
+	std::list<propagateParam> out;
+	
+//	if(side == Direction::FRONT || side == Direction::BACK)
+//		return out;
+	
+	const std::array<region_dtype, Chunk::size * Chunk::size> blocks = getSide(side);
+	
+	int norm = 0;
+	int slice = 0;
+	if(side == Direction::FRONT || side == Direction::BACK){
+		norm = 2;
+	}
+	
+	if(side == Direction::BACK || side == Direction::RIGHT){
+		slice = 15;
+	}
+	
+	int tan = (norm + 1) % 3;
+	int biTan = (norm + 2) % 3;
+	
+	glm::ivec3 normal(0); // back -1 ,front +1 left -1, right +1
+	normal[norm] = 1;
+	if(side == Direction::FRONT || side == Direction::LEFT){
+		normal[norm] = -1;
+	}
+	
+	glm::ivec3 cursor(0);
+	cursor[norm] = slice;
+	int y = 0;
+	for(cursor[biTan] = 0; cursor[biTan] < size; cursor[biTan]++, y++){
+		int x = 0;
+		for(cursor[tan] = 0; cursor[tan] < size; cursor[tan]++, x++){
+			const region_dtype& block = blocks[y * size + x];
+			region_dtype light = block & 0xf00;
+//			if((light)){ && ((block & 0xff) == 0)){
+//			if(worldOffset.x == 48 && worldOffset.y == 0 && worldOffset.z == 0){
+//				printf("%4x ", block);
+//			}
+			
+			if((block & 0xff) == 0){
+				light += 0x100;
+				out.push_back((struct propagateParam){
+					.position = worldOffset + cursor + normal,
+					.light_value = light
+				});
+			}
+		}
+//		if(worldOffset.x == 48 && worldOffset.y == 0 && worldOffset.z == 0){
+//			printf("\n");
+//		}
+	}
+	
+	
+	return out;
+}
+
+std::array<region_dtype, Chunk::size * Chunk::size> Chunk::getSide(Direction side){
+	switch(side){
+		case Direction::FRONT:
+			return getSide(2, 0);
+		case Direction::BACK:
+			return getSide(2, 1);
+		case Direction::LEFT:
+			return getSide(0, 0);
+		case Direction::RIGHT:
+			return getSide(0, 1);
+	}
+	
+	return getSide(0, 0);
+}
+
+std::array<region_dtype, Chunk::size * Chunk::size> Chunk::getSide(int direction, int side){
+	std::array<region_dtype, Chunk::size * Chunk::size> output;
+	
+//	direction &= 3;
+	int norm = direction;
+	int tan = (norm + 1) % 3;
+	int biTan = (norm + 2) % 3;
+	
+	int cursor[3];
+	cursor[norm] = 0;
+	
+	if(side == 1)
+		cursor[norm] = size - 1;
+	int y = 0;
+	for(cursor[biTan] = 0; cursor[biTan] < size; cursor[biTan]++, y++){
+		int x = 0;
+		for(cursor[tan] = 0; cursor[tan] < size; cursor[tan]++, x++){
+			int index = cursor[0] + cursor[1] * size + cursor[2] * size_squared;
+			output[y * size + x] = data[data_offset + index];
+		}
+	}
+	
+	return output;
+}
+
 Chunk::~Chunk(){
 	if(doNotDraw){
 //		printf("Not drawable destroyed\n");
