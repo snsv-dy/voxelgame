@@ -58,7 +58,7 @@ public:
 //	char data[chunkSize][chunkSize][chunkSize];
 	
 	std::array<region_dtype, size_squared> getBottomLayer();
-	std::list<propagateParam> sunlightPass(int mask[size][size]);
+	std::list<propagateParam> sunlightPass(int mask[size][size], bool& allDark);
 	
 //	Mesh mesh;
 	
@@ -84,5 +84,9 @@ public:
 	~Chunk();
 };
 
+// ivec2 only for returning two ints.
+glm::ivec2 inc_pos(int block, int chunk);
+block_position calculate_position(block_position pos, const glm::ivec3& offset);
+block_position block_position_create(glm::ivec3 block, glm::ivec3 chunk);
 
 #endif

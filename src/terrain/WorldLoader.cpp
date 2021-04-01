@@ -323,7 +323,7 @@ void WorldLoader::update(glm::vec3 cameraPos){
 			nexti++;
 			if(ivec3len2(i->first - chpos) > unloadRadiusSquared){
 				glm::ivec3 pos = i->first;
-				printf("Clearing chunk (%d %d %d)\n", pos.x, pos.y, pos.z);
+//				printf("Clearing chunk (%d %d %d)\n", pos.x, pos.y, pos.z);
 				chunks.erase(i);
 			}
 		}
@@ -377,27 +377,31 @@ std::list<propagateParam> WorldLoader::updateSunlightInColumn(int x, int z){
 		
 		
 		while(true){
+			bool allDark = false;
 			if(auto it = chunks.find(top); it != chunks.end()){
 				Chunk& ch = it->second;
 				
-				std::list<propagateParam> tpropagate = ch.sunlightPass(mask);
-				lights_to_propagate.insert(lights_to_propagate.end(), tpropagate.begin(), tpropagate.end());
 				
+				if(!allDark){
+					std::list<propagateParam> tpropagate = ch.sunlightPass(mask, allDark);
+					lights_to_propagate.insert(lights_to_propagate.end(), tpropagate.begin(), tpropagate.end());
+				}
+					
 				// Get light coming from adjecent chunks
 				for(const DirAndSide& dir : directions){
 					if(auto it = chunks.find(dir.position + top); it != chunks.end()){
 //						auto side = it->second.getSide(dir.face);
 						std::list<propagateParam> side_emit = it->second.getEmmitedLightFromSide(dir.face);
 						// check 3, 0, 0
-						if(top.x == 3 && top.y == 0 && top.z == 0 && dir.face == Direction::RIGHT){
-							glm::ivec3 from = dir.position + top;
-							printf("Propagation from [%d %d %d]\n", from.x, from.y, from.z);
-							for(const propagateParam& p : side_emit){
-								printf("pos [%d %d %d], light: 0x%x\n", p.position.x, p.position.y, p.position.z, p.light_value);
-								
-							}
-//							printf("les goo: %d from (%d %d %d) -> (%d %d %d)\n", side_emit.size(), from.x, from.y, from.z, top.x, top.y, top.z);
-						}
+//						if(top.x == 3 && top.y == 0 && top.z == 0 && dir.face == Direction::RIGHT){
+//							glm::ivec3 from = dir.position + top;
+////							printf("Propagation from [%d %d %d]\n", from.x, from.y, from.z);
+////							for(const propagateParam& p : side_emit){
+//////								printf("pos [%d %d %d], light: 0x%x\n", p.position.x, p.position.y, p.position.z, p.light_value);
+////								
+////							}
+////							printf("les goo: %d from (%d %d %d) -> (%d %d %d)\n", side_emit.size(), from.x, from.y, from.z, top.x, top.y, top.z);
+//						}
 						lights_to_propagate.insert(lights_to_propagate.end(), side_emit.begin(), side_emit.end());
 //						std::array<region_dtype, Chunk::size * Chunk::size> side;
 					}
@@ -415,18 +419,33 @@ std::list<propagateParam> WorldLoader::updateSunlightInColumn(int x, int z){
 	return lights_to_propagate;
 }
 
+const glm::ivec3 neighbouring_offsets[6] {
+	glm::ivec3(-1, 0, 0),
+	glm::ivec3(1, 0, 0),
+	glm::ivec3(0, -1, 0),
+	glm::ivec3(0, 1, 0),
+	glm::ivec3(0, 0, -1),
+	glm::ivec3(0, 0, 1)
+};
+
+
 
 std::set<glm::ivec3, compareVec> WorldLoader::propagateLight(std::list<propagateParam>& lights){
 	
 	std::set<glm::ivec3, compareVec> affected_chunks;
 	
+	printf("Propagate list size: %d, ", lights.size());
+	int insertions = 0;
+	int deletions = 0;
+	
 	while(!lights.empty()){
-		const propagateParam param = lights.front();
+		propagateParam param = lights.front();
 		lights.pop_front();
-//	for(propagateParam& param : lights){
+		deletions++;
 		
-		glm::ivec3 chunk_pos, in_chunk_pos;
-		std::tie(chunk_pos, in_chunk_pos) = toChunkCoords(param.position, WorldLoader::chunkSize);
+		glm::ivec3 chunk_pos = param.position.chunk;
+		glm::ivec3 in_chunk_pos = param.position.block;
+//		std::tie(chunk_pos, in_chunk_pos) = toChunkCoords(param.position, WorldLoader::chunkSize);
 		
 		if(auto it = chunks.find(chunk_pos); it != chunks.end()){
 			region_dtype* data;
@@ -443,28 +462,27 @@ std::set<glm::ivec3, compareVec> WorldLoader::propagateLight(std::list<propagate
 				affected_chunks.insert(chunk_pos);
 				
 				region_dtype next_light_value = param.light_value + 0x100;
-				if(next_light_value < 0xf00){
-					glm::ivec3 new_poses[6] = {
-						param.position + glm::ivec3(-1, 0, 0),
-						param.position + glm::ivec3(1, 0, 0),
-						param.position + glm::ivec3(0, -1, 0),
-						param.position + glm::ivec3(0, 1, 0),
-						param.position + glm::ivec3(0, 0, -1),
-						param.position + glm::ivec3(0, 0, 1)
-					};
-					
-					for(int i = 0; i < 6; i++){
-						lights.push_back(
-							(struct propagateParam){
-								.position = new_poses[i],
-								.light_value = next_light_value
-							}
-						);
-					}
+				
+				if(next_light_value == 0xf00){
+					continue;
 				}
+					
+				for(int i = 0; i < 6; i++){
+					lights.push_back(
+						(struct propagateParam){
+							.position = calculate_position(param.position, neighbouring_offsets[i]),
+							.light_value = next_light_value
+						}
+					);
+					insertions++;
+				}
+				
 			}
 		}
+		
 	}
+	
+	printf("insertions: %d, deletions: %d\n", insertions, deletions);
 	
 	return affected_chunks;
 }

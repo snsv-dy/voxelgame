@@ -27,11 +27,22 @@ typedef unsigned short region_dtype; // Should probably be struct, for easier ac
 #define block_type(x) ((x) & 0xff)
 #define block_light(x) ((x) >> 8)
 
-struct propagateParam{ // change to something with light (will be also useful when propagating light emited by blocks)
-	glm::ivec3 region_pos;
-	glm::ivec3 position; // In region
+
+struct block_position{
+	glm::ivec3 chunk;
+	glm::ivec3 block;
+};
+
+struct propagateParam{
+	block_position position;
 	region_dtype light_value;
 };
+
+//struct propagateParam{ // change to something with light (will be also useful when propagating light emited by blocks)
+//	glm::ivec3 region_pos;
+//	glm::ivec3 position; // In region
+//	region_dtype light_value;
+//};
 
 enum class RegionType{
 	NULL_REGION,
@@ -70,7 +81,7 @@ public:
 	
 	bool modified = false;
 	bool brand_new = false; // Not loaded from disk, generated using generate(), needs to calculate world light. Change name of this
-	std::list<propagateParam> pending_lights;
+//	std::list<propagateParam> pending_lights;
 	
 	glm::ivec3 position = glm::ivec3(0);
 	
@@ -80,8 +91,8 @@ public:
 	Region()=default;
 	Region(glm::ivec3 pos);
 	
-	std::list<propagateParam> calculateSunlight();
-	void propagatePendingLight();
+//	std::list<propagateParam> calculateSunlight();
+//	void propagatePendingLight();
 	
 	region_dtype& valueAt(int x, int y, int z);
 	const std::vector<glm::ivec3>& getLoadedChunks();
@@ -96,16 +107,16 @@ private:
 //															 // values from this array will be taken by other regions.
 //															 // Saving this variable should be also implemented.
 //	bool light_taken[6] {false};
-	std::array<std::list<propagateParam>, 6> light_output; // For each side there will be a list with lights to be propagated 
-														   // to adjecent chunks.
-														   // Order: 0 - left, 1 - front, 2 - right, 3 - back, 4 - top, 5 - bottom.
-	void addToOutputList(glm::ivec3 pos, const region_dtype& light);
-		
+//	std::array<std::list<propagateParam>, 6> light_output; // For each side there will be a list with lights to be propagated 
+//														   // to adjecent chunks.
+//														   // Order: 0 - left, 1 - front, 2 - right, 3 - back, 4 - top, 5 - bottom.
+//	void addToOutputList(glm::ivec3 pos, const region_dtype& light);
+//		
 	std::array<region_dtype, chunk_size * chunk_size> getChunkSide(glm::ivec3 pos, int norm, int side);
-	
-	std::list<propagateParam> propagateLight(std::list<propagateParam>& queue);
-	bool is_near_light(int x, int z, int mask[chunk_size][chunk_size]);
-	std::list<propagateParam>  calculateSunInChunk(int gx, int gy, int gz, int mask[chunk_size][chunk_size]);
+//	
+//	std::list<propagateParam> propagateLight(std::list<propagateParam>& queue);
+//	bool is_near_light(int x, int z, int mask[chunk_size][chunk_size]);
+//	std::list<propagateParam>  calculateSunInChunk(int gx, int gy, int gz, int mask[chunk_size][chunk_size]);
 };
 
 #endif // REGION_H

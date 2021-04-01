@@ -52,25 +52,37 @@ int opengl_context_scope(GLFWwindow *window);
 
 const int screen_width = 1270;
 const int screen_height = 720;
-	
+
 int main(void){
 	
-//	std::list<int> t {1, 2, 3, 4, 5, 6, 7};
-//	std::list<int>::iterator it = t.begin();
+//	int size = 16;
+////	
+//	int chunk = 0;
+//	int block = -1 ;
 //	
-//	while(it != t.end()){
-//		
-//	}
-
-//	glm::all(glm::lessThan(a, b));
-//	glm::ivec3 a(1.0f, 2.0f, 3.0f);
-//	glm::ivec3 b(1.0f, 2.0f, 4.0f);
-//	glm::ivec3 res = glm::lessThan(a, b);
+//	chunk += (block >= size) -(block < 0);
+////	block &= size - 1;
+//	block = 15 * (block < 0) + block * (block > 0 && block < size);
+////	
+//	printf("chunk: %d, block: %d\n", chunk, block);
+////	
+//////	return glm::ivec2(block, chunk);
+//////	block &= (size - 1); // ONLY IF SIZE IS POWER OF 2!!! 
+//////}
+////	
+	// ivec2 only for returning two ints.
+	
+//	printf("%d\n", 1 > 1);
+	
+//	block_position p;
+//	p.block = glm::ivec3(16, 0, 8);
+//	p.chunk = glm::ivec3(0);
 //	
-//	printf("%d %d %d\n", res.x, res.y, res.z);
-//	printf("%d\n", glm::any(glm::lessThan(a, b)));
-////	glm::less
 //	
+//	p = calculate_position2(p, glm::ivec3(1, 0, 0));
+//	
+//	printf("chunk: %d %d %d, \nblock: %d %d %d\n", p.chunk.x, p.chunk.y, p.chunk.z, p.block.x, p.block.y, p.block.z);
+//
 //	return 0;
 	
 //	srand(time(NULL));
