@@ -85,6 +85,8 @@ void WorldLoader::updateTerrain(const int& block_type, const glm::ivec3 &pos, Bl
 		Region& containing_region = provider.getRegion(pos);
 		containing_region.modified = true;
 		
+		updateSunlightForBlock(block_position_create(in_chunk_pos, chunk_pos), action == BlockAction::PLACE);
+		
 		// Not enough adjacent chunks are updated. ( Check -1 0/1 -1 cursor position)
 		
 		// I tried to make it not ugly, but in the end it didn't even matter. :<
@@ -123,6 +125,231 @@ void WorldLoader::updateTerrain(const int& block_type, const glm::ivec3 &pos, Bl
 			}
 		}
 	}
+}
+//
+std::pair<region_dtype&, bool> WorldLoader::getBlock(const block_position& pos){
+	if(auto it = chunks.find(pos.chunk); it != chunks.end()){
+		Chunk& chunk = it->second;
+		region_dtype *data;
+		int data_offset;
+		std::tie(data, data_offset) = chunk.giveData();
+		
+		int index = pos.block.x + pos.block.y * Chunk::size + pos.block.z * Chunk::size * Chunk::size;
+		region_dtype& block = data[data_offset + index];
+		
+		return {block, true};
+	}
+	
+	return {ref0, false};
+}
+
+void WorldLoader::updateSunlightForBlock(block_position pos, bool placed){
+	std::set<glm::ivec3, compareVec> chunks_to_update;
+	
+	region_dtype sunlight_value = 0;
+	auto [above,found] = getBlock(calculate_position(pos, glm::ivec3(0, 1, 0)));
+	
+	const region_dtype above_light = above & 0xf00;
+	printf("above light %x\n", above_light);
+	
+	if(placed){
+		std::list<propagateParam> darks;
+//		auto [here, found] = getBlock(pos);
+//		
+//		const region_dtype light_here = here & 0xf00;
+//		if(above_light > 0){
+//			darks.push_back((struct propagateParam){
+//					.position = calculate_position(pos, neighbouring_offsets[i]),
+//					.light_value = (block & 0xf00) + 0x100
+//				});
+//		}
+		
+		bool first = true;
+		while(true){
+			auto [block, found] = getBlock(pos);
+			if(!found || ((block & 0xff) != 0 && !first))
+				break;
+			
+//			region_dtype next_l_value = light_here + 0x100;
+			for(int i = 0; i < 6; i++){
+				darks.push_back((struct propagateParam){
+					.position = calculate_position(pos, neighbouring_offsets[i]),
+					.light_value = (block & 0xf00) + 0x100
+				});
+			}
+			
+			block |= 0xf00;
+			
+//			darks.push_back((struct propagateParam){
+//				.position = pos,
+//				.light_value = above_light
+//			});
+			
+			pos = calculate_position(pos, glm::ivec3(0, -1, 0));
+			first = false;
+		}
+		
+		for(const glm::ivec3& pos : propagateDark(darks)){
+			chunks_to_update.insert(pos);
+		}
+		
+	}else{
+		
+		
+		std::list<propagateParam> propagate_list;
+		
+		
+	//	printf("light cond: %d %d %d %d\n", found , (above & 0xff) == 0 , (above_light) != 0, (above_light < 0xe));
+		
+		if(found ){ 
+			if((above & 0xff) == 0 && above_light == 0){
+			// go all the way down until you come across a block.
+			// set lights to 0, and then propagate.
+		
+			auto [current, found] = getBlock(pos);
+	//		region_dtype above_light = above & 0xf00;
+			while(true){
+				auto [current, found] = getBlock(pos);
+				if(!found || (current & 0xff) != 0)
+					break;
+				
+				current &= 0xf0ff; // sets sun light to 0.
+				chunks_to_update.insert(pos.chunk);
+				
+				// propagate light outwards
+				for(int i = 0; i < 4; i++){
+					propagate_list.push_back(
+						(struct propagateParam){
+							.position = calculate_position(pos, neighbouring_offsets[i]),
+							.light_value = 0x100
+						}
+					);
+				}
+							
+				pos = calculate_position(pos, glm::ivec3(0, -1, 0));
+			}
+//			}else if((above_light) != 0 && (above_light < 0xe00)){
+			}else{
+				// just propagate light coming from the top
+//				propagateParam param;
+//				param.position = pos;
+//				param.light_value = above_light + 0x100;
+//				propagate_list.push_back(param);
+				region_dtype max_light = 0xf00;
+				for(int i = 0; i < 6; i++){
+	//				if(auto [block, found] = getBlock(calculate_position(pos, neighbouring_offsets[i]));found && (block & 0xf00) < max_light){
+					auto [block, found] = getBlock(calculate_position(pos, neighbouring_offsets[i]));
+					printf("%d found: %d\n", i, found);
+					if(found && (block & 0xf00) < max_light){
+						max_light = block & 0xf00;
+					}
+				}
+				propagate_list.push_back((struct propagateParam){
+					.position = pos,
+					.light_value = max_light + 0x100
+				});
+			}
+		}
+//		else{
+//			region_dtype max_light = 0xf00;
+//			for(int i = 0; i < 6; i++){
+////				if(auto [block, found] = getBlock(calculate_position(pos, neighbouring_offsets[i]));found && (block & 0xf00) < max_light){
+//				auto [block, found] = getBlock(calculate_position(pos, neighbouring_offsets[i]));
+//				printf("%d found: %d\n", i, found);
+//				if(found && (block & 0xf00) < max_light){
+//					max_light = block & 0xf00;
+//				}
+//			}
+//			propagate_list.push_back((struct propagateParam){
+//				.position = pos,
+//				.light_value = max_light
+//			});
+//		}
+		
+		for(const glm::ivec3& pos : propagateLight(propagate_list)){
+			chunks_to_update.insert(pos);
+		}
+	}
+	
+	for(const glm::ivec3& c : chunks_to_update){
+		chunks[c].update_data();
+	}
+}
+
+std::set<glm::ivec3, compareVec> WorldLoader::propagateDark(std::list<propagateParam> darks){
+	
+	std::set<glm::ivec3, compareVec> affected_chunks;
+	std::list<propagateParam> lights;
+	
+	printf("Propagate dark list size: %d, ", darks.size());
+	int insertions = 0;
+	int deletions = 0;
+	
+	while(!darks.empty()){
+		propagateParam param = darks.front();
+		darks.pop_front();
+		deletions++;
+		
+		glm::ivec3 chunk_pos = param.position.chunk;
+		glm::ivec3 in_chunk_pos = param.position.block;
+//		std::tie(chunk_pos, in_chunk_pos) = toChunkCoords(param.position, WorldLoader::chunkSize);
+		
+		if(auto it = chunks.find(chunk_pos); it != chunks.end()){
+			region_dtype* data;
+			int data_offset;
+			std::tie(data, data_offset) = it->second.giveData();
+//			auto [data, data_offset] = it->second.giveData();
+			
+			int index = in_chunk_pos.z * chunkSize * chunkSize + in_chunk_pos.y * chunkSize + in_chunk_pos.x;
+			region_dtype& block = data[data_offset + index];
+			
+			if((block & 0xff) == 0 && (block & 0xf00) < 0xf00){
+				
+				affected_chunks.insert(chunk_pos);
+				region_dtype block_light = block & 0xf00;
+//				printf("block light: %d, param.light_value: %d\n", block_light, param.light_value); 
+				if(block_light == param.light_value){
+					block |= 0xf00; // sun light to zero
+//					propagate dark to neighbours
+					region_dtype next_light_value = param.light_value + 0x100;
+					if( next_light_value < 0xf00 ){
+						for(int i = 0; i < 6; i++){
+							darks.push_back((struct propagateParam){
+									.position = calculate_position(param.position, neighbouring_offsets[i]),
+									.light_value = next_light_value
+								}
+							);
+							insertions++;
+						}
+					}
+				}else if(block_light < param.light_value){
+					// propagate LIGHT to neighbours starting from this block
+					region_dtype& next_light_value = param.light_value;
+//					if( next_light_value > 0xf00 ){
+						for(int i = 0; i < 6; i++){
+							lights.push_back((struct propagateParam){
+									.position = calculate_position(param.position, neighbouring_offsets[i]),
+									.light_value = block_light + 0x100
+								}
+							);
+							insertions++;
+						}
+//					}
+				}
+			}
+		}
+	}
+	
+//	std::set<glm::ivec3, compareVec> affected2 = propagateLight(lights);
+	// Propagating light should probably be done outside this function.
+	for(const glm::ivec3& e : propagateLight(lights)){
+		affected_chunks.insert(e);
+	}
+//	affected_chunks.insert(affected_chunks.end(), affected2.begin(), affected2.end());
+	
+	printf("insertions: %d, deletions: %d\n", insertions, deletions);
+	
+	return affected_chunks;
 }
 
 region_dtype WorldLoader::valueAt(int x, int y, int z){
@@ -419,17 +646,7 @@ std::list<propagateParam> WorldLoader::updateSunlightInColumn(int x, int z){
 	return lights_to_propagate;
 }
 
-const glm::ivec3 neighbouring_offsets[6] {
-	glm::ivec3(-1, 0, 0),
-	glm::ivec3(1, 0, 0),
-	glm::ivec3(0, -1, 0),
-	glm::ivec3(0, 1, 0),
-	glm::ivec3(0, 0, -1),
-	glm::ivec3(0, 0, 1)
-};
-
-
-
+// Make propagate list a set?
 std::set<glm::ivec3, compareVec> WorldLoader::propagateLight(std::list<propagateParam>& lights){
 	
 	std::set<glm::ivec3, compareVec> affected_chunks;

@@ -66,12 +66,12 @@ private:
 	
 	// xyz - position of a chunk inside of region used only in generate
 	void genChunk(int x, int y, int z);
-	region_dtype ref0 = 0;
 	
 	void generate();
 	void load();
 	void save();
 
+	region_dtype ref0 = 0;
 public:
 	inline static const std::string directory = std::string("../world3");
 	static const int reg_size = 4;

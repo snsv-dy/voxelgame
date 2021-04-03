@@ -15,7 +15,7 @@ private:
 	glm::vec3 front;
 	float yaw = -90.0f, pitch = 0.0f;
 	float sensitivity = 0.05f;
-	float movementSpeed = 0.4f;
+	float movementSpeed = 0.2f;
 	
 public:
 	enum direction{

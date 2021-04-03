@@ -9,7 +9,17 @@
 //#include "Mesh.h"
 //#include "../vec3Comp.h"
 #include <glm/gtx/norm.hpp>
-#include <mutex>
+//#include <mutex>
+
+// used in light propagation
+const glm::ivec3 neighbouring_offsets[6] { 
+	glm::ivec3(-1, 0, 0),
+	glm::ivec3(1, 0, 0),
+	glm::ivec3(0, 0, -1),
+	glm::ivec3(0, 0, 1),
+	glm::ivec3(0, -1, 0),
+	glm::ivec3(0, 1, 0)
+};
 
 class WorldLoader
 {
@@ -25,6 +35,7 @@ class WorldLoader
 	bool first = true;
 	
 	int highest_y = 0; // should be lowest int?
+	region_dtype ref0 = 0;
 	
 public:
 	WorldLoader(glm::mat4 *projection, glm::mat4 *view, unsigned int textures, struct shaderParams params);
@@ -41,8 +52,11 @@ public:
 	void updateTerrain(const int& block_type, const glm::ivec3 &pos, BlockAction action);
 //	void insertBlock(const glm::ivec3 &pos);
 private:
+	std::pair<region_dtype&, bool> getBlock(const block_position& pos);
+	void updateSunlightForBlock(block_position pos, bool placed); // removed means if we are removing a block or placing it.
 	std::list<propagateParam> updateSunlightInColumn(int x, int z);
 	std::set<glm::ivec3, compareVec> propagateLight(std::list<propagateParam>& lights);
+	std::set<glm::ivec3, compareVec> propagateDark(std::list<propagateParam> darks);
 };
 
 #endif // WORLDLOADER_H
