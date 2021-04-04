@@ -157,13 +157,13 @@ void Region::genChunk(int x, int y, int z){
 //				continue;
 				
 				
-				glm::vec3 fpos = (world_pos_f + local_pos) / glm::vec3(5.0f);
+				glm::vec3 fpos = (world_pos_f + local_pos) / glm::vec3(10.0f);
 				
 //				#define MOUNTAIN_SCALE 40.0f
 //				#define MOUNTAIN_DISTANCE 2.0f
 //				float mountain = perlin.noise2D_0_1(fpos.x / MOUNTAIN_DISTANCE, fpos.z / MOUNTAIN_DISTANCE) * MOUNTAIN_SCALE;
 				#define THRESHOLD 0.5f
-				#define GROUND_LEVEL 30
+				#define GROUND_LEVEL 40
 //				#define GROUND_LEVEL 11
 				char ival = 0;
 				int ypos = worldOffset.y + y;

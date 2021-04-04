@@ -75,43 +75,6 @@ char terrain(int x, int y, int z){
 	
 }
 
-// ivec2 only for returning two ints.
-glm::ivec2 inc_pos(int block, int chunk){
-	int size = Chunk::size;
-	
-	chunk += (block >= size) -(block < 0);
-	block &= (size - 1); // ONLY IF SIZE IS POWER OF 2!!! 
-//	block = 15 * (block < 0) + block * (block > 0 && block < size);
-//	block = 15 * (block < 0) + block * (block > size);
-	
-	return glm::ivec2(block, chunk);
-}
-
-block_position calculate_position(block_position pos, const glm::ivec3& offset){
-	pos.block += offset;
-	for(int i = 0; i < 3; i++){
-//		pos.block[i] += offset[i];
-		glm::ivec2 newpos = inc_pos(pos.block[i], pos.chunk[i]);
-		pos.block[i] = newpos[0];
-		pos.chunk[i] = newpos[1];
-	}
-	
-	return pos;
-}
-
-block_position block_position_create(glm::ivec3 block, glm::ivec3 chunk){
-	for(int i = 0; i < 3; i++){
-//		pos.block[i] += offset[i];
-		glm::ivec2 newpos = inc_pos(block[i], chunk[i]);
-		block[i] = newpos[0];
-		chunk[i] = newpos[1];
-	}
-	
-	struct block_position ret { .chunk = chunk, .block = block};
-	
-	return ret;
-}
-
 Chunk& Chunk::operator=(Chunk&& t){
 	if(this != &t){
 		mesh = std::move(t.mesh);
@@ -252,13 +215,14 @@ std::list<propagateParam> Chunk::sunlightPass(int mask[size][size], bool& allDar
 //						const int size2 = size;
 //						std::tie(chpos, in_chpos) = toChunkCoords(new_poses[i], size2);
 				
-						spread_queue.push_back(
-							(struct propagateParam){
-								.position = block_position_create(glm::ivec3(x, y, z) + new_poses[i], gridOffset), //(struct block_position) {.chunk = chpos, .block = in_chpos},
-//								.position = (struct block_position) {.chunk = chpos, .block = in_chpos},
-								.light_value = 0x100
-							}
-						);
+//						spread_queue.push_back(
+//							(struct propagateParam){
+//								.position = block_position_create(glm::ivec3(x, y, z) + new_poses[i], gridOffset), //(struct block_position) {.chunk = chpos, .block = in_chpos},
+////								.position = (struct block_position) {.chunk = chpos, .block = in_chpos},
+//								.light_value = 0x100
+//							}
+//						);
+						spread_queue.push_back(propagateParam(block_position(glm::ivec3(x, y, z) + new_poses[i], gridOffset), 0x100));
 					}
 				}
 			}
@@ -604,11 +568,6 @@ std::tuple<region_dtype*, int> Chunk::giveData(){
 std::list<propagateParam> Chunk::getEmmitedLightFromSide(Direction side){
 	std::list<propagateParam> out;
 	
-//	if(side == Direction::FRONT || side == Direction::BACK)
-//		return out;
-	
-//	const std::array<region_dtype, Chunk::size * Chunk::size> blocks = getSide(side);
-	
 	int norm = 0;
 	int slice = 0;
 	if(side == Direction::FRONT || side == Direction::BACK){
@@ -634,39 +593,16 @@ std::list<propagateParam> Chunk::getEmmitedLightFromSide(Direction side){
 	for(cursor[biTan] = 0; cursor[biTan] < size; cursor[biTan]++, y++){
 		int x = 0;
 		for(cursor[tan] = 0; cursor[tan] < size; cursor[tan]++, x++){
-//			const region_dtype& block = blocks[y * size + x];
 			int index = cursor.x + cursor.y * size + cursor.z * size * size;
 			const region_dtype& block = data[data_offset + index];
 			region_dtype light = block & 0xf00;
-//			if((light)){ && ((block & 0xff) == 0)){
-//			if(worldOffset.x == 48 && worldOffset.y == 0 && worldOffset.z == 0){
-//				printf("%4x ", block);
-//			}
 			
 			if((block & 0xff) == 0){
 				light += 0x100;
-//				const int size2 = size;
-//				glm::ivec3 chpos, in_chpos; // temp for testing
-//				std::tie(chpos, in_chpos) = toChunkCoords(worldOffset + cursor + normal, size2); // temp for testing
-				out.push_back(
-					(struct propagateParam){
-						.position = block_position_create(cursor + normal, gridOffset), //(struct block_position) {.chunk = chpos, .block = in_chpos},
-						.light_value = light
-					}
-				);
-				
-				
-//				out.push_back((struct propagateParam){
-//					.position = worldOffset + cursor + normal,
-//					.light_value = light
-//				});
+				out.push_back(propagateParam(block_position(cursor + normal, gridOffset), light));
 			}
 		}
-//		if(worldOffset.x == 48 && worldOffset.y == 0 && worldOffset.z == 0){
-//			printf("\n");
-//		}
 	}
-	
 	
 	return out;
 }

@@ -25,17 +25,54 @@ struct array_deleter{
 
 typedef unsigned short region_dtype; // Should probably be struct, for easier access to light and block info.
 #define block_type(x) ((x) & 0xff)
-#define block_light(x) ((x) >> 8)
+#define block_light(x) ((x) & 0xff00)
 
 
 struct block_position{
 	glm::ivec3 chunk;
 	glm::ivec3 block;
+	
+	block_position(glm::ivec3 block, glm::ivec3 chunk): block{block}, chunk{chunk}{
+		this->verify_position();
+	}
+	
+	block_position& operator+= (const glm::ivec3& block_offset){
+		this->block += block_offset;
+		this->verify_position();
+		
+		return *this;
+	}
+	
+	block_position operator+ (const glm::ivec3& block_offset){
+		return block_position(block + block_offset, chunk);
+	}
+	
+private:
+	void verify_position(){
+		for(int i = 0; i < 3; i++){
+			auto [b, c] = this->inc_pos(block[i], chunk[i]);
+//			printf("%d bc: %d %d\n", i, b, c);
+			block[i] = b;
+			chunk[i] = c;
+		}
+	}
+	
+	std::pair<int, int> inc_pos(int block, int chunk){
+		int size = 16;//Chunk::size; // Make some global chunk size reference.
+	
+		chunk += (block >= size) -(block < 0);
+		block &= (size - 1); // ONLY IF SIZE IS POWER OF 2!!! Use expression below in other cases.
+//		block = 15 * (block < 0) + block * (block > 0 && block < size);
+		
+		return {block, chunk};
+	}
 };
 
 struct propagateParam{
 	block_position position;
 	region_dtype light_value;
+	
+	propagateParam(block_position position, region_dtype light_value): position{position}, light_value{light_value} {}
 };
 
 //struct propagateParam{ // change to something with light (will be also useful when propagating light emited by blocks)

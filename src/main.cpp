@@ -80,9 +80,16 @@ int main(void){
 //	
 //	
 //	p = calculate_position2(p, glm::ivec3(1, 0, 0));
-//	
+////	
 //	printf("chunk: %d %d %d, \nblock: %d %d %d\n", p.chunk.x, p.chunk.y, p.chunk.z, p.block.x, p.block.y, p.block.z);
-//
+
+//	block_position a(glm::ivec3(0, 15, 0), glm::ivec3(0, 0, 0));
+//	
+//	printf("block: %d %d %d, chunk: %d %d %d\n", a.block.x, a.block.y, a.block.z, a.chunk.x, a.chunk.y, a.chunk.z);
+////	a += glm::ivec3(0, -1, 0);
+//	a = a + glm::ivec3(0, 1, 0);
+//	printf("block: %d %d %d, chunk: %d %d %d\n", a.block.x, a.block.y, a.block.z, a.chunk.x, a.chunk.y, a.chunk.z);
+//	
 //	return 0;
 	
 //	srand(time(NULL));
