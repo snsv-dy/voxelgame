@@ -47,6 +47,8 @@ int processInput(GLFWwindow* window){
 			controls->placing_block_type = 2;
 		}else if(glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS){
 			controls->placing_block_type = 3;
+		}else if(glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS){
+			controls->placing_block_type = 4;
 		}
 	}else{
 		if(glfwGetKey(window, GLFW_KEY_1) == GLFW_RELEASE || glfwGetKey(window, GLFW_KEY_2) == GLFW_RELEASE || glfwGetKey(window, GLFW_KEY_3) == GLFW_RELEASE){

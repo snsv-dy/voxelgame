@@ -39,10 +39,13 @@ void main(){
 	float y = float(block_param >> 20) / 15.0f;
 	float x = float((block_param & 0xf0000) >> 16) / 15.0f;
 	
-	int global_light = (block_param >> 24);// & 0xf;
+	int global_light = (block_param >> 24) & 0xf;
 	float light_intensity = float(15 - global_light) / 20.0f + 0.25f;
 	
-	FragColor = texture(blockTexture, texCoordClip) * vec4(vec3(ao_test), 1.0f) * vec4(vec3(light_intensity), 1.0f);
+	int block_light = ((block_param >> 24) & 0xf0) >> 4;
+	float light_intensity2 = float(15 - block_light) / 20.0f + 0.25f;
+	
+	FragColor = texture(blockTexture, texCoordClip) * vec4(vec3(ao_test), 1.0f) * vec4(vec3(light_intensity2), 1.0f);
 	//FragColor = texture(blockTexture, texCoordClip) * vec4(vec3(ao_color_debug), 1.0f);
 }
 

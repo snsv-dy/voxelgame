@@ -222,6 +222,7 @@ int opengl_context_scope(GLFWwindow *window)
 	// Make greedy meshing work with lightning!
 	// Change .h files to .hpp*
 	// Split worldProvider to 2 files.
+	// Propagating dark works a little bit too well.
 	// 
 	
 	
@@ -257,7 +258,7 @@ int opengl_context_scope(GLFWwindow *window)
 		sprintf(textBuffer, "cursor  : x: %2d, y: %2d, z: %2d ", controls.cursor_pos.x, controls.cursor_pos.y, controls.cursor_pos.z);
 		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
 		
-		sprintf(textBuffer, "block under cursor: [%d, %d]", block_under_cursor & 0xff, block_under_cursor >> 8);
+		sprintf(textBuffer, "block under cursor: [%d, %x]", block_under_cursor & 0xff, block_under_cursor >> 8);
 		renderText(fontmesh1, std::string(textBuffer), 20, 90, 0.5);
 		
 		glm::ivec3 chpos;

@@ -121,6 +121,7 @@ void Chunk::changeBlock(const int& block_type, const glm::ivec3& data_pos, Block
 	
 	if(action == BlockAction::DESTROY){
 		data[data_offset + arr_index] &= 0xff00;
+		printf("Chunk.cpp 123 destroy block, data: %x\n", data[data_offset + arr_index]);
 	}else if(block_type(data[data_offset + arr_index]) == 0){
 		data[data_offset + arr_index] |= block_type;
 	}
@@ -181,9 +182,9 @@ std::list<propagateParam> Chunk::sunlightPass(int mask[size][size], bool& allDar
 					mask[z][x] = 0xf00;
 				}
 				
-				block &= 0xff | mask[z][x];
+				block &= 0xf0ff | mask[z][x];
 				
-				if((block & 0xff00) < 0xf00){
+				if((block & 0xf00) < 0xf00){
 					allDark = false;
 				}
 			}
@@ -513,7 +514,12 @@ std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData()
 						if(top){
 							texid |= 0x100;
 						}
-						texid |= ((prev_layer[y][x] & 0xff00)) << 16;
+						
+//						if(gridOffset.x == 0 && gridOffset.y == 0 && gridOffset.z == 0 && (prev_layer[y][x] & 0xf000) != 0){
+//							printf("torch != 0: %x\n", prev_layer[y][x] & 0xf000);
+//						}
+						
+						texid |= ((prev_layer[y][x] & 0xff00)) << 16; // this is the light.
 						
 						texid |= (y << 4 | x) << 16; // debugging info
 						

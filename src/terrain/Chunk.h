@@ -10,6 +10,10 @@
 
 class WorldLoader;
 
+enum class LightType {
+	Sun,
+	Block
+};
 
 enum class Direction {
 	LEFT,
