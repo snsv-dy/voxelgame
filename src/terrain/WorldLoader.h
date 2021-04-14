@@ -11,6 +11,8 @@
 #include <glm/gtx/norm.hpp>
 //#include <mutex>
 
+void inline disperseLight(block_position pos, std::list<propagateParam>& lights, region_dtype light_value);
+
 // used in light propagation
 const glm::ivec3 neighbouring_offsets[6] { 
 	glm::ivec3(-1, 0, 0),
@@ -62,6 +64,7 @@ private:
 	std::list<propagateParam> updateSunlightInColumn(int x, int z);
 	std::set<glm::ivec3, compareVec> propagateLight(std::list<propagateParam>& lights, const LightType& type = LightType::Sun);
 	std::set<glm::ivec3, compareVec> propagateDark(std::list<propagateParam> darks, const LightType& type = LightType::Sun);
+	void updateLightSource(region_dtype& block, block_position& pos, region_dtype intensity, bool placed);
 };
 
 #endif // WORLDLOADER_H
