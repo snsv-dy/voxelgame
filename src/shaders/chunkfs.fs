@@ -10,7 +10,8 @@ flat in int block_param;
 in float ao_test;
 in vec3 ao_color_debug;
 
-vec3 blocklight_color = vec3(1.0f, 1.0f, 1.0f);
+//vec3 blocklight_color = vec3(1.0f, 1.0f, 1.0f);
+vec3 blocklight_color = vec3(1.0f, 1.0f, 0.6f);
 
 void main(){
 	
@@ -42,18 +43,19 @@ void main(){
 	float x = float((block_param & 0xf0000) >> 16) / 15.0f;
 	
 	int sun_value = (block_param >> 24) & 0xf;
-	float sun_intensity = float(15 - sun_value) / 20.0f + 0.25f;
+	float sun_intensity = float(sun_value) / 20.0f + 0.25f;
 	vec3 sun_light = vec3(sun_intensity);
 	
 	int block_value = ((block_param >> 28) & 0xf);
-	float block_intensity = float(15 - block_value) / 20.0f + 0.25f;
+	float block_intensity = float(block_value) / 20.0f + 0.25f;
 	vec3 block_light = blocklight_color * block_intensity;
 	
 	vec3 final_light = max(block_light, sun_light);
+	
 	//float final_light = (, block_intensity);
 	
 	FragColor = texture(blockTexture, texCoordClip) * vec4(vec3(ao_test), 1.0f) * vec4(final_light, 1.0f);
-	//FragColor = texture(blockTexture, texCoordClip) * vec4(vec3(ao_color_debug), 1.0f);
+	//FragColor = texture(blockTexture, texCoordClip) * vec4(vec3(ao_test), 1.0f) * vec4(sun_light, 1.0f);
 }
 
 /*

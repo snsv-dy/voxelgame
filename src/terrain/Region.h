@@ -27,6 +27,9 @@ typedef unsigned short region_dtype; // Should probably be struct, for easier ac
 #define block_type(x) ((x) & 0xff)
 #define block_light(x) ((x) & 0xff00)
 
+#define getSunLight(x) ((x) & 0xf00)
+#define getBlockLight(x) ((x) & 0xf000)
+#define getBlockType(x) ((x) & 0xff)
 
 struct block_position{
 	glm::ivec3 chunk;

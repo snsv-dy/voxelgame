@@ -222,7 +222,7 @@ int opengl_context_scope(GLFWwindow *window)
 	// Make greedy meshing work with lightning!
 	// Change .h files to .hpp*
 	// Split worldProvider to 2 files.
-	// Propagating dark works a little bit too well.
+	// Reverse light values. ( 0 should be no light)
 	// 
 	
 	

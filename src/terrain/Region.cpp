@@ -148,7 +148,7 @@ void Region::genChunk(int x, int y, int z){
 //				char value = ((Y) <= abs( ( (X+8) % 16) - 8)) + 16 && ((Y) <= abs((Z+8) % 16 - 8)) + 16 && ((Y) >= -abs( ( (X+8) % 16) - 8)) + 16 && ((Y) >= -abs((Z+8) % 16 - 8)) + 16;
 				
 //				region_dtype light_value = (rand() & 0xf) << 8;//(rand() & 0xf) << 8;
-				region_dtype light_value = 0xff00;
+				region_dtype light_value = 0x0000;
 //				if(X < 16 && Z < 16 && (X + Z < 15))
 //					light_value = ((X + Z) & 0xf) << 8;//(rand() & 0xf) << 8;
 				

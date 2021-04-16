@@ -122,7 +122,7 @@ void Chunk::changeBlock(const int& block_type, const glm::ivec3& data_pos, Block
 	if(action == BlockAction::DESTROY){
 		data[data_offset + arr_index] &= 0xff00;
 		printf("Chunk.cpp 123 destroy block, data: %x\n", data[data_offset + arr_index]);
-	}else if(block_type(data[data_offset + arr_index]) == 0){
+	}else if(getBlockType(data[data_offset + arr_index]) == 0){
 		data[data_offset + arr_index] |= block_type;
 	}
 	
@@ -178,13 +178,14 @@ std::list<propagateParam> Chunk::sunlightPass(int mask[size][size], bool& allDar
 				int index = z * size * size + y * size + x;
 				region_dtype& block = data[data_offset + index];
 				
-				if((block & 0xff) != 0){
-					mask[z][x] = 0xf00;
+				if(getBlockType(block) != 0){
+					mask[z][x] = 0;
 				}
 				
-				block &= 0xf0ff | mask[z][x];
+				block &= 0xf0ff;
+				block |= mask[z][x];
 				
-				if((block & 0xf00) < 0xf00){
+				if(getSunLight(block) > 0){
 					allDark = false;
 				}
 			}
@@ -200,7 +201,7 @@ std::list<propagateParam> Chunk::sunlightPass(int mask[size][size], bool& allDar
 			for(int x = 0; x < size; x++){
 				int index = z * size * size + y * size + x;
 				region_dtype& block = data[data_offset + index];
-				if(mask[z][x] == 0 && (block & 0xff) == 0){
+				if(mask[z][x] != 0 && getBlockType(block) == 0){
 //					glm::ivec3 base = gridOffset * size + glm::ivec3(x, y, z);
 					const glm::ivec3 new_poses[6] = {
 						glm::ivec3(-1, 0, 0),
@@ -212,18 +213,7 @@ std::list<propagateParam> Chunk::sunlightPass(int mask[size][size], bool& allDar
 					};
 					
 					for(int i = 0; i < 6; i++){
-//						glm::ivec3 chpos, in_chpos; // temp
-//						const int size2 = size;
-//						std::tie(chpos, in_chpos) = toChunkCoords(new_poses[i], size2);
-				
-//						spread_queue.push_back(
-//							(struct propagateParam){
-//								.position = block_position_create(glm::ivec3(x, y, z) + new_poses[i], gridOffset), //(struct block_position) {.chunk = chpos, .block = in_chpos},
-////								.position = (struct block_position) {.chunk = chpos, .block = in_chpos},
-//								.light_value = 0x100
-//							}
-//						);
-						spread_queue.push_back(propagateParam(block_position(glm::ivec3(x, y, z) + new_poses[i], gridOffset), 0x100));
+						spread_queue.push_back(propagateParam(block_position(glm::ivec3(x, y, z) + new_poses[i], gridOffset), 0xe00));
 					}
 				}
 			}
@@ -601,10 +591,10 @@ std::list<propagateParam> Chunk::getEmmitedLightFromSide(Direction side){
 		for(cursor[tan] = 0; cursor[tan] < size; cursor[tan]++, x++){
 			int index = cursor.x + cursor.y * size + cursor.z * size * size;
 			const region_dtype& block = data[data_offset + index];
-			region_dtype light = block & 0xf00;
+			region_dtype light = block & 0xff00;
 			
 			if((block & 0xff) == 0){
-				light += 0x100;
+				light -= 0x100 * ((light & 0xf00) != 0) + 0x1000 * ((light & 0xf000) != 0);
 				out.push_back(propagateParam(block_position(cursor + normal, gridOffset), light));
 			}
 		}
