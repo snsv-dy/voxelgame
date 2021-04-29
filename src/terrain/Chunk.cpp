@@ -593,7 +593,7 @@ std::list<propagateParam> Chunk::getEmmitedLightFromSide(Direction side){
 			const region_dtype& block = data[data_offset + index];
 			region_dtype light = block & 0xff00;
 			
-			if((block & 0xff) == 0){
+			if((block & 0xff) == 0 && ((light & 0xf000) > 0x1000 || (light & 0xf00) > 0x100)){
 				light -= 0x100 * ((light & 0xf00) != 0) + 0x1000 * ((light & 0xf000) != 0);
 				out.push_back(propagateParam(block_position(cursor + normal, gridOffset), light));
 			}

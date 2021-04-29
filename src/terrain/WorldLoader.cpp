@@ -106,14 +106,20 @@ void WorldLoader::updateTerrain(const int& block_type, const glm::ivec3 &pos, Bl
 		chunks[block_pos.chunk].changeBlock(block_type, in_chunk_pos, action);
 //		Region& containing_region = provider.getRegion(pos);
 //		containing_region.modified = true;
+		// Bug is when loading/meshing/most likely calculating sunlight for new chunk with blocklight
+
+		printf("updating blocklight\n");
 		updateBlocklightForBlock(block_pos, action == BlockAction::PLACE);
 		
 		if(block_type == 4 || (block_before & 0xff) == 4){
 			updateLightSource(block, block_pos, 0xb000, action == BlockAction::PLACE);
+			printf("lightsource made\n");
 		}
 		
+		printf("updating sunlight\n");
 		updateSunlightForBlock(block_pos, action == BlockAction::PLACE);
 		
+		printf("lights updated\n");
 		// Not enough adjacent chunks are updated. ( Check -1 0/1 -1 cursor position)
 		
 		// I tried to make it not ugly, but in the end it didn't even matter. :<
@@ -222,7 +228,7 @@ void WorldLoader::updateSunlightForBlock(block_position pos, bool placed){
 			if(!found || (getBlockType(block) != 0 && !first))
 				break;
 			
-			disperseLight(pos, darks, getSunLight(block) - 0x100);
+			disperseLight(pos, darks, getSunLight(block) - 0x100); // tutaj ?
 			
 //			block |= 0xf00;
 			block &= 0xf0ff; // darkens sunlight.
@@ -433,7 +439,9 @@ void WorldLoader::update(glm::vec3 cameraPos){
 //					
 //				printf("Propagating light %d\n", lights_to_propagate.size());
 //				std::set<glm::ivec3, compareVec> chunks_to_updatet = 
+				printf("propagating column\n");
 				propagateLight(lights_to_propagate);
+				printf("propagated column\n");
 //				for(const glm::ivec3& posz :chunks_to_updatet)
 //					chunks_to_update.insert(posz);
 //				printf("Light propagated (affected chunks %d)\n", chunks_to_update.size());
@@ -559,7 +567,7 @@ std::list<propagateParam> WorldLoader::updateSunlightInColumn(int x, int z){
 						lights_to_propagate.insert(lights_to_propagate.end(), side_emit.begin(), side_emit.end());
 					}
 				}
-					
+				
 			}else{
 				break;
 			}
@@ -572,12 +580,13 @@ std::list<propagateParam> WorldLoader::updateSunlightInColumn(int x, int z){
 	return lights_to_propagate;
 }
 
-
+// Don't be an idiot, don't propagate dim lights ( where light_value == 0)!
 std::set<glm::ivec3, compareVec> WorldLoader::propagateLight(std::list<propagateParam>& lights, const LightType& type){
 	
 	std::set<glm::ivec3, compareVec> affected_chunks;
 	
 	printf("%s Propagate list size: %d, ", type == LightType::Block ? "BLOCK" : "SUN  ", lights.size());
+	printf("\n");
 	int insertions = 0;
 	int deletions = 0;
 	
@@ -597,6 +606,8 @@ std::set<glm::ivec3, compareVec> WorldLoader::propagateLight(std::list<propagate
 			
 			region_dtype light_min = 0;
 			region_dtype light = block & light_mask;
+			param.light_value &= light_mask; // Necessary when propagating params returned by Chunk's get emitted light from side.
+											 //	(returns params with both lights).
 			
 			if(getBlockType(block) == 0 && light < param.light_value){
 				block &= ~light_mask; 		// reset light value.
@@ -604,13 +615,14 @@ std::set<glm::ivec3, compareVec> WorldLoader::propagateLight(std::list<propagate
 				
 				chunks_to_update.insert(param.position.chunk);
 				
-				region_dtype next_light_value = param.light_value - light_increment * (param.light_value > 0);
+				region_dtype next_light_value = param.light_value - light_increment;// * (param.light_value > light_increment);
 				
-				if(next_light_value == light_min)
-					continue;
-						
-				disperseLight(param.position, lights, next_light_value);
-				insertions += 6;
+//				if(next_light_value == light_min)
+				if((param.light_value & light_mask) > light_increment){
+					disperseLight(param.position, lights, next_light_value);
+					insertions += 6;
+//					continue;
+				}
 			}
 		}
 		
@@ -663,11 +675,9 @@ std::set<glm::ivec3, compareVec> WorldLoader::propagateDark(std::list<propagateP
 //					propagate dark to neighbours
 //					region_dtype next_light_value = param.light_value - light_increment;
 					if( next_light_value > light_min ){
-						printf("huh1\n");
 						disperseLight(param.position, darks, next_light_value);
 						insertions += 6;
 					}else{
-						printf("huh2\n");
 						// Check if there is some light nearby that should be propagated.
 						// Bug: wall 2x3 block wall 1 block away from light with 8 strength.
 						for(int i = 0; i < 6; i++){

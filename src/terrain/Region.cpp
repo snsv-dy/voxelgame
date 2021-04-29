@@ -163,25 +163,25 @@ void Region::genChunk(int x, int y, int z){
 //				#define MOUNTAIN_DISTANCE 2.0f
 //				float mountain = perlin.noise2D_0_1(fpos.x / MOUNTAIN_DISTANCE, fpos.z / MOUNTAIN_DISTANCE) * MOUNTAIN_SCALE;
 				#define THRESHOLD 0.5f
-//				#define GROUND_LEVEL 40
-				#define GROUND_LEVEL 11
+				#define GROUND_LEVEL 40
+//				#define GROUND_LEVEL 11
 				region_dtype ival = 0;
 				int ypos = worldOffset.y + y;
 //				if(ypos <= GROUND_LEVEL && !((worldOffset.x + x) == 0 && (worldOffset.z + z) == 0)){
 				if(ypos <= GROUND_LEVEL){
 					// light debug
-					ival = 1;
-					if((ypos <= 10 && ypos > 6) || (ypos <= 5 && ypos > 0) || (ypos == 11 && x == 8 && z == 8 && zero))
-						ival = 0;
+//					ival = 1;
+//					if((ypos <= 10 && ypos > 6) || (ypos <= 5 && ypos > 0) || (ypos == 11 && x == 8 && z == 8 && zero))
+//						ival = 0;
 					// light debug end
-//					float cave = perlin.noise3D_0_1(fpos.x, fpos.y, fpos.z);
-//	//				if((ypos) < (GROUND_LEVEL + mountain) && !(cave > THRESHOLD && (ypos < GROUND_LEVEL + 10))){
-//					if(ypos == 0 || cave < THRESHOLD){
-//						ival = 1;
-//						if(ypos < GROUND_LEVEL / 2){
-//							ival = 3;
-//						}
-//					}
+					float cave = perlin.noise3D_0_1(fpos.x, fpos.y, fpos.z);
+	//				if((ypos) < (GROUND_LEVEL + mountain) && !(cave > THRESHOLD && (ypos < GROUND_LEVEL + 10))){
+					if(ypos == 0 || cave < THRESHOLD){
+						ival = 1;
+						if(ypos < GROUND_LEVEL / 2){
+							ival = 3;
+						}
+					}
 				}
 //				char ival = 1;
 //				if ( (cave > THRESHOLD || (worldOffset.y > GROUND_LEVEL && mountain <= THRESHOLD) )){
