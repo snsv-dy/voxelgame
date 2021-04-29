@@ -1,12 +1,14 @@
 #ifndef _CHUNK_H_
 #define _CHUNK_H_
 
-#include "worldProvider.h"
 #include <stdio.h>
-#include "../objects/Mesh.h"
-#include <glm/glm.hpp>
 #include <vector>
 #include <memory>
+
+#include "TerrainConfig.hpp"
+#include "worldProvider.h"
+#include "../objects/Mesh.h"
+#include <glm/glm.hpp>
 
 class WorldLoader;
 
@@ -54,8 +56,8 @@ public:
 //		return this->gridOffset;
 //	}
 
-	static const int size = 16;
-	static const int chunkSize = 16;
+//	static const int chunkSize = 16;
+	static const int size = TerrainConfig::ChunkSize;
 	static constexpr int size_cubed = size * size * size;
 	static constexpr int size_squared = size * size;
 	

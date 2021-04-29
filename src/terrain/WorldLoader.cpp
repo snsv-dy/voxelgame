@@ -320,21 +320,12 @@ void WorldLoader::update(glm::vec3 cameraPos){
 					for(int x = -radius; x <= radius; x++){
 						glm::ivec3 pos = glm::ivec3(x + chpos.x, y + chpos.y, z + chpos.z);
 	
-						if(chunks.find(pos) == chunks.end() && provider.isThereAChunk(pos * chunkSize)){
-							
-							Region& region = provider.getRegion(pos * chunkSize);
-//							std::shared_ptr<char[]> chunk_data = region.getData();
-							region_dtype* chunk_data = region.getData();
-							int data_offset = region.getChunkOffset(pos * chunkSize);
-//							Chunk t(projection, view, textures, shParams, pos, this, chunk_data, data_offset);
-							chunks[pos] = Chunk(shParams.model, pos, this, chunk_data, data_offset);
-							chunks_to_update.insert(pos);
-//							Chunk& ch = chunks[pos];
-//							int mask[Chunk::size][Chunk::size] = {0};
-//							ch.sunlightPass(mask);
-//							if( y > highest_y){
-//								highest_y = y;
-//							}
+						if(chunks.find(pos) == chunks.end()){
+							auto [chunk_data, data_offset] = provider.getChunkData(pos);
+							if(chunk_data != nullptr){
+								chunks[pos] = Chunk(shParams.model, pos, this, chunk_data, data_offset);
+								chunks_to_update.insert(pos);
+							}
 						}
 					}
 				}
@@ -346,41 +337,12 @@ void WorldLoader::update(glm::vec3 cameraPos){
 				for(int x = -radius; x <= radius; x++){
 					std::list<propagateParam> tpropagate = updateSunlightInColumn(x, z);
 					lights_to_propagate.insert(lights_to_propagate.end(), tpropagate.begin(), tpropagate.end());
-//					end
-					
-//					for(int y = -radius; y <= radius; y++){
-//						if(auto it = chunks.find(glm::ivec3(x, y, z)); it != chunks.end()){
-//							Chunk& a = it->second;
-//							a.update_data();
-//						}
-//					}
 				}
 			}
 			
-			//std::set<glm::ivec3, compareVec> chunks_to_update = 
 			propagateLight(lights_to_propagate);
-			
-//			for(int z = -radius; z <= radius; z++){
-//				for(int x = -radius; x <= radius; x++){
-//					for(int y = -radius; y <= radius; y++){
-//						if(auto it = chunks.find(glm::ivec3(x, y, z)); it != chunks.end()){
-//							Chunk& a = it->second;
-//							a.update_data();
-//						}
-//					}
-//				}
-//			}
-//			for(int z = -radius; z <= radius; z++){
-//				for(int y = -radius; y <= radius; y++){
-//					for(int x = -radius; x <= radius; x++){
-//						if(chunks.find(pos) == chunks.end() && provider.isThereAChunk(pos * chunkSize)){
-//					}
-//				}
-//			}
 		}else{
 			std::set<glm::ivec3, compareVec> light_needed;
-//			std::list<glm::ivec3> light_needed;
-			
 			printf("change: %d %d %d\n", change[0], change[1], change[2]);
 			
 			for(int i = 0; i < 3; i++){
@@ -405,75 +367,26 @@ void WorldLoader::update(glm::vec3 cameraPos){
 							cursor[norm] *= back;
 							glm::ivec3 pos = cursor + chpos;
 							cursor[norm] *= back;
-							bool cond1 = chunks.find(pos) == chunks.end();
-							bool cond2 = provider.isThereAChunk(pos * chunkSize);
-							if(cond1 && cond2){
-								
-								Region& region = provider.getRegion(pos * chunkSize);
-//								std::shared_ptr<char[]> chunk_data = region.getData();
-								region_dtype* chunk_data = region.getData();
-								int data_offset = region.getChunkOffset(pos * chunkSize);
-//								Chunk t(projection, view, textures, shParams, pos, this, chunk_data, data_offset);
-		//						t.setLoader(this);
-								
-								chunks[pos] = Chunk(shParams.model, pos, this, chunk_data, data_offset);
-								light_needed.insert(glm::ivec3(pos.x, 0, pos.z));
-								chunks_to_update.insert(pos);
-//								chunks[pos].update_data();
-//								if( y > highest_y){
-//									highest_y = y;
-//								}
+//							bool cond1 = chunks.find(pos) == chunks.end();
+//							bool cond2 = provider.isThereAChunk(pos * chunkSize);
+							if(chunks.find(pos) == chunks.end()){
+								auto [chunk_data, data_offset] = provider.getChunkData(pos);
+								if(chunk_data != nullptr){
+									chunks[pos] = Chunk(shParams.model, pos, this, chunk_data, data_offset);
+									light_needed.insert(glm::ivec3(pos.x, 0, pos.z));
+									chunks_to_update.insert(pos);
+								}
 							}
-//							else{
-//								printf("Chunk is not visible becouse: %d %d\n", cond1, cond2);
-//							}
 						}
 					}
 				}
 				
-				printf("Light needed: %d\n", light_needed.size());
 				for(const glm::ivec3& pos : light_needed){
 					std::list<propagateParam> tpropagate = updateSunlightInColumn(pos.x, pos.z);
 					lights_to_propagate.insert(lights_to_propagate.end(), tpropagate.begin(), tpropagate.end());
 				}
-//					
-//				printf("Propagating light %d\n", lights_to_propagate.size());
-//				std::set<glm::ivec3, compareVec> chunks_to_updatet = 
-				printf("propagating column\n");
-				propagateLight(lights_to_propagate);
-				printf("propagated column\n");
-//				for(const glm::ivec3& posz :chunks_to_updatet)
-//					chunks_to_update.insert(posz);
-//				printf("Light propagated (affected chunks %d)\n", chunks_to_update.size());
 				
-//				for(const glm::ivec3& pos : chunks_to_update){
-//					if(auto it = chunks.find(pos); it != chunks.end()){
-//						it->second.update_data();
-//					}
-//				}
-//here
-//					
-//					cursor[norm] = 0;
-//					for(cursor[biTan] = -radius; cursor[biTan] <= radius; cursor[biTan]++){
-//						for(cursor[tan] = -radius; cursor[tan] <= radius; cursor[tan]++){
-//							cursor[norm] *= back;
-//							glm::ivec3 pos = cursor + chpos;
-//							cursor[norm] *= back;
-//							
-//							if(auto it = chunks.find(pos); it != chunks.end()){
-//								it->second.update_data();
-//							}
-//						}
-//					}
-//here
-//					for(const glm::ivec3& column : light_needed){
-//						for(int x = -radius; x <= radius; x++){
-//							if(auto it = chunks.find(glm::ivec3(x, y, z)); it != chunks.end()){
-//								Chunk& a = it->second;
-//								a.update_data();
-//							}
-//						}
-//					}
+				propagateLight(lights_to_propagate);
 			}
 		}
 		

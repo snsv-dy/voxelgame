@@ -7,8 +7,9 @@
 #include <fstream>
 #include <memory>
 #include <vector>
-//#include <queue>
+#include <set>
 #include <list>
+#include "TerrainConfig.hpp"
 //#include "vec3Comp.h"
 //#incldue "basic_util.h"
 #include "../utilities/basic_util.h"
@@ -23,7 +24,7 @@ struct array_deleter{
 	}
 };
 
-typedef unsigned short region_dtype; // Should probably be struct, for easier access to light and block info.
+//typedef unsigned short region_dtype; // Should probably be struct, for easier access to light and block info.
 #define block_type(x) ((x) & 0xff)
 #define block_light(x) ((x) & 0xff00)
 
@@ -31,45 +32,6 @@ typedef unsigned short region_dtype; // Should probably be struct, for easier ac
 #define getBlockLight(x) ((x) & 0xf000)
 #define getBlockType(x) ((x) & 0xff)
 
-struct block_position{
-	glm::ivec3 chunk;
-	glm::ivec3 block;
-	
-	block_position(glm::ivec3 block, glm::ivec3 chunk): block{block}, chunk{chunk}{
-		this->verify_position();
-	}
-	
-	block_position& operator+= (const glm::ivec3& block_offset){
-		this->block += block_offset;
-		this->verify_position();
-		
-		return *this;
-	}
-	
-	block_position operator+ (const glm::ivec3& block_offset){
-		return block_position(block + block_offset, chunk);
-	}
-	
-private:
-	void verify_position(){
-		for(int i = 0; i < 3; i++){
-			auto [b, c] = this->inc_pos(block[i], chunk[i]);
-//			printf("%d bc: %d %d\n", i, b, c);
-			block[i] = b;
-			chunk[i] = c;
-		}
-	}
-	
-	std::pair<int, int> inc_pos(int block, int chunk){
-		int size = 16;//Chunk::size; // Make some global chunk size reference.
-	
-		chunk += (block >= size) -(block < 0);
-		block &= (size - 1); // ONLY IF SIZE IS POWER OF 2!!! Use expression below in other cases.
-//		block = 15 * (block < 0) + block * (block > 0 && block < size);
-		
-		return {block, chunk};
-	}
-};
 
 struct propagateParam{
 	block_position position;
@@ -77,7 +39,6 @@ struct propagateParam{
 	
 	propagateParam(block_position position, region_dtype light_value): position{position}, light_value{light_value} {}
 };
-
 //struct propagateParam{ // change to something with light (will be also useful when propagating light emited by blocks)
 //	glm::ivec3 region_pos;
 //	glm::ivec3 position; // In region
@@ -101,7 +62,8 @@ class Region{
 private:
 	std::string fileName = std::string("");
 	
-	std::vector<glm::ivec3> loaded_chunks;
+//	std::vector<glm::ivec3> loaded_chunks;
+	std::set<glm::ivec3, compareVec> loaded_chunks;
 	char terrain(int x, int y, int z);
 	
 	// xyz - position of a chunk inside of region used only in generate
@@ -114,8 +76,8 @@ private:
 	region_dtype ref0 = 0;
 public:
 	inline static const std::string directory = std::string("../world3");
-	static const int reg_size = 4;
-	static const int chunk_size = 16;
+	static const int reg_size = TerrainConfig::RegionSize;
+	static const int chunk_size = TerrainConfig::ChunkSize;
 	static const unsigned int region_size = chunk_size * reg_size;//worldProvider::regionSize;
 	static const unsigned int data_size = region_size * region_size * region_size;
 	
@@ -135,7 +97,7 @@ public:
 //	void propagatePendingLight();
 	
 	region_dtype& valueAt(int x, int y, int z);
-	const std::vector<glm::ivec3>& getLoadedChunks();
+//	const std::vector<glm::ivec3>& getLoadedChunks();
 	int getChunkOffset(glm::ivec3 pos);
 	region_dtype* getData();
 	

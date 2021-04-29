@@ -92,7 +92,7 @@ Chunk& Chunk::operator=(Chunk&& t){
 
 Chunk::Chunk(const unsigned int& model_location, glm::ivec3 offset, WorldLoader *loaderPtr, region_dtype* data, int data_offset){
 	parentLoader = loaderPtr;
-	float fchunkSize = (float)chunkSize;
+//	float fchunkSize = (float)chunkSize;
 	this->worldOffset = offset * this->size;//glm::vec3(offset.x * fchunkSize, offset.y * fchunkSize, offset.z * fchunkSize);
 	
 	this->gridOffset = offset;
@@ -228,7 +228,7 @@ region_dtype Chunk::valueAt(const glm::ivec3& pos){
 		return 0;
 	
 	
-	if((pos.x < 0 || pos.x >= chunkSize) || (pos.y < 0 || pos.y >= chunkSize) || (pos.z < 0 || pos.z >= chunkSize)){
+	if((pos.x < 0 || pos.x >= size) || (pos.y < 0 || pos.y >= size) || (pos.z < 0 || pos.z >= size)){
 //		return 0; // AO DEBUG
 		
 		if(parentLoader != nullptr)

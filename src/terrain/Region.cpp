@@ -89,7 +89,7 @@ Region::Region(glm::ivec3 pos){
 //	fileName = "-1.0.-1.reg";
 	std::ifstream file_exists(directory + "/" + fileName);
 	
-	generate();
+//	generate();
 //		if(!file_exists.good()){
 //			// generate region
 //			generate();
@@ -108,7 +108,6 @@ struct FrequencyParams{
 	double frequency, frequency_inc;
 };
 
-// xyz - position of a chunk inside of region used only in generate
 void Region::genChunk(int x, int y, int z){
 	int chunk_cubed = chunk_size * chunk_size * chunk_size;
 	int chunk_squared = chunk_size * chunk_size;
@@ -627,31 +626,73 @@ int Region::getChunkOffset(glm::ivec3 pos){
 	// odejmij od współrzędnych position * chsize * regsize
 //	bool print = pos.z < 0;
 	
-	pos -= position * static_cast<int>(region_size);
+	glm::ivec3 local_pos = pos - (this->position * static_cast<int>(region_size));
 	
-	int chunk_cubed = chunk_size * chunk_size * chunk_size;
+	const int chunk_cubed = chunk_size * chunk_size * chunk_size;
 	
-	int cx = (pos.x / chunk_size) * (chunk_cubed);
-	int cy = (pos.y / chunk_size) * (chunk_cubed * reg_size);
-	int cz = (pos.z / chunk_size) * (chunk_cubed * (reg_size * reg_size));
+	int cx = (local_pos.x / chunk_size);
+	int cy = (local_pos.y / chunk_size);
+	int cz = (local_pos.z / chunk_size);
 	
-	int index = cx + cy + cz;
+	int data_x = cx * (chunk_cubed);
+	int data_y = cy * (chunk_cubed * reg_size);
+	int data_z = cz * (chunk_cubed * (reg_size * reg_size));
+	
+	int index = data_x + data_y + data_z;
 	if(index < 0 || index >= data_size){
 //		if(print)
 //			printf("nochunk %02d %02d %02d, pos: %d\n", x, y, z, pos);
 		return -1;
 	}
 	
+	if(loaded_chunks.find(pos) == loaded_chunks.end()){
+		// generate
+//		printf("generating: %2d %2d %2d\n", cx, cy, cz);
+		genChunk(cx, cy, cz);		
+		loaded_chunks.insert(pos);
+	}
+	
 	return index;
 }
+
+//
+//
+//
+//void Region::generate(){
+//	for(int z = 0; z < reg_size; z++){
+//		for(int y = 0; y < reg_size; y++){
+//			for(int x = 0; x < reg_size; x++){
+//				genChunk(x, y, z);
+//			}
+//		}
+//	}
+//	
+////	for(int s = 0; s < 6; s++){
+////		for(int z = 0; z < chunk_size
+////	}
+//	
+//	brand_new = true;
+//}
+//// xyz - position of a chunk inside of region used only in generate
+//void Region::genChunk(int x, int y, int z){
+//	int chunk_cubed = chunk_size * chunk_size * chunk_size;
+//	int chunk_squared = chunk_size * chunk_size;
+////		glm::ivec3 offset = glm::ivec3(x, y, z);
+//	int dataoffset = x * chunk_cubed + y * (chunk_cubed * reg_size) + z * (chunk_cubed * reg_size * reg_size);
+//	
+//	glm::ivec3 worldOffset = glm::ivec3(x * chunk_size, y * chunk_size, z * chunk_size);
+//	worldOffset += position * reg_size * chunk_size;// xyz - position of a chunk inside of region used only in generate
+//
+//
+//
 
 region_dtype* Region::getData(){
 	return this->data;
 }
 
-const std::vector<glm::ivec3>& Region::getLoadedChunks(){
-	return this->loaded_chunks;
-}
+//const std::vector<glm::ivec3>& Region::getLoadedChunks(){
+//	return this->loaded_chunks;
+//}
 
 Region::~Region(){
 	if(type == RegionType::NORMAL_REGION && modified){
