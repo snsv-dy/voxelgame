@@ -47,7 +47,7 @@ public:
 	const int radius = 2;
 	const int unloadRadius = (radius * 2);
 	const int unloadRadiusSquared = unloadRadius*unloadRadius;
-	const int chunkSize = 16;
+	const int chunkSize = TerrainConfig::ChunkSize;
 	
 	void update(glm::vec3 cameraPos);
 	region_dtype valueAt(int x, int y, int z);

@@ -304,7 +304,7 @@ void WorldLoader::update(glm::vec3 cameraPos){
 	
 	cameraPos.y = 0.0f;
 	
-	std::tie(chpos, std::ignore) = toChunkCoords(cameraPos, 16);
+	std::tie(chpos, std::ignore) = toChunkCoords(cameraPos, TerrainConfig::ChunkSize);
 	
 	if(last_camera_pos != chpos || first){
 		provider.update(chpos);

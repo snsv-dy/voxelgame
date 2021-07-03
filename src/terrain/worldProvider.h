@@ -25,7 +25,7 @@ class worldProvider{
 	inline static const std::string world_path = "../world2";
 	
 public:
-	static const int chunkSize = 16;
+	static const int chunkSize = TerrainConfig::ChunkSize;
 	static constexpr int regionN = Region::reg_size;
 	static constexpr int regionSize = regionN * chunkSize; // Region size in single blocks, not in chunks.
 	static const int regionHeight = regionN * chunkSize;

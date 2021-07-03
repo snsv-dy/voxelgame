@@ -89,7 +89,7 @@ Region::Region(glm::ivec3 pos){
 //	fileName = "-1.0.-1.reg";
 	std::ifstream file_exists(directory + "/" + fileName);
 	
-//	generate();
+	generate();
 //		if(!file_exists.good()){
 //			// generate region
 //			generate();
@@ -645,12 +645,15 @@ int Region::getChunkOffset(glm::ivec3 pos){
 		return -1;
 	}
 	
-	if(loaded_chunks.find(pos) == loaded_chunks.end()){
-		// generate
-//		printf("generating: %2d %2d %2d\n", cx, cy, cz);
-		genChunk(cx, cy, cz);		
-		loaded_chunks.insert(pos);
-	}
+	// This was a failed optimization attempt to generate chunks when they are first loaded.
+	// This could work if when attempting to get not generated block type in meshing, 
+	// instead of returning 0 (which implies empty space) we return block from layer before.
+//	if(loaded_chunks.find(pos) == loaded_chunks.end()){
+//		// generate
+////		printf("generating: %2d %2d %2d\n", cx, cy, cz);
+//		genChunk(cx, cy, cz);		
+//		loaded_chunks.insert(pos);
+//	}
 	
 	return index;
 }

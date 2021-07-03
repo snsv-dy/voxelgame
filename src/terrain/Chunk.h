@@ -56,7 +56,6 @@ public:
 //		return this->gridOffset;
 //	}
 
-//	static const int chunkSize = 16;
 	static const int size = TerrainConfig::ChunkSize;
 	static constexpr int size_cubed = size * size * size;
 	static constexpr int size_squared = size * size;

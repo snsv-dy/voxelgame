@@ -262,7 +262,7 @@ int opengl_context_scope(GLFWwindow *window)
 		renderText(fontmesh1, std::string(textBuffer), 20, 90, 0.5);
 		
 		glm::ivec3 chpos;
-		std::tie(chpos, std::ignore) = toChunkCoords(controls.cursor_pos, 16);
+		std::tie(chpos, std::ignore) = toChunkCoords(controls.cursor_pos, TerrainConfig::ChunkSize);
 		sprintf(textBuffer, "chunk cursor: x: %2d, y: %2d, z: %2d ", chpos.x, chpos.y, chpos.z);
 		renderText(fontmesh1, std::string(textBuffer), 20, 110, 0.5);
 		
