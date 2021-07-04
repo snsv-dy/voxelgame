@@ -71,16 +71,6 @@ char Region::terrain(int x, int y, int z){
 	return 0;
 }
 
-//Region::Region(){
-////	printf("auto made (%d %d %d)\n", position.x, position.y, position.z);
-//	printf("DEFAULT REGION CONSTRUCTOR\n");
-//	this->type = RegionType::NULL_REGION;
-////	this->default_ = true;
-////	this->data = nullptr;
-//	this->position = glm::ivec3(0);
-////	canBeDestroyed = false;
-//}
-
 Region::Region(glm::ivec3 pos){
 	this->position = pos;
 	this->type = RegionType::NORMAL_REGION;

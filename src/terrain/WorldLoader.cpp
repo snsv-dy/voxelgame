@@ -306,96 +306,62 @@ void WorldLoader::update(glm::vec3 cameraPos){
 	
 	std::tie(chpos, std::ignore) = toChunkCoords(cameraPos, TerrainConfig::ChunkSize);
 	
+	std::list<propagateParam> lights_to_propagate;
 	if(last_camera_pos != chpos || first){
 		provider.update(chpos);
 		
 		glm::ivec3 change = chpos - last_camera_pos;
 		glm::ivec3 abs_change = glm::abs(change);
 		
-		int highest_y;
-		
-		if(abs_change.x > 1 || abs_change.y > 1 || abs_change.z > 1 || first){
-			for(int z = -radius; z <= radius; z++){
-				for(int y = -radius; y <= radius; y++){
-					for(int x = -radius; x <= radius; x++){
-						glm::ivec3 pos = glm::ivec3(x + chpos.x, y + chpos.y, z + chpos.z);
-	
-						if(chunks.find(pos) == chunks.end()){
-							auto [chunk_data, data_offset] = provider.getChunkData(pos);
-							if(chunk_data != nullptr){
-								chunks[pos] = Chunk(shParams.model, pos, this, chunk_data, data_offset);
-								chunks_to_update.insert(pos);
-							}
-						}
-					}
-				}
-			}
-			
-			std::list<propagateParam> lights_to_propagate;
-			
-			for(int z = -radius; z <= radius; z++){
-				for(int x = -radius; x <= radius; x++){
-					std::list<propagateParam> tpropagate = updateSunlightInColumn(x, z);
-					lights_to_propagate.insert(lights_to_propagate.end(), tpropagate.begin(), tpropagate.end());
-				}
-			}
-			
-			propagateLight(lights_to_propagate);
-		}else{
-			std::set<glm::ivec3, compareVec> light_needed;
-			printf("change: %d %d %d\n", change[0], change[1], change[2]);
-			
-			for(int i = 0; i < 3; i++){
-				if(change[i] == 0){
-					continue;
-				}
-				
-				int back = change[i];
-				
-				int norm = i;
-				int tan = (norm + 2) % 3;
-				int biTan = (norm + 1) % 3;
-				
-				glm::ivec3 cursor(0);
-				
-				std::list<propagateParam> lights_to_propagate;
-//				std::set<glm::ivec3, compareVec> chunks_to_update;
-					
-				for(cursor[norm] = 0; cursor[norm] < radius; cursor[norm]++){
-					for(cursor[biTan] = -radius; cursor[biTan] <= radius; cursor[biTan]++){
-						for(cursor[tan] = -radius; cursor[tan] <= radius; cursor[tan]++){
-							cursor[norm] *= back;
-							glm::ivec3 pos = cursor + chpos;
-							cursor[norm] *= back;
-//							bool cond1 = chunks.find(pos) == chunks.end();
-//							bool cond2 = provider.isThereAChunk(pos * chunkSize);
-							if(chunks.find(pos) == chunks.end()){
-								auto [chunk_data, data_offset] = provider.getChunkData(pos);
-								if(chunk_data != nullptr){
-									chunks[pos] = Chunk(shParams.model, pos, this, chunk_data, data_offset);
-									light_needed.insert(glm::ivec3(pos.x, 0, pos.z));
-									chunks_to_update.insert(pos);
-								}
-							}
-						}
-					}
-				}
-				
-				for(const glm::ivec3& pos : light_needed){
-					std::list<propagateParam> tpropagate = updateSunlightInColumn(pos.x, pos.z);
-					lights_to_propagate.insert(lights_to_propagate.end(), tpropagate.begin(), tpropagate.end());
-				}
-				
-				propagateLight(lights_to_propagate);
-			}
+		if(abs_change.x > 1 || abs_change.y > 1 || abs_change.z > 1 || first) {
+			abs_change = glm::ivec3(radius * 2);
 		}
+		
+		std::set<glm::ivec3, compareVec> light_needed;
+//		printf("change: %d %d %d\n", change[0], change[1], change[2]);
+		
+		for(int i = 0; i < 3; i++){
+			if(abs_change[i] == 0){
+				continue;
+			}
+			
+			int back = change[i] > 0 ? 1 : -1;
+			
+			int norm = i;
+			int tan = (norm + 2) % 3;
+			int biTan = (norm + 1) % 3;
+			
+			glm::ivec3 cursor(0);
+			
+			int updateRange = radius - abs_change[i];
+			
+			for (cursor[norm] = updateRange; cursor[norm] < radius; cursor[norm]++) {
+				for (cursor[biTan] = -radius; cursor[biTan] <= radius; cursor[biTan]++) {
+					for (cursor[tan] = -radius; cursor[tan] <= radius; cursor[tan]++) {
+						cursor[norm] *= back;
+						glm::ivec3 pos = chpos + cursor;
+						cursor[norm] *= back;
+						
+						if (chunks.find(pos) == chunks.end()) {
+							loadChunk(pos, &light_needed);
+						}
+					}
+				}
+			}
+			
+			for (const glm::ivec3& pos : light_needed) {
+				std::list<propagateParam> tpropagate = updateSunlightInColumn(pos.x, pos.z);
+				lights_to_propagate.insert(lights_to_propagate.end(), tpropagate.begin(), tpropagate.end());
+			}
+			
+		}
+		propagateLight(lights_to_propagate);
 		
 		// Removing chunks
 		for(auto i = chunks.begin(), nexti = i; i != chunks.end(); i = nexti){
 			nexti++;
 			if(ivec3len2(i->first - chpos) > unloadRadiusSquared){
 				glm::ivec3 pos = i->first;
-//				printf("Clearing chunk (%d %d %d)\n", pos.x, pos.y, pos.z);
 				chunks.erase(i);
 			}
 		}
@@ -413,6 +379,18 @@ void WorldLoader::update(glm::vec3 cameraPos){
 		chunks_to_update.clear();
 	}
 }
+
+void WorldLoader::loadChunk(const glm::ivec3& pos, std::set<glm::ivec3, compareVec> *light_needed) {
+	auto [chunk_data, data_offset] = provider.getChunkData(pos);
+	if(chunk_data != nullptr) {
+		chunks[pos] = Chunk(shParams.model, pos, this, chunk_data, data_offset);
+		if(light_needed != nullptr) {
+			light_needed->insert(glm::ivec3(pos.x, 0, pos.z));
+		}
+		chunks_to_update.insert(pos);
+	}
+}
+
 //
 //enum class direction {
 //	LEFT,

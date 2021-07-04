@@ -50,6 +50,7 @@ public:
 	const int chunkSize = TerrainConfig::ChunkSize;
 	
 	void update(glm::vec3 cameraPos);
+	void loadChunk(const glm::ivec3& pos, std::set<glm::ivec3, compareVec> *light_needed=nullptr);
 	region_dtype valueAt(int x, int y, int z);
 	void draw(glm::vec3 cameraPos);
 	std::tuple<glm::ivec3, glm::ivec3, region_dtype> collideRay(const glm::vec3& origin, const glm::vec3& direction, const int& range);
