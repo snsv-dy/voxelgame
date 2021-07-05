@@ -13,7 +13,7 @@ CurrentFileName        :=
 CurrentFilePath        :=
 CurrentFileFullPath    :=
 User                   :=Jacek
-Date                   :=04/07/21
+Date                   :=05/07/21
 CodeLitePath           :=/home/jacek/.codelite
 LinkerName             :=/usr/bin/g++
 SharedObjectLinkerName :=/usr/bin/g++ -shared -fPIC
@@ -60,8 +60,8 @@ AS       := /usr/bin/as
 ## User defined environment variables
 ##
 CodeLiteDir:=/usr/share/codelite
-Objects0=$(IntermediateDirectory)/src_utilities_fonts.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_utilities_controls.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_main.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_objects_Cursor.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_terrain_Chunk.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_utilities_Shader.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_glad.c$(ObjectSuffix) $(IntermediateDirectory)/src_utilities_basic_util.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_terrain_Region.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_objects_Mesh.cpp$(ObjectSuffix) \
-	$(IntermediateDirectory)/src_terrain_WorldLoader.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_terrain_Terrain.cpp$(ObjectSuffix) 
+Objects0=$(IntermediateDirectory)/src_utilities_fonts.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_utilities_controls.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_main.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_objects_Cursor.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_utilities_Shader.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_glad.c$(ObjectSuffix) $(IntermediateDirectory)/src_utilities_basic_util.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_terrain_Region.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_terrain_Chunk.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_terrain_Lighter.cpp$(ObjectSuffix) \
+	$(IntermediateDirectory)/src_objects_Mesh.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_terrain_WorldLoader.cpp$(ObjectSuffix) $(IntermediateDirectory)/src_terrain_Terrain.cpp$(ObjectSuffix) 
 
 
 
@@ -116,12 +116,6 @@ $(IntermediateDirectory)/src_objects_Cursor.cpp$(ObjectSuffix): src/objects/Curs
 $(IntermediateDirectory)/src_objects_Cursor.cpp$(PreprocessSuffix): src/objects/Cursor.cpp
 	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_objects_Cursor.cpp$(PreprocessSuffix) src/objects/Cursor.cpp
 
-$(IntermediateDirectory)/src_terrain_Chunk.cpp$(ObjectSuffix): src/terrain/Chunk.cpp
-	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_terrain_Chunk.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_terrain_Chunk.cpp$(DependSuffix) -MM src/terrain/Chunk.cpp
-	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/jacek/cprograms/minestruggle/minestruggle/src/terrain/Chunk.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_terrain_Chunk.cpp$(ObjectSuffix) $(IncludePath)
-$(IntermediateDirectory)/src_terrain_Chunk.cpp$(PreprocessSuffix): src/terrain/Chunk.cpp
-	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_terrain_Chunk.cpp$(PreprocessSuffix) src/terrain/Chunk.cpp
-
 $(IntermediateDirectory)/src_utilities_Shader.cpp$(ObjectSuffix): src/utilities/Shader.cpp
 	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_utilities_Shader.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_utilities_Shader.cpp$(DependSuffix) -MM src/utilities/Shader.cpp
 	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/jacek/cprograms/minestruggle/minestruggle/src/utilities/Shader.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_utilities_Shader.cpp$(ObjectSuffix) $(IncludePath)
@@ -145,6 +139,18 @@ $(IntermediateDirectory)/src_terrain_Region.cpp$(ObjectSuffix): src/terrain/Regi
 	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/jacek/cprograms/minestruggle/minestruggle/src/terrain/Region.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_terrain_Region.cpp$(ObjectSuffix) $(IncludePath)
 $(IntermediateDirectory)/src_terrain_Region.cpp$(PreprocessSuffix): src/terrain/Region.cpp
 	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_terrain_Region.cpp$(PreprocessSuffix) src/terrain/Region.cpp
+
+$(IntermediateDirectory)/src_terrain_Chunk.cpp$(ObjectSuffix): src/terrain/Chunk.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_terrain_Chunk.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_terrain_Chunk.cpp$(DependSuffix) -MM src/terrain/Chunk.cpp
+	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/jacek/cprograms/minestruggle/minestruggle/src/terrain/Chunk.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_terrain_Chunk.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/src_terrain_Chunk.cpp$(PreprocessSuffix): src/terrain/Chunk.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_terrain_Chunk.cpp$(PreprocessSuffix) src/terrain/Chunk.cpp
+
+$(IntermediateDirectory)/src_terrain_Lighter.cpp$(ObjectSuffix): src/terrain/Lighter.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_terrain_Lighter.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_terrain_Lighter.cpp$(DependSuffix) -MM src/terrain/Lighter.cpp
+	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/jacek/cprograms/minestruggle/minestruggle/src/terrain/Lighter.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/src_terrain_Lighter.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/src_terrain_Lighter.cpp$(PreprocessSuffix): src/terrain/Lighter.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/src_terrain_Lighter.cpp$(PreprocessSuffix) src/terrain/Lighter.cpp
 
 $(IntermediateDirectory)/src_objects_Mesh.cpp$(ObjectSuffix): src/objects/Mesh.cpp
 	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/src_objects_Mesh.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/src_objects_Mesh.cpp$(DependSuffix) -MM src/objects/Mesh.cpp

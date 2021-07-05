@@ -15,6 +15,7 @@
 #include "objects/Cursor.hpp"
 
 #include "terrain/Terrain.h"
+#include "terrain/Lighter.hpp"
 #include "src/terrain/WorldLoader.h"
 #include "src/terrain/Chunk.h"
 
@@ -204,6 +205,7 @@ int opengl_context_scope(GLFWwindow *window)
 	cameraPos = kamera.get_pos();
 	
 	WorldLoader wl(&projection, view, textures, chunkShaderParams);
+	Lighter light(wl);
 	
 	controls.world_loader = &wl;
 	
@@ -223,6 +225,7 @@ int opengl_context_scope(GLFWwindow *window)
 	// Change .h files to .hpp*
 	// Split worldProvider to 2 files.
 	// Reverse light values. ( 0 should be no light)
+	// Removing block on chunk's edge doesn't update light in neighbouring chunk.
 	// 
 	
 	
@@ -232,6 +235,29 @@ int opengl_context_scope(GLFWwindow *window)
     while (!glfwWindowShouldClose(window))
     {
 		wl.update(kamera.get_pos());
+		auto unlitColumns = wl.getUnlitColumns();
+		if(unlitColumns.size() > 0) {
+			printf("ltp size: %d\n", unlitColumns.size());
+			std::list<propagateParam> lights_to_propagate = light.updateLightColumns(unlitColumns);
+//			printf("ltp size: %d\n", lights_to_propagate.size());
+//			wl.propagateLight(lights_to_propagate);
+		}
+		
+		std::list<ChangedBlock> blocks_changed = wl.getChangedBlocks();
+		if(blocks_changed.size() > 0) {
+			light.updateLight(blocks_changed);
+//			std::list<propagateParam> darks = light.getDarksToPropagate();
+//			printf("darks size: %d\n", darks.size());
+//			wl.propagateDark(darks);
+//			std::list<propagateParam> lights = light.getLightsToPropagate();
+//			printf("lights size: %d\n", lights.size());
+//			wl.propagateLight(lights);
+		}
+		light.propagateBlockLight();
+		light.propagateSunLight();
+		
+		wl.addUpdatedChunks(light.getUpdatedChunks());
+		wl.updateGeometry();
 		
 		int debugkeys = processInput(window);
 		
