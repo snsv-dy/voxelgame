@@ -9,6 +9,13 @@
 //class WorldLoader;
 //struct DirAndSide;
 
+
+struct DirAndSide{
+	glm::ivec3 position;
+	Direction face;
+};
+
+
 void inline disperseLight(block_position pos, std::list<propagateParam>& lights, region_dtype light_value);
 
 class Lighter
@@ -23,21 +30,22 @@ class Lighter
 public:
 	Lighter(WorldLoader& worldLoader);
 //	~Lighter();
-	std::list<propagateParam> updateSunlightInColumn(int x, int z);
-	std::list<propagateParam> updateLightColumns(std::set<glm::ivec3, compareVec3> columns);
+	void updateSunlightInColumn(int x, int z);
+	void updateLightColumns(std::set<glm::ivec3, compareVec3> columns);
+	
 	void updateSunlightForBlock(block_position pos, bool placed);
-	void updateBlocklightForBlock(block_position pos, bool placed);
+//	void updateBlocklightForBlock(block_position pos, bool placed);
+	void updateBlocklightForBlock(block_position pos, region_dtype& block_before, bool placed);
+	
 	void updateLightSource(region_dtype& block, block_position& pos, region_dtype intensity, bool placed);
-	void updateLight(std::list<ChangedBlock> blocks);
+	void updateLightForBlock(std::list<ChangedBlock> blocks);
 	std::set<glm::ivec3, compareVec3> getUpdatedChunks();
 	
-	void propagateBlockLight();
-	void propagateSunLight();
-	std::set<glm::ivec3, compareVec> propagateLight(std::list<propagateParam>& lights, const LightType& type = LightType::Sun);
-	std::set<glm::ivec3, compareVec> propagateDark(std::list<propagateParam> darks, const LightType& type = LightType::Sun);
+	void propagateLights();
 	
-	std::list<propagateParam> getLightsToPropagate();
-	std::list<propagateParam> getDarksToPropagate();
+private:
+	void propagateLight(std::list<propagateParam>& lights, const LightType& type = LightType::Sun);
+	void propagateDark(std::list<propagateParam> darks, const LightType& type = LightType::Sun);
 };
 
 #endif // LIGHTER_HPP

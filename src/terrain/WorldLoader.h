@@ -12,8 +12,6 @@
 #include <glm/gtx/norm.hpp>
 //#include <mutex>
 
-//void inline disperseLight(block_position pos, std::list<propagateParam>& lights, region_dtype light_value);
-
 // used in light propagation
 const glm::ivec3 neighbouring_offsets[6] { 
 	glm::ivec3(-1, 0, 0),
@@ -23,13 +21,6 @@ const glm::ivec3 neighbouring_offsets[6] {
 	glm::ivec3(0, -1, 0),
 	glm::ivec3(0, 1, 0)
 };
-
-
-struct DirAndSide{
-	glm::ivec3 position;
-	Direction face;
-};
-
 struct ChangedBlock{
 	block_position position;
 	bool placed;
@@ -69,7 +60,6 @@ public:
 	void loadChunk(const glm::ivec3& pos, std::set<glm::ivec3, compareVec3> *light_needed=nullptr);
 	std::set<glm::ivec3, compareVec3> getUnlitColumns();
 	void updateGeometry();
-//	std::list<std::pair<block_position, bool>> getChangedBlocks();
 	std::list<ChangedBlock> getChangedBlocks();
 	void addUpdatedChunks(std::set<glm::ivec3, compareVec3> updatedChunks);
 	
@@ -78,17 +68,7 @@ public:
 	std::tuple<glm::ivec3, glm::ivec3, region_dtype> collideRay(const glm::vec3& origin, const glm::vec3& direction, const int& range);
 	void updateTerrain(const int& block_type, const glm::ivec3 &pos, BlockAction action);
 	std::pair<Chunk&, bool> getChunk(glm::ivec3 position);
-//	void insertBlock(const glm::ivec3 &pos);
-//	std::set<glm::ivec3, compareVec> propagateLight(std::list<propagateParam>& lights, const LightType& type = LightType::Sun);
-//	std::set<glm::ivec3, compareVec> propagateDark(std::list<propagateParam> darks, const LightType& type = LightType::Sun);
 	std::pair<region_dtype&, bool> getBlock(const block_position& pos);
-private:
-//	void litBlock(block_position& pos, int intensity);
-//	void updateSunlightForBlock(block_position pos, bool placed); // removed means if we are removing a block or placing it.
-//	void updateBlocklightForBlock(block_position pos, bool placed);
-	
-//	std::list<propagateParam> updateSunlightInColumn(int x, int z);
-//	void updateLightSource(region_dtype& block, block_position& pos, region_dtype intensity, bool placed);
 };
 
 #endif // WORLDLOADER_H

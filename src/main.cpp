@@ -237,24 +237,15 @@ int opengl_context_scope(GLFWwindow *window)
 		wl.update(kamera.get_pos());
 		auto unlitColumns = wl.getUnlitColumns();
 		if(unlitColumns.size() > 0) {
-			printf("ltp size: %d\n", unlitColumns.size());
-			std::list<propagateParam> lights_to_propagate = light.updateLightColumns(unlitColumns);
-//			printf("ltp size: %d\n", lights_to_propagate.size());
-//			wl.propagateLight(lights_to_propagate);
+			light.updateLightColumns(unlitColumns);
 		}
 		
 		std::list<ChangedBlock> blocks_changed = wl.getChangedBlocks();
-		if(blocks_changed.size() > 0) {
-			light.updateLight(blocks_changed);
-//			std::list<propagateParam> darks = light.getDarksToPropagate();
-//			printf("darks size: %d\n", darks.size());
-//			wl.propagateDark(darks);
-//			std::list<propagateParam> lights = light.getLightsToPropagate();
-//			printf("lights size: %d\n", lights.size());
-//			wl.propagateLight(lights);
+		if (!blocks_changed.empty()) {
+			light.updateLightForBlock(blocks_changed);
 		}
-		light.propagateBlockLight();
-		light.propagateSunLight();
+		
+		light.propagateLights();
 		
 		wl.addUpdatedChunks(light.getUpdatedChunks());
 		wl.updateGeometry();
