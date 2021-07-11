@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include <tuple>
 
+#include "../terrain/TerrainConfig.hpp"
+	
 enum class BlockAction{
 	DESTROY,
 	PLACE
@@ -49,6 +51,9 @@ unsigned int loadTexture(const std::string& filename);
 std::tuple<glm::ivec3, glm::ivec3> toChunkCoords(const glm::ivec3& cord, const int& chunkSize);
 std::tuple<int, int> toNonSymetricSpace(const int& value, const int& chunkSize);
 
+inline std::tuple<int, int> toNonSymetricSpaceReal(const float& value, const float& chunkSize);
+std::tuple<glm::ivec3, glm::ivec3> toChunkCoordsReal(const glm::vec3& position, const int& chunkSize);
+
 struct compareVec3{
 	bool operator()(const glm::ivec3 &a, const glm::ivec3 &b) const;
 };
@@ -74,6 +79,11 @@ struct block_position{
 	
 	block_position operator+ (const glm::ivec3& block_offset){
 		return block_position(block + block_offset, chunk);
+	}
+	
+	static block_position fromPosition(const glm::vec3 position) {
+		auto [chunk_pos, in_chunk_pos] = toChunkCoords(position, TerrainConfig::ChunkSize);
+		return block_position(in_chunk_pos, chunk_pos);
 	}
 	
 private:

@@ -15,7 +15,7 @@ void mouse_cursor_callback(GLFWwindow *window, double xpos, double ypos){
 	
 	const double &mspeed = controls->mouse_speed;
 	
-	controls->kamera.rotateView(dx * mspeed, dy * mspeed);
+	controls->player.turn(dx * mspeed, dy * mspeed);
 	
 	controls->last_mx = xpos;
 	controls->last_my = ypos;
@@ -57,18 +57,18 @@ int processInput(GLFWwindow* window){
 	}
 	
 	if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		controls->kamera.walk(controls->kamera.FRONT);
+		controls->player.moveRequest(moveDirection::FRONT);
 	if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		controls->kamera.walk(controls->kamera.BACK);
+		controls->player.moveRequest(moveDirection::BACK);
 	if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		controls->kamera.walk(controls->kamera.LEFT);
+		controls->player.moveRequest(moveDirection::LEFT);
 	if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		controls->kamera.walk(controls->kamera.RIGHT);
+		controls->player.moveRequest(moveDirection::RIGHT);
 		
 	if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-		controls->kamera.moveVertical(controls->kamera.UP);
+		controls->player.moveRequest(moveDirection::UP);
 	if(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-		controls->kamera.moveVertical(controls->kamera.DOWN);
+		controls->player.moveRequest(moveDirection::DOWN);
 		
 	return (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) | (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) * 2;
 }

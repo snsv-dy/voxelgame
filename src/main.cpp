@@ -13,6 +13,7 @@
 
 #include "objects/Mesh.h"
 #include "objects/Cursor.hpp"
+#include "objects/Player.hpp"
 
 #include "terrain/Terrain.h"
 #include "terrain/Lighter.hpp"
@@ -54,43 +55,25 @@ int opengl_context_scope(GLFWwindow *window);
 const int screen_width = 1270;
 const int screen_height = 720;
 
-int main(void){
-	
-//	int size = 16;
-////	
-//	int chunk = 0;
-//	int block = -1 ;
-//	
-//	chunk += (block >= size) -(block < 0);
-////	block &= size - 1;
-//	block = 15 * (block < 0) + block * (block > 0 && block < size);
-////	
-//	printf("chunk: %d, block: %d\n", chunk, block);
-////	
-//////	return glm::ivec2(block, chunk);
-//////	block &= (size - 1); // ONLY IF SIZE IS POWER OF 2!!! 
-//////}
-////	
-	// ivec2 only for returning two ints.
-	
-//	printf("%d\n", 1 > 1);
-	
-//	block_position p;
-//	p.block = glm::ivec3(16, 0, 8);
-//	p.chunk = glm::ivec3(0);
-//	
-//	
-//	p = calculate_position2(p, glm::ivec3(1, 0, 0));
-////	
-//	printf("chunk: %d %d %d, \nblock: %d %d %d\n", p.chunk.x, p.chunk.y, p.chunk.z, p.block.x, p.block.y, p.block.z);
+//void arrChan(int a[3]) {
+//	a[0] = 5;
+//	a[1] = 2;
+//	a[2] = 0;
+//}
 
-//	block_position a(glm::ivec3(0, 15, 0), glm::ivec3(0, 0, 0));
+int main(void) {
+//	int a[3] {1, 2, 3};
+//	for(int i = 0; i < 3; i++){
+//		printf("%d, ", a[i]);
+//	}
 //	
-//	printf("block: %d %d %d, chunk: %d %d %d\n", a.block.x, a.block.y, a.block.z, a.chunk.x, a.chunk.y, a.chunk.z);
-////	a += glm::ivec3(0, -1, 0);
-//	a = a + glm::ivec3(0, 1, 0);
-//	printf("block: %d %d %d, chunk: %d %d %d\n", a.block.x, a.block.y, a.block.z, a.chunk.x, a.chunk.y, a.chunk.z);
+//	arrChan(a);
+//	printf("\n");
+//	for(int i = 0; i < 3; i++){
+//		printf("%d, ", a[i]);
+//	}
 //	
+//	getchar();
 //	return 0;
 	
 //	srand(time(NULL));
@@ -120,25 +103,13 @@ int main(void){
 
 int opengl_context_scope(GLFWwindow *window)
 {
-//	glm::ivec3 a(1, 2, 3);
-//	glm::ivec3 b(1, 3, 5);
-//	glm::ivec3 t = glm::abs(a - b) == glm::ivec3(1);
-//	printf("%d %d %d \n", t.x, t.y, t.z);
-//	
-//	char gb;
-//	scanf("%c", &gb);
-//
-//	return 0;
-	
-	
 	const std::string CHUNK_VERTEX_SHADER = std::string("../src/shaders/chunkvs.vs");
 	const std::string CHUNK_FRAGMENT_SHADER = std::string("../src/shaders/chunkfs.fs");
-
-	
 	
 	// Setting params struct and callbacks.
 	
 	Camera kamera(static_cast<float>(screen_width), static_cast<float>(screen_height));
+	Player player(AABB( {-0.4f, 0.0f, -0.2f}, {0.4f, 1.9f, 0.2f} ));
 	
 	ControlsStruct controls {
 		.last_mx = -1,
@@ -154,7 +125,9 @@ int opengl_context_scope(GLFWwindow *window)
 		
 		.world_loader = nullptr,
 		.block_key_pressed = false,
-		.placing_block_type = 3
+		.placing_block_type = 3,
+		
+		.player = player
 	};
 	
 	glfwSetWindowUserPointer(window, &controls);
@@ -230,11 +203,12 @@ int opengl_context_scope(GLFWwindow *window)
 	
 	
 	Cursor cursor(controls.cursor_pos);
+	glm::mat4& playersView = player.getView();
 	
 	char textBuffer[2000] = {};
     while (!glfwWindowShouldClose(window))
     {
-		wl.update(kamera.get_pos());
+		wl.update(player.positionFromHead);
 		auto unlitColumns = wl.getUnlitColumns();
 		if(unlitColumns.size() > 0) {
 			light.updateLightColumns(unlitColumns);
@@ -252,18 +226,36 @@ int opengl_context_scope(GLFWwindow *window)
 		
 		int debugkeys = processInput(window);
 		
-		kamera.updateView();
+		auto [groundIntersected, intersectionAmount] = wl.playerIntersects(player);
+//		if (groundIntersected) {
+////			player.position += intersectionAmount;
+//			player.applyMove(true, intersectionAmount);
+//		}else{
+//		}
+		player.applyMove(false);
+
+		
+		player.updateView();
 		
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
-		wl.draw(kamera.get_pos());
+		wl.draw(player.positionFromHead, playersView);
 //		
-		glm::vec3 kameraPos = kamera.get_pos();
-		sprintf(textBuffer, "cameraPos: x: %.02f, y: %.02f, z: %.02f", kameraPos.x, kameraPos.y, kameraPos.z);
+		sprintf(textBuffer, "ground intersection: %.02f, y: %.02f, z: %.02f", intersectionAmount.x, intersectionAmount.y, intersectionAmount.z);
+		renderText(fontmesh1, std::string(textBuffer), 20, 130, 0.5);
+		
+		glm::vec3 kameraPos = player.positionFromHead;
+		glm::vec3 playerPos = player.getPosition();
+		sprintf(textBuffer, "playerPos: x: %.02f, y: %.02f, z: %.02f", playerPos.x, playerPos.y, playerPos.z);
 		renderText(fontmesh1, std::string(textBuffer), 20, 50, 0.5);
+		
+		glm::ivec3 playerBlockPos;
+		std::tie(std::ignore, playerBlockPos) = toChunkCoordsReal(playerPos, TerrainConfig::ChunkSize);
+		sprintf(textBuffer, "playerBlockPos: x: %2d, y: %2d, z: %2d", playerBlockPos.x, playerBlockPos.y, playerBlockPos.z);
+		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
 //		
-		glm::vec3 kameraFront = kamera.get_front();
+		glm::vec3 kameraFront = player.orientation;
 		sprintf(textBuffer, "cameraFront: x: %.02f, y: %.02f, z: %.02f", kameraFront.x, kameraFront.y, kameraFront.z);
 		renderText(fontmesh1, std::string(textBuffer), 20, 20, 0.5);
 		
@@ -272,8 +264,8 @@ int opengl_context_scope(GLFWwindow *window)
 		std::tie(controls.cursor_pos, controls.prev_cursor_pos, block_under_cursor) = wl.collideRay(kameraPos, kameraFront, 7);
 //		controls.cursor_pos = c_pos;
 		
-		sprintf(textBuffer, "cursor  : x: %2d, y: %2d, z: %2d ", controls.cursor_pos.x, controls.cursor_pos.y, controls.cursor_pos.z);
-		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
+//		sprintf(textBuffer, "cursor  : x: %2d, y: %2d, z: %2d ", controls.cursor_pos.x, controls.cursor_pos.y, controls.cursor_pos.z);
+//		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
 		
 		sprintf(textBuffer, "block under cursor: [%d, %x]", block_under_cursor & 0xff, block_under_cursor >> 8);
 		renderText(fontmesh1, std::string(textBuffer), 20, 90, 0.5);
@@ -284,7 +276,7 @@ int opengl_context_scope(GLFWwindow *window)
 		renderText(fontmesh1, std::string(textBuffer), 20, 110, 0.5);
 		
 		// Cursor drawing
-		cursor.draw(projection, view);
+		cursor.draw(projection, &playersView);
 		// End of cursor drawing
 		
 		

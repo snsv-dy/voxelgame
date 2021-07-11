@@ -4,8 +4,11 @@
 #include <map>
 #include <set>
 #include <unordered_map>
+#include <cmath> // for sweep
 #include "worldProvider.h"
 #include "Chunk.h"
+#include "../objects/Player.hpp"
+#include "../objects/AABB.hpp"
 //#include "Lighter.hpp"
 //#include "Mesh.h"
 //#include "../vec3Comp.h"
@@ -64,11 +67,23 @@ public:
 	void addUpdatedChunks(std::set<glm::ivec3, compareVec3> updatedChunks);
 	
 	region_dtype valueAt(int x, int y, int z);
-	void draw(glm::vec3 cameraPos);
+	void draw(glm::vec3 cameraPos, const glm::mat4& view);
 	std::tuple<glm::ivec3, glm::ivec3, region_dtype> collideRay(const glm::vec3& origin, const glm::vec3& direction, const int& range);
 	void updateTerrain(const int& block_type, const glm::ivec3 &pos, BlockAction action);
 	std::pair<Chunk&, bool> getChunk(glm::ivec3 position);
 	std::pair<region_dtype&, bool> getBlock(const block_position& pos);
+	
+	std::pair<bool, glm::vec3> playerIntersects(Player& player);
+	float fastRay(glm::vec3 origin, glm::vec3 direction, glm::vec3& penetration);
+	
+	// sweeep stuff
+	float sweep(AABB box, glm::vec3 dir);
+	bool checkCollision(int i_axis, int leading_i[3], int trailing_i[3], int step[3]);
 };
 
 #endif // WORLDLOADER_H
+
+// for sweep only
+int trailEdgeToInt(int lead, int step);
+int leadEdgeToInt(int lead, int step);
+int stepForward(float tNext[3], float& t, int leading_i[3], float trailing[3], int trailing_i[3], int step[3], float tDelta[3], float normed[3]);

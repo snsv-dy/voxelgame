@@ -149,7 +149,7 @@ unsigned int loadTexture(const std::string& filename, unsigned int& width, unsig
 	return texture;
 }
 
-std::tuple<glm::ivec3, glm::ivec3> toChunkCoords(const glm::ivec3& position, const int& chunkSize){
+std::tuple<glm::ivec3, glm::ivec3> toChunkCoords(const glm::ivec3& position, const int& chunkSize) {
 	glm::ivec3 chunk_index;
 	glm::ivec3 index_in_chunk;
 	
@@ -169,7 +169,7 @@ std::tuple<glm::ivec3, glm::ivec3> toChunkCoords(const glm::ivec3& position, con
 	return std::make_tuple(chunk_index, index_in_chunk);
 }
 
-inline std::tuple<int, int> toNonSymetricSpace(const int& value, const int& chunkSize){
+inline std::tuple<int, int> toNonSymetricSpace(const int& value, const int& chunkSize) {
 	int chunk_index;
 	int index_in_chunk;
 	
@@ -180,6 +180,43 @@ inline std::tuple<int, int> toNonSymetricSpace(const int& value, const int& chun
 		int mx = (-value - 1);
 		chunk_index = -(mx / chunkSize + 1);
 		index_in_chunk = -(mx % chunkSize) + chunkSize - 1;
+	}
+	
+	return std::make_tuple(chunk_index, index_in_chunk);
+}
+
+std::tuple<glm::ivec3, glm::ivec3> toChunkCoordsReal(const glm::vec3& position, const int& chunkSize) {
+	glm::ivec3 chunk_index;
+	glm::ivec3 index_in_chunk;
+	const float& fChunkSize = (float)chunkSize;
+	
+	int temp_chunk_i, temp_i_in_chunk;
+	std::tie(temp_chunk_i, temp_i_in_chunk) = toNonSymetricSpaceReal(position.x, fChunkSize);
+	chunk_index.x = temp_chunk_i;
+	index_in_chunk.x = temp_i_in_chunk;
+	
+	std::tie(temp_chunk_i, temp_i_in_chunk) = toNonSymetricSpaceReal(position.y, fChunkSize);
+	chunk_index.y = temp_chunk_i;
+	index_in_chunk.y = temp_i_in_chunk;
+	
+	std::tie(temp_chunk_i, temp_i_in_chunk) = toNonSymetricSpaceReal(position.z, fChunkSize);
+	chunk_index.z = temp_chunk_i;
+	index_in_chunk.z = temp_i_in_chunk;
+	
+	return std::make_tuple(chunk_index, index_in_chunk);
+}
+
+inline std::tuple<int, int> toNonSymetricSpaceReal(const float& value, const float& chunkSize) {
+	int chunk_index;
+	int index_in_chunk;
+	
+	if(value >= 0){
+		chunk_index = value / chunkSize;
+		index_in_chunk = (int)value % (int)chunkSize;
+	}else{
+		float mx = (-value);
+		chunk_index = -(mx / chunkSize + 1);
+		index_in_chunk = -((int)mx % (int)chunkSize) + chunkSize - 1;
 	}
 	
 	return std::make_tuple(chunk_index, index_in_chunk);
