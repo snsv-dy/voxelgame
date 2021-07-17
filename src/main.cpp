@@ -232,7 +232,7 @@ int opengl_context_scope(GLFWwindow *window)
 //			player.applyMove(true, intersectionAmount);
 //		}else{
 //		}
-		player.applyMove(false);
+//		player.applyMove(false);
 
 		
 		player.updateView();
@@ -250,9 +250,9 @@ int opengl_context_scope(GLFWwindow *window)
 		sprintf(textBuffer, "playerPos: x: %.02f, y: %.02f, z: %.02f", playerPos.x, playerPos.y, playerPos.z);
 		renderText(fontmesh1, std::string(textBuffer), 20, 50, 0.5);
 		
-		glm::ivec3 playerBlockPos;
-		std::tie(std::ignore, playerBlockPos) = toChunkCoordsReal(playerPos, TerrainConfig::ChunkSize);
-		sprintf(textBuffer, "playerBlockPos: x: %2d, y: %2d, z: %2d", playerBlockPos.x, playerBlockPos.y, playerBlockPos.z);
+		glm::ivec3 playerBlockPos = {floor(playerPos.x), floor(playerPos.y), floor(playerPos.z)};
+		std::tie(std::ignore, playerBlockPos) = toChunkCoordsReal(playerBlockPos, TerrainConfig::ChunkSize);
+		sprintf(textBuffer, "playerOrdżin: x: %2d, y: %2d, z: %2d", playerBlockPos.x, playerBlockPos.y, playerBlockPos.z);
 		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
 //		
 		glm::vec3 kameraFront = player.orientation;

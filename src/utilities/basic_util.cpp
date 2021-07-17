@@ -214,7 +214,7 @@ inline std::tuple<int, int> toNonSymetricSpaceReal(const float& value, const flo
 		chunk_index = value / chunkSize;
 		index_in_chunk = (int)value % (int)chunkSize;
 	}else{
-		float mx = (-value);
+		float mx = (-value - 1);
 		chunk_index = -(mx / chunkSize + 1);
 		index_in_chunk = -((int)mx % (int)chunkSize) + chunkSize - 1;
 	}

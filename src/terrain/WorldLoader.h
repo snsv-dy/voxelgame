@@ -72,9 +72,10 @@ public:
 	void updateTerrain(const int& block_type, const glm::ivec3 &pos, BlockAction action);
 	std::pair<Chunk&, bool> getChunk(glm::ivec3 position);
 	std::pair<region_dtype&, bool> getBlock(const block_position& pos);
+	std::pair<region_dtype&, bool> getBlock(const glm::vec3& pos);
 	
 	std::pair<bool, glm::vec3> playerIntersects(Player& player);
-	float fastRay(glm::vec3 origin, glm::vec3 direction, glm::vec3& penetration);
+	float fastRay(glm::vec3 origin, glm::vec3 direction, float maxt, glm::vec3& penetration, int& collision_axis, glm::ivec3& hit);
 	
 	// sweeep stuff
 	float sweep(AABB box, glm::vec3 dir);

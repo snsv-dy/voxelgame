@@ -9,13 +9,20 @@ Player::~Player() {
 
 void Player::moveRequest(moveDirection direction) {
 	switch (direction) {
-		case moveDirection::FRONT: velocity += movementSpeed * orientation; break;
-		case moveDirection::BACK: velocity -= movementSpeed * orientation; break;
-		case moveDirection::LEFT: velocity -= movementSpeed * glm::normalize(glm::cross(orientation, up)); break;
-		case moveDirection::RIGHT: velocity += movementSpeed * glm::normalize(glm::cross(orientation, up)); break;
+		case moveDirection::FRONT: force += movingForce * orientation; break;
+		case moveDirection::BACK: force -= movingForce * orientation; break;
+		case moveDirection::LEFT: force -= movingForce * glm::normalize(glm::cross(orientation, up)); break;
+		case moveDirection::RIGHT: force += movingForce * glm::normalize(glm::cross(orientation, up)); break;
 		
-		case moveDirection::UP: velocity.y += movementSpeed; break;
-		case moveDirection::DOWN: velocity.y -= movementSpeed; break;
+		case moveDirection::UP: force.y += movingForce; break;
+		case moveDirection::DOWN: force.y -= movingForce; break;
+//		case moveDirection::FRONT: velocity += movementSpeed * orientation; break;
+//		case moveDirection::BACK: velocity -= movementSpeed * orientation; break;
+//		case moveDirection::LEFT: velocity -= movementSpeed * glm::normalize(glm::cross(orientation, up)); break;
+//		case moveDirection::RIGHT: velocity += movementSpeed * glm::normalize(glm::cross(orientation, up)); break;
+//		
+//		case moveDirection::UP: velocity.y += movementSpeed; break;
+//		case moveDirection::DOWN: velocity.y -= movementSpeed; break;
 	}
 }
 
