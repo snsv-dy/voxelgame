@@ -1,0 +1,36 @@
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<style>
+			/* https://stackoverflow.com/questions/396145/how-can-i-vertically-center-a-div-element-for-all-browsers-using-css */
+			.outer {
+				display: table;
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+			}
+
+			.middle {
+				display: table-cell;
+				vertical-align: middle;
+			}
+
+			div {
+				margin-left: auto;
+				margin-right: auto;
+				width: 500px;
+			}
+		</style>
+	</head>
+	<script type="text/javascript" src="script.js"></script>
+	<body>
+		<section class="outer">
+			<section class="middle">
+				<div>
+				</div>
+			</section>
+		</section>
+	</body>
+</html>
