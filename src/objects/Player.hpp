@@ -31,7 +31,7 @@ public:
 	glm::vec3 force = glm::vec3(0.0f);
 	float mass = 1.0f;
 
-	const glm::vec3 headPosition = glm::vec3(0.0f, 1.8f, 0.0f);
+	const glm::vec3 headPosition = glm::vec3(0.0f, 1.5f, 0.0f);
 	int touching[3] {0}; // direction in which player is colliding with ground.
 //	glm::vec3 _impulses;
 

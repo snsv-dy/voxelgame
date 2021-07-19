@@ -109,7 +109,8 @@ int opengl_context_scope(GLFWwindow *window)
 	// Setting params struct and callbacks.
 	
 	Camera kamera(static_cast<float>(screen_width), static_cast<float>(screen_height));
-	Player player(AABB( {-0.4f, 0.0f, -0.2f}, {0.4f, 1.9f, 0.2f} ));
+	const float player_xz = 0.8f / 2.0f;
+	Player player(AABB( {-player_xz, 0.0f, -player_xz}, {player_xz, 1.8f, player_xz} ));
 	
 	ControlsStruct controls {
 		.last_mx = -1,

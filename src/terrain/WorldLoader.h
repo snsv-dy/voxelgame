@@ -76,10 +76,9 @@ public:
 	
 	std::pair<bool, glm::vec3> playerIntersects(Player& player);
 	float fastRay(glm::vec3 origin, glm::vec3 direction, float maxt, glm::vec3& penetration, int& collision_axis, glm::ivec3& hit);
+	float fastAABB(AABB& origin, glm::vec3 direction, float maxt, glm::vec3& penetration, int& collision_axis, glm::ivec3& hit);
 	
 	// sweeep stuff
-	float sweep(AABB box, glm::vec3 dir);
-	bool checkCollision(int i_axis, int leading_i[3], int trailing_i[3], int step[3]);
 };
 
 #endif // WORLDLOADER_H
