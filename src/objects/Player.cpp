@@ -14,7 +14,14 @@ void Player::moveRequest(moveDirection direction) {
 		case moveDirection::LEFT: force -= movingForce * glm::normalize(glm::cross(orientation, up)); break;
 		case moveDirection::RIGHT: force += movingForce * glm::normalize(glm::cross(orientation, up)); break;
 		
-		case moveDirection::UP: force.y += movingForce; break;
+		case moveDirection::UP: 
+			{
+				force.y += movingForce;
+//				if (!jumped) {
+//					force.y += jumpForce;
+//					jumped = true;
+//				}
+			}break;
 		case moveDirection::DOWN: force.y -= movingForce; break;
 //		case moveDirection::FRONT: velocity += movementSpeed * orientation; break;
 //		case moveDirection::BACK: velocity -= movementSpeed * orientation; break;
@@ -55,36 +62,6 @@ void Player::updateView() {
 	view = glm::lookAt(positionFromHead, positionFromHead + orientation, up);
 }
 
-glm::vec3 Player::nextPosition() {
-	return position + velocity;
-}
-
-void Player::applyMove(bool correct, glm::vec3 maxAllowed) {
-	if( velocity.x != 0 || velocity.y != 0 || velocity.z != 0) {
-//		if (correct) {
-//			velocity = maxAllowed;
-//		}
-//		position += velocity;
-		setPosition(position + velocity);
-		velocity.x = velocity.y = velocity.z = 0;
-	}
-}
-
-void Player::resetVelocity(int part) {
-	if (part & 1) {
-		velocity.x = 0.0f;
-	}
-	
-	if (part & 2) {
-		velocity.y = 0.0f;
-	}
-	
-	if (part & 4) {
-		velocity.z = 0.0f;
-	}
-}
-
-
 const glm::vec3 Player::getPosition() {
 	return position;
 }
@@ -92,5 +69,55 @@ const glm::vec3 Player::getPosition() {
 void Player::setPosition(glm::vec3 newPosition) {
 	position = newPosition;
 	aabb.moveTo(newPosition);
-//	printf("AABB min: %2.2f, %2.2f, %2.2f, AABB max: %2.2f, %2.2f, %2.2f\n", aabb.min.x, aabb.min.y, aabb.min.z, aabb.max.x, aabb.max.y, aabb.max.z);
+}
+
+glm::vec3 Player::updatePhysics(const float& dt) {
+	glm::vec3 a = force / mass;
+//	const float gravity = 10.0f;
+//	a.y -= gravity / mass;
+	
+	glm::vec3 dv = a * dt;
+	
+	for (int i = 0; i < 3; i++) {
+		if (abs(velocity[i]) < maxVelocity) {
+			velocity[i] += dv[i];
+		} else if(i == 1 && abs(velocity[i]) < maxFalling) { // eh
+			velocity[i] += dv[i];
+		}
+	}
+		
+	// friction
+	const float frictionValue = 2.6f;
+	float fMax = frictionValue * dt;
+	glm::vec3 friction = -velocity;
+	float frictionMag = glm::length(friction);
+	if (frictionMag > fMax) {
+		friction *= fMax / frictionMag;
+		velocity += friction;
+	} else {
+		velocity.x = velocity.y = velocity.z = 0.0f;
+	}
+	force = glm::vec3(0.0f);
+	
+	int oldTouching[3];
+	for(int i = 0; i < 3; i++) {
+		oldTouching[i] = touching[i];
+		touching[i] = 0;
+	}
+	
+	int movingDirection[3];
+	for(int ax = 0; ax < 3; ax++) {
+		movingDirection[ax] = 0;
+		if (velocity[ax] > 0) {
+			movingDirection[ax] = 1;
+		} else if (velocity[ax] < 0) {
+			movingDirection[ax] = -1;
+		}
+	}
+	
+	return velocity * dt;
+}
+
+void Player::applyTranslation(const glm::vec3& dx) {
+	this->setPosition(position + dx);
 }
