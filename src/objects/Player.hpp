@@ -27,7 +27,7 @@ private:
 	
 	const float movingForce = 2.0f;
 public:
-	glm::vec3 position = glm::vec3(0.0f, 5.0f, 0.0f);
+	glm::vec3 position = glm::vec3(0.0f, 60.0f, 0.0f);
 	glm::vec3 force = glm::vec3(0.0f);
 	float mass = 1.0f;
 

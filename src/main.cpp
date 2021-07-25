@@ -1,4 +1,11 @@
+#include <functional>
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#else
 #include <glad/glad.h>
+#endif
+
 #include <GLFW/glfw3.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -61,6 +68,108 @@ const int screen_height = 720;
 //	a[2] = 0;
 //}
 
+struct LoopParams {
+	WorldLoader* wl;
+	Lighter* light;
+	Player* player;
+	GLFWwindow* window;
+	char* textBuffer;
+	FontMesh* fontMesh;
+	ControlsStruct *controls;
+	Cursor* cursor;
+	glm::mat4 projection;
+	glm::mat4& playersView;
+};
+
+std::function<void()> loop;
+void main_loop(void* params) {
+	LoopParams* loopP = (LoopParams*)params;
+	WorldLoader& wl = *loopP->wl;
+	Lighter& light = *loopP->light;
+	Player& player = *loopP->player;
+	GLFWwindow* window = loopP->window;
+	char* textBuffer = loopP->textBuffer;
+	FontMesh fontmesh1 = *loopP->fontMesh;
+	ControlsStruct& controls = *loopP->controls;
+	Cursor& cursor = *loopP->cursor;
+	glm::mat4& playersView = loopP->playersView;
+
+	wl.update(player.positionFromHead);
+	auto unlitColumns = wl.getUnlitColumns();
+	if(unlitColumns.size() > 0) {
+		light.updateLightColumns(unlitColumns);
+	}
+	
+	std::list<ChangedBlock> blocks_changed = wl.getChangedBlocks();
+	if (!blocks_changed.empty()) {
+		light.updateLightForBlock(blocks_changed);
+	}
+	
+	light.propagateLights();
+	
+	wl.addUpdatedChunks(light.getUpdatedChunks());
+	wl.updateGeometry();
+	
+	int debugkeys = processInput(window);
+	
+	auto [groundIntersected, intersectionAmount] = wl.playerIntersects(player);
+//		if (groundIntersected) {
+////			player.position += intersectionAmount;
+//			player.applyMove(true, intersectionAmount);
+//		}else{
+//		}
+//		player.applyMove(false);
+
+	
+	player.updateView();
+	
+	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+	wl.draw(player.positionFromHead, playersView);
+//		
+	sprintf(textBuffer, "ground intersection: %.02f, y: %.02f, z: %.02f", intersectionAmount.x, intersectionAmount.y, intersectionAmount.z);
+	renderText(fontmesh1, std::string(textBuffer), 20, 130, 0.5);
+	
+	glm::vec3 kameraPos = player.positionFromHead;
+	glm::vec3 playerPos = player.getPosition();
+	sprintf(textBuffer, "playerPos: x: %.02f, y: %.02f, z: %.02f", playerPos.x, playerPos.y, playerPos.z);
+	renderText(fontmesh1, std::string(textBuffer), 20, 50, 0.5);
+	
+	glm::ivec3 playerBlockPos = {floor(playerPos.x), floor(playerPos.y), floor(playerPos.z)};
+	std::tie(std::ignore, playerBlockPos) = toChunkCoordsReal(playerBlockPos, TerrainConfig::ChunkSize);
+	sprintf(textBuffer, "playerOrdżin: x: %2d, y: %2d, z: %2d", playerBlockPos.x, playerBlockPos.y, playerBlockPos.z);
+	renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
+//		
+	glm::vec3 kameraFront = player.orientation;
+	sprintf(textBuffer, "cameraFront: x: %.02f, y: %.02f, z: %.02f", kameraFront.x, kameraFront.y, kameraFront.z);
+	renderText(fontmesh1, std::string(textBuffer), 20, 20, 0.5);
+	
+//		glm::ivec3 c_pos;
+	region_dtype block_under_cursor;
+	std::tie(controls.cursor_pos, controls.prev_cursor_pos, block_under_cursor) = wl.collideRay(kameraPos, kameraFront, 7);
+//		controls.cursor_pos = c_pos;
+	
+//		sprintf(textBuffer, "cursor  : x: %2d, y: %2d, z: %2d ", controls.cursor_pos.x, controls.cursor_pos.y, controls.cursor_pos.z);
+//		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
+	
+	sprintf(textBuffer, "block under cursor: [%d, %x]", block_under_cursor & 0xff, block_under_cursor >> 8);
+	renderText(fontmesh1, std::string(textBuffer), 20, 90, 0.5);
+	
+	glm::ivec3 chpos;
+	std::tie(chpos, std::ignore) = toChunkCoords(controls.cursor_pos, TerrainConfig::ChunkSize);
+	sprintf(textBuffer, "chunk cursor: x: %2d, y: %2d, z: %2d ", chpos.x, chpos.y, chpos.z);
+	renderText(fontmesh1, std::string(textBuffer), 20, 110, 0.5);
+	
+	// Cursor drawing
+	// cursor.draw(loopP->projection, &playersView);
+	// End of cursor drawing
+	
+	
+	glfwSwapBuffers(window);
+	glfwPollEvents();
+}
+
 int main(void) {
 //	int a[3] {1, 2, 3};
 //	for(int i = 0; i < 3; i++){
@@ -103,8 +212,8 @@ int main(void) {
 
 int opengl_context_scope(GLFWwindow *window)
 {
-	const std::string CHUNK_VERTEX_SHADER = std::string("../src/shaders/chunkvs.vs");
-	const std::string CHUNK_FRAGMENT_SHADER = std::string("../src/shaders/chunkfs.fs");
+	const std::string CHUNK_VERTEX_SHADER = std::string("src/shaders/chunkvs.vs");
+	const std::string CHUNK_FRAGMENT_SHADER = std::string("src/shaders/chunkfs.fs");
 	
 	// Setting params struct and callbacks.
 	
@@ -141,17 +250,20 @@ int opengl_context_scope(GLFWwindow *window)
 //	glfwSetScrollCallback(window, scroll_callback);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	
-	if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
-		printf("Failed to initialize GLAD\n");
-		return -1;
-	}
+	#ifndef __EMSCRIPTEN__ 
+	// #else
+		if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
+			printf("Failed to initialize GLAD\n");
+			return -1;
+		}
+	#endif
 	
 	glViewport(0, 0, screen_width, screen_height);
 	
 	glEnable(GL_DEPTH_TEST);
 	
 	FontMesh fontmesh1 = {0};
-	if(initText(fontmesh1, "../font.png", "../src/shaders/text.vs", "../src/shaders/text.fs", glm::ortho(0.0f, static_cast<float>(screen_width), 0.0f, static_cast<float>(screen_height))) != 0){
+	if(initText(fontmesh1, "font.png", "src/shaders/text.vs", "src/shaders/text.fs", glm::ortho(0.0f, static_cast<float>(screen_width), 0.0f, static_cast<float>(screen_height))) != 0){
 		printf("Initialization of text failed.\n");
 		
 		glfwDestroyWindow(window);
@@ -166,7 +278,7 @@ int opengl_context_scope(GLFWwindow *window)
 			getShaderFromFile(CHUNK_FRAGMENT_SHADER, ShaderType::FRAGMENT)
 			)
 		);
-	unsigned int textures = loadTexture(std::string("../texture.png"));
+	unsigned int textures = loadTexture(std::string("texture.png"));
 	
 	glm::mat4 projection = glm::perspective(glm::radians(55.0f), static_cast<float>(screen_width) / screen_height, 0.1f, 1000.0f);
 	
@@ -207,83 +319,105 @@ int opengl_context_scope(GLFWwindow *window)
 	glm::mat4& playersView = player.getView();
 	
 	char textBuffer[2000] = {};
-    while (!glfwWindowShouldClose(window))
-    {
-		wl.update(player.positionFromHead);
-		auto unlitColumns = wl.getUnlitColumns();
-		if(unlitColumns.size() > 0) {
-			light.updateLightColumns(unlitColumns);
-		}
+
+	LoopParams loopP {
+		.wl = &wl,
+		.light = &light,
+		.player = &player,
+		.window = window,
+		.textBuffer = textBuffer,
+		.fontMesh = &fontmesh1,
+		.controls = &controls,
+		.cursor = &cursor,
+		.projection = projection,
+		.playersView = playersView
+	};
+
+    // while (!glfwWindowShouldClose(window))
+// 	loop = [&] {
+// 		wl.update(player.positionFromHead);
+// 		auto unlitColumns = wl.getUnlitColumns();
+// 		if(unlitColumns.size() > 0) {
+// 			light.updateLightColumns(unlitColumns);
+// 		}
 		
-		std::list<ChangedBlock> blocks_changed = wl.getChangedBlocks();
-		if (!blocks_changed.empty()) {
-			light.updateLightForBlock(blocks_changed);
-		}
+// 		std::list<ChangedBlock> blocks_changed = wl.getChangedBlocks();
+// 		if (!blocks_changed.empty()) {
+// 			light.updateLightForBlock(blocks_changed);
+// 		}
 		
-		light.propagateLights();
+// 		light.propagateLights();
 		
-		wl.addUpdatedChunks(light.getUpdatedChunks());
-		wl.updateGeometry();
+// 		wl.addUpdatedChunks(light.getUpdatedChunks());
+// 		wl.updateGeometry();
 		
-		int debugkeys = processInput(window);
+// 		int debugkeys = processInput(window);
 		
-		auto [groundIntersected, intersectionAmount] = wl.playerIntersects(player);
-//		if (groundIntersected) {
-////			player.position += intersectionAmount;
-//			player.applyMove(true, intersectionAmount);
-//		}else{
-//		}
-//		player.applyMove(false);
+// 		auto [groundIntersected, intersectionAmount] = wl.playerIntersects(player);
+// //		if (groundIntersected) {
+// ////			player.position += intersectionAmount;
+// //			player.applyMove(true, intersectionAmount);
+// //		}else{
+// //		}
+// //		player.applyMove(false);
 
 		
-		player.updateView();
+// 		player.updateView();
 		
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+// 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+// 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
-		wl.draw(player.positionFromHead, playersView);
-//		
-		sprintf(textBuffer, "ground intersection: %.02f, y: %.02f, z: %.02f", intersectionAmount.x, intersectionAmount.y, intersectionAmount.z);
-		renderText(fontmesh1, std::string(textBuffer), 20, 130, 0.5);
+// 		wl.draw(player.positionFromHead, playersView);
+// //		
+// 		sprintf(textBuffer, "ground intersection: %.02f, y: %.02f, z: %.02f", intersectionAmount.x, intersectionAmount.y, intersectionAmount.z);
+// 		renderText(fontmesh1, std::string(textBuffer), 20, 130, 0.5);
 		
-		glm::vec3 kameraPos = player.positionFromHead;
-		glm::vec3 playerPos = player.getPosition();
-		sprintf(textBuffer, "playerPos: x: %.02f, y: %.02f, z: %.02f", playerPos.x, playerPos.y, playerPos.z);
-		renderText(fontmesh1, std::string(textBuffer), 20, 50, 0.5);
+// 		glm::vec3 kameraPos = player.positionFromHead;
+// 		glm::vec3 playerPos = player.getPosition();
+// 		sprintf(textBuffer, "playerPos: x: %.02f, y: %.02f, z: %.02f", playerPos.x, playerPos.y, playerPos.z);
+// 		renderText(fontmesh1, std::string(textBuffer), 20, 50, 0.5);
 		
-		glm::ivec3 playerBlockPos = {floor(playerPos.x), floor(playerPos.y), floor(playerPos.z)};
-		std::tie(std::ignore, playerBlockPos) = toChunkCoordsReal(playerBlockPos, TerrainConfig::ChunkSize);
-		sprintf(textBuffer, "playerOrdżin: x: %2d, y: %2d, z: %2d", playerBlockPos.x, playerBlockPos.y, playerBlockPos.z);
-		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
-//		
-		glm::vec3 kameraFront = player.orientation;
-		sprintf(textBuffer, "cameraFront: x: %.02f, y: %.02f, z: %.02f", kameraFront.x, kameraFront.y, kameraFront.z);
-		renderText(fontmesh1, std::string(textBuffer), 20, 20, 0.5);
+// 		glm::ivec3 playerBlockPos = {floor(playerPos.x), floor(playerPos.y), floor(playerPos.z)};
+// 		std::tie(std::ignore, playerBlockPos) = toChunkCoordsReal(playerBlockPos, TerrainConfig::ChunkSize);
+// 		sprintf(textBuffer, "playerOrdżin: x: %2d, y: %2d, z: %2d", playerBlockPos.x, playerBlockPos.y, playerBlockPos.z);
+// 		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
+// //		
+// 		glm::vec3 kameraFront = player.orientation;
+// 		sprintf(textBuffer, "cameraFront: x: %.02f, y: %.02f, z: %.02f", kameraFront.x, kameraFront.y, kameraFront.z);
+// 		renderText(fontmesh1, std::string(textBuffer), 20, 20, 0.5);
 		
-//		glm::ivec3 c_pos;
-		region_dtype block_under_cursor;
-		std::tie(controls.cursor_pos, controls.prev_cursor_pos, block_under_cursor) = wl.collideRay(kameraPos, kameraFront, 7);
-//		controls.cursor_pos = c_pos;
+// //		glm::ivec3 c_pos;
+// 		region_dtype block_under_cursor;
+// 		std::tie(controls.cursor_pos, controls.prev_cursor_pos, block_under_cursor) = wl.collideRay(kameraPos, kameraFront, 7);
+// //		controls.cursor_pos = c_pos;
 		
-//		sprintf(textBuffer, "cursor  : x: %2d, y: %2d, z: %2d ", controls.cursor_pos.x, controls.cursor_pos.y, controls.cursor_pos.z);
-//		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
+// //		sprintf(textBuffer, "cursor  : x: %2d, y: %2d, z: %2d ", controls.cursor_pos.x, controls.cursor_pos.y, controls.cursor_pos.z);
+// //		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
 		
-		sprintf(textBuffer, "block under cursor: [%d, %x]", block_under_cursor & 0xff, block_under_cursor >> 8);
-		renderText(fontmesh1, std::string(textBuffer), 20, 90, 0.5);
+// 		sprintf(textBuffer, "block under cursor: [%d, %x]", block_under_cursor & 0xff, block_under_cursor >> 8);
+// 		renderText(fontmesh1, std::string(textBuffer), 20, 90, 0.5);
 		
-		glm::ivec3 chpos;
-		std::tie(chpos, std::ignore) = toChunkCoords(controls.cursor_pos, TerrainConfig::ChunkSize);
-		sprintf(textBuffer, "chunk cursor: x: %2d, y: %2d, z: %2d ", chpos.x, chpos.y, chpos.z);
-		renderText(fontmesh1, std::string(textBuffer), 20, 110, 0.5);
+// 		glm::ivec3 chpos;
+// 		std::tie(chpos, std::ignore) = toChunkCoords(controls.cursor_pos, TerrainConfig::ChunkSize);
+// 		sprintf(textBuffer, "chunk cursor: x: %2d, y: %2d, z: %2d ", chpos.x, chpos.y, chpos.z);
+// 		renderText(fontmesh1, std::string(textBuffer), 20, 110, 0.5);
 		
-		// Cursor drawing
-		cursor.draw(projection, &playersView);
-		// End of cursor drawing
+// 		// Cursor drawing
+// 		cursor.draw(projection, &playersView);
+// 		// End of cursor drawing
 		
 		
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
+//         glfwSwapBuffers(window);
+//         glfwPollEvents();
+//     };
+
+	#ifdef __EMSCRIPTEN__ 
+		emscripten_set_main_loop_arg(main_loop, (void*)&loopP, 0, true);
+	#else
+		while(!glfwWindowShouldClose(window)){
+			main_loop((void*)&loopP);
+		}
+	#endif
 	
 	glDeleteTextures(1, &textures);
 	

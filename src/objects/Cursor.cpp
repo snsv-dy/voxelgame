@@ -5,10 +5,12 @@ Cursor::Cursor(glm::ivec3& pos) : position{pos} {
 }
 
 void Cursor::init(){
+	std::string vspath = "../src/shaders/chunkvs.vs";
+	std::string fspath = "../src/shaders/chunkfs.fs";
 	shader = getShaderParams(
 		getShaderProgram(
-			getShaderFromFile("../src/shaders/chunkvs.vs", ShaderType::VERTEX),
-			getShaderFromFile("../src/shaders/chunkfs.fs", ShaderType::FRAGMENT)
+			getShaderFromFile(vspath, ShaderType::VERTEX),
+			getShaderFromFile(fspath, ShaderType::FRAGMENT)
 			)
 		);
 		
@@ -67,9 +69,9 @@ void Cursor::draw(const glm::mat4& projection, const glm::mat4* view){
 	glUniformMatrix4fv(shader.view, 1, GL_FALSE, glm::value_ptr(*view));
 	mesh.model = glm::translate(glm::mat4(1.0f), glm::vec3(position) + glm::vec3(0.5f));
 //		
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	mesh.draw();
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	// glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 Cursor::~Cursor()
