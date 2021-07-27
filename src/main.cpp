@@ -207,8 +207,14 @@ int opengl_context_scope(GLFWwindow *window)
 	glm::mat4& playersView = player.getView();
 	
 	char textBuffer[2000] = {};
+	float dt = 1000.0f / 12 / 1000;
+	float deltaTime = 0.0f;
+	float lastFrame = 0.0f;
     while (!glfwWindowShouldClose(window))
-    {
+    {	
+		float currentFrame = glfwGetTime();
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
 		wl.update(player.positionFromHead);
 		auto unlitColumns = wl.getUnlitColumns();
 		if(unlitColumns.size() > 0) {
@@ -227,7 +233,15 @@ int opengl_context_scope(GLFWwindow *window)
 		
 		int debugkeys = processInput(window);
 		
-		auto [groundIntersected, intersectionAmount] = wl.playerIntersects(player);
+		glm::vec3 dx = player.updatePhysics(deltaTime);
+		bool jumpReset = dx[1] < 0;
+		dx = wl.collideAABB(player.aabb, player.velocity, dx);
+		if (jumpReset && abs(dx[1]) < 0.0001) {
+			player.jumped = false;
+		}
+//		printf("dx: [%2.2f, %2.2f, %2.2f]\n", dx[0], dx[1], dx[2]);
+		player.applyTranslation(dx);
+//		auto [groundIntersected, intersectionAmount] = wl.playerIntersects(player);
 //		if (groundIntersected) {
 ////			player.position += intersectionAmount;
 //			player.applyMove(true, intersectionAmount);
@@ -243,7 +257,7 @@ int opengl_context_scope(GLFWwindow *window)
 		
 		wl.draw(player.positionFromHead, playersView);
 //		
-		sprintf(textBuffer, "ground intersection: %.02f, y: %.02f, z: %.02f", intersectionAmount.x, intersectionAmount.y, intersectionAmount.z);
+		sprintf(textBuffer, "ground intersection: %.02f, y: %.02f, z: %.02f", deltaTime, dx.y, dx.z);
 		renderText(fontmesh1, std::string(textBuffer), 20, 130, 0.5);
 		
 		glm::vec3 kameraPos = player.positionFromHead;
@@ -283,6 +297,8 @@ int opengl_context_scope(GLFWwindow *window)
 		
         glfwSwapBuffers(window);
         glfwPollEvents();
+//		frameEndClock = clock();
+//		dt = (float)(frameEndClock - frameStartClock) / CLOCKS_PER_SEC * 10.0f;
     }
 	
 	glDeleteTextures(1, &textures);

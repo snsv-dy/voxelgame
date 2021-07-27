@@ -74,9 +74,9 @@ public:
 	std::pair<region_dtype&, bool> getBlock(const block_position& pos);
 	std::pair<region_dtype&, bool> getBlock(const glm::vec3& pos);
 	
-	std::pair<bool, glm::vec3> playerIntersects(Player& player);
+	glm::vec3 collideAABB(const AABB& aabb, glm::vec3& velocity, glm::vec3 dx);
 	float fastRay(glm::vec3 origin, glm::vec3 direction, float maxt, glm::vec3& penetration, int& collision_axis, glm::ivec3& hit);
-	float fastAABB(AABB& origin, glm::vec3 direction, float maxt, glm::vec3& penetration, int& collision_axis, glm::ivec3& hit);
+	float fastAABB(const AABB& origin, glm::vec3 direction, float maxt, int& collision_axis);
 	
 	// sweeep stuff
 };

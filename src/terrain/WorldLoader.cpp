@@ -282,212 +282,37 @@ std::pair<Chunk&, bool> WorldLoader::getChunk(glm::ivec3 position) {
 	return {chunks.begin()->second, false};
 }
 
-std::pair<bool, glm::vec3> WorldLoader::playerIntersects(Player& player) {
-	
-	// updating physics
-	
-	float dt = 1000.0f / 12 / 1000;
-	
-	glm::vec3 a = player.force / player.mass;
-	const float gravity = 1.0f;
-	a.y -= gravity;
-	
-	glm::vec3 dv = a * dt;
-	player.velocity += dv;
-		
-	// friction
-	const float frictionValue = 0.6;
-	float fMax = frictionValue * dt;
-	glm::vec3 friction = -player.velocity;
-	float frictionMag = glm::length(friction);
-	if (frictionMag > fMax) {
-		friction *= fMax / frictionMag;
-		player.velocity += friction;
-//		printf("[%2.2f %2.2f %2.2f] [%2.2f %2.2f %2.2f] %f\n", friction.x, friction.y, friction.z, player.velocity.x, player.velocity.y, player.velocity.z, frictionMag);
-	} else {
-//		printf("zeros\n");
-		player.velocity.x = player.velocity.y = player.velocity.z = 0.0f;
-	}
-	
-	player.force = glm::vec3(0.0f);
-	
-	// end of physics
-	
-	// collision handling
-	
-//	return {true, glm::vec3(0.0f)};
-	
-	int oldTouching[3];
-	for(int i = 0; i < 3; i++) {
-		oldTouching[i] = player.touching[i];
-		player.touching[i] = 0;
-	}
-	
-	int movingDirection[3];
-	for(int ax = 0; ax < 3; ax++) {
-		movingDirection[ax] = 0;
-		if (player.velocity[ax] > 0) {
-			movingDirection[ax] = 1;
-		} else if (player.velocity[ax] < 0) {
-			movingDirection[ax] = -1;
-		}
-		
-		// If player attempts to move in direction which is already touching the ground, set velocity in this axis to 0.
-//		if (player.touching[ax] == movingDirection[ax]) {
-//			player.velocity[ax] = 0.0f;
-//		}else if(player.touching[ax] == -movingDirection[ax]) { 
-//			player.touching[ax] = 0; // resetting touching if player moves in opposite direction.
-//		}
-	}
-	
-	glm::vec3 pointsToCheck[2] {
-		player.getPosition(),// + player.headPosition - glm::vec3(0.1f)
-//		player.getPosition() + player.headPosition
-//		player.aabb.min,
-//		player.aabb.max,
-	};
-	
-	glm::vec3 dx = player.velocity * dt;
-	
-	// checking if player is in block
-//	auto [chunkPosition, blockPosition] = toChunkCoordsReal(pointsToCheck[0], TerrainConfig::ChunkSize);
-////	auto [chunkPosition, blockPosition] = toChunkCoordsReal(point, TerrainConfig::ChunkSize);
-//	block_position blockPos = block_position(blockPosition, chunkPosition);
-//	auto [block, found] = getBlock(blockPos);
-	
-//	if (found && getBlockType(block) != 0) {
-//		// player is currently in block
-//	}
-	
-	// end of check
-	
-//	for (int i = 0; i < 3; i++) {
-		float velLength = glm::length(player.velocity);
-		float dxLength = glm::length(dx);
-	//	printf("velocity length: %f\n", velLength);
-	
-	if (dxLength > 0.0f) {
-		auto playaPos = player.getPosition();
-		glm::vec3 points[8] = {
-			playaPos
-//			{playaPos.x - 0.2, playaPos.y, playaPos.z - 0.2},
-//			{playaPos.x + 0.2, playaPos.y, playaPos.z - 0.2},
-//			{playaPos.x + 0.2, playaPos.y, playaPos.z + 0.2},
-//			{playaPos.x - 0.2, playaPos.y, playaPos.z + 0.2},
-//			
-//			{playaPos.x - 0.2, playaPos.y + 0.2, playaPos.z - 0.2},
-//			{playaPos.x + 0.2, playaPos.y + 0.2, playaPos.z - 0.2},
-//			{playaPos.x + 0.2, playaPos.y + 0.2, playaPos.z + 0.2},
-//			{playaPos.x - 0.2, playaPos.y + 0.2, playaPos.z + 0.2}
-		};
-		
+//std::pair<bool, glm::vec3> WorldLoader::playerIntersects(Player& player) {
+glm::vec3 WorldLoader::collideAABB(const AABB& aabb, glm::vec3& velocity, glm::vec3 dx) {
+	float dxLength = glm::length(dx);
+	if (dxLength > 0.0001f) {
+		int axis = -1;
+		int loops = 0;
 		bool hitted = true;
-		for (int i = 0; i < 1; i++) {
-			glm::vec3 penetration;
-			glm::ivec3 hit;
-	//		glm::vec3 velocity_normalized = glm::normalize(player.velocity);
-			int axis = -1;
-			int loops = 0;
-			while(hitted && dxLength > 0.0001f && loops < 5) {
-				loops++;
-//				printf("%d %d %2.2f\n", hitted, dxLength > 0.001f, dxLength);
-				hitted = false;
-				float t = fastAABB(player.aabb, dx, dxLength, penetration, axis, hit);
-				for(int i = 0; i < 3; i++) {
-					if (hit[i] != 0) {
-						hitted = true;
-						player.velocity[axis] = 0.0f;
-//						printf("penetration [%2.2f, %2.2f, %2.2f], cult: %d, dx: %2.2f, dxLength: %2.2f, dx: [%2.2f, %2.2f, %2.2f]\n", penetration.x, penetration.y, penetration.z, axis, dx[axis], dxLength, dx.x, dx.y, dx.z);
-//						printf("penetration [%d, %d, %d]\n", hit[0], hit[1], hit[2]);
-		//				getchar();
-		//				if (penetration[axis] != NAN && penetration[axis] != INFINITY) {
-		//					dx[axis] = -penetration[axis];
-		//				}
-						
-						dx[axis] = 0.0f;//0.01 * -hit[axis];//penetration[axis];
-					}
-				}
-				dxLength = glm::length(dx);
+		while(hitted && dxLength > 0.0001f && loops < 5) {
+			loops++;
+			hitted = false;
+			float t = fastAABB(aabb, dx, dxLength, axis);
+			if (axis != -1) {
+				hitted = true;
+				velocity[axis] = 0.0f;						
+				dx[axis] = 0.0f;
 			}
-			
+			dxLength = glm::length(dx);
 		}
 	}
 	
-//	}
-	
-	// update position after collision detection.
-	player.setPosition(player.getPosition() + dx);
-	
-	return {true, glm::vec3(0.0f)};
-	
-//	for(int i = 0; i < 1; i++) {
-//		auto point = pointsToCheck[i];
-//		for(int ax = 1; ax < 2; ax++) {
-//			if (movingDirection[ax] == 0 || player.touching[ax] != 0)
-//				continue;
-//			
-//			glm::vec3 movedInAxis(0.0f);
-//			movedInAxis[ax] = player.velocity[ax];
-//			
-////			auto [chunkPosition, blockPosition] = toChunkCoordsReal(point + movedInAxis, TerrainConfig::ChunkSize);
-//			auto [chunkPosition, blockPosition] = toChunkCoordsReal(point, TerrainConfig::ChunkSize);
-//			block_position blockPos = block_position(blockPosition, chunkPosition);
-//			auto [block, found] = getBlock(blockPos);
-//			
-//			float globalBlockPosition = blockPosition[ax] + chunkPosition[ax] * TerrainConfig::ChunkSize;
-//			
-//			if(found && getBlockType(block) != 0) {
-//				// calculate maximum allowed velocity
-////				player.velocity[ax] = 0.0f;
-//				float& pos = point[ax];
-////				float& vel = player.velocity[ax];
-//				float maxAllowed = 0.0f;
-////				
-////				if( movingDirection[ax] == 1) {
-////					maxAllowed = globalBlockPosition - pos;
-////				} else {
-////					maxAllowed = pos - (globalBlockPosition + 1);
-////				}
-//				if( movingDirection[ax] == 1) {
-//					maxAllowed = -(globalBlockPosition - pos);
-//				} else {
-//					maxAllowed = globalBlockPosition + 1 - pos;
-//				}
-//				
-//				
-////				if (oldTouching[ax] == 0) {
-////					player.velocity[ax] = (maxAllowed - 0.01) * (float) movingDirection[ax];
-////				} else {
-////				}
-//				player.position[ax] -= maxAllowed;
-//				player.velocity[ax] = 0;
-//				
-//				// fordebug
-//				glm::ivec3 debPos = blockPosition + chunkPosition * TerrainConfig::ChunkSize;
-//				printf("ax touched: %d, direction: %d, allowed: %2.2f, position: [%d %d %d] , playerPosition: [%2.2f %2.2f %2.2f], ", ax, movingDirection[ax], maxAllowed, debPos.x, debPos.y, debPos.z, point.x, point.y, point.z);
-//				printf("player velocity [%2.2f, %2.2f, %2.2f]\n", player.velocity.x, player.velocity.y, player.velocity.z);
-//				// endfor
-//				
-//				// set that player is touching in this axis in this direction
-//				player.touching[ax] = movingDirection[ax];
-//			}
-//		}
-//	}
-	
-	
-	
-	return {true, glm::vec3(0.0f)};
+	return dx;
 }
 
 // As mentioned in javascript script this algorithm is from https://github.com/andyhall/voxel-aabb-sweep
-float WorldLoader::fastAABB(AABB& aabb, glm::vec3 direction, float maxt, glm::vec3& penetration, int& collision_axis, glm::ivec3& hit) {
-	penetration = glm::vec3(0.0f);
-	hit = glm::ivec3(0);
+float WorldLoader::fastAABB(const AABB& aabb, glm::vec3 direction, float maxt, int& collision_axis) {
+//	penetration = glm::vec3(0.0f);
 	glm::vec3 normalDirection = glm::normalize(direction);
 	
 	int step[3]; // In which direction we are moving in each axis.
 	for (int i = 0; i < 3; i++) {
-		step[i] = direction[i] > 0 ? 1 : -1;//direction[i] < 0 ? -1 : 0;
+		step[i] = direction[i] > 0 ? 1 : -1;
 	}
 	
 	glm::vec3 origin;
@@ -495,24 +320,12 @@ float WorldLoader::fastAABB(AABB& aabb, glm::vec3 direction, float maxt, glm::ve
 		origin[i] = step[i] == 1 ? aabb.max[i] : aabb.min[i];
 	}
 	
-//	glm::ivec3 ipos {
-//		floor(origin.x),
-//		floor(origin.y),
-//		floor(origin.z)
-//	};
 	glm::ivec3 ilead;
 	glm::ivec3 itrail;
 	for (int i = 0; i < 3; i++) {
 		ilead[i] = step[i] == 1 ? floor(aabb.max[i]) : floor(aabb.min[i]);
 		itrail[i] = step[i] == 1 ? floor(aabb.min[i]) : floor(aabb.max[i]);
 	}
-	
-//	printf("lead [%d, %d, %d]\n", ilead[0], ilead[1], ilead[2]);
-	
-//	glm::ivec3 iBackPos;
-//	for (int i = 0; i < 3; i++) {
-//		iBackPos[i] = step[i] == 1 ? aabb.max[i] : aabb.min[i];
-//	}
 	
 	float scaling[3]; // How far along the ray we have to move to get to the next voxel.
 	scaling[0] = sqrt( 1 + pow(normalDirection.z / normalDirection.x, 2));
@@ -530,14 +343,9 @@ float WorldLoader::fastAABB(AABB& aabb, glm::vec3 direction, float maxt, glm::ve
 		tMax[i] = step[i] >= 0 ? (float) floor(origin[i]) + 1 - origin[i] : origin[i] - (float) floor(origin[i]);
 		tMax[i] *= scaling[i];
 	}
-//	int collision_axis = tMax[0] < tMax[1] ?
-//							tMax[0] < tMax[2] ? 0 : 2 :
-//							tMax[1] < tMax[2] ? 1 : 2;
-//	if (collision_axis == -1) {
-		collision_axis  = tMax[0] < tMax[1] ?
-							tMax[0] < tMax[2] ? 0 : 2 :
-							tMax[1] < tMax[2] ? 1 : 2;
-//	}
+	collision_axis  = tMax[0] < tMax[1] ?
+						tMax[0] < tMax[2] ? 0 : 2 :
+						tMax[1] < tMax[2] ? 1 : 2;
 	
 	float t = 0.0f;
 	bool collision = false;
@@ -557,12 +365,12 @@ float WorldLoader::fastAABB(AABB& aabb, glm::vec3 direction, float maxt, glm::ve
 				for (cursor.x = beg.x; cursor.x != end.x; cursor.x += step[0]) {
 					auto [block, found] = getBlock(cursor);
 					if (found && getBlockType(block) != 0) {
-						penetration.x = origin.x + normalDirection.x * t;
-						penetration.y = origin.y + normalDirection.y * t;
-						penetration.z = origin.z + normalDirection.z * t;
+						// Left collision point in case i would need it in the future.
+//						penetration.x = origin.x + normalDirection.x * t;
+//						penetration.y = origin.y + normalDirection.y * t;
+//						penetration.z = origin.z + normalDirection.z * t;
 						
 						collision = true;
-						hit[collision_axis] = step[collision_axis];
 						return t;
 					}
 				}
@@ -579,37 +387,10 @@ float WorldLoader::fastAABB(AABB& aabb, glm::vec3 direction, float maxt, glm::ve
 			
 		t = tMax[axis];
 		tMax[axis] += scaling[axis];
-//		ipos[axis] += step[axis];
 		itrail[axis] += step[axis];
 		ilead[axis] += step[axis];
 		collision_axis = axis;
 		// End of stepping.
-				
-//		if (tMax[0] < tMax[1]) {
-//			if (tMax[0] < tMax[2]) { 
-//				t = tMax[0];
-//				tMax[0] += scaling[0];
-//				ipos[0] += step[0];
-//				collision_axis = 0;
-//			} else {
-//				t = tMax[2];
-//				tMax[2] += scaling[2];
-//				ipos[2] += step[2];
-//				collision_axis = 2;
-//			}
-//		} else {
-//			if (tMax[1] < tMax[2]) {
-//				t = tMax[1];
-//				tMax[1] += scaling[1];
-//				ipos[1] += step[1];
-//				collision_axis = 1;
-//			} else {
-//				t = tMax[2];
-//				tMax[2] += scaling[2];
-//				ipos[2] += step[2];
-//				collision_axis = 2;
-//			}
-//		}
 	}
 	
 	if (!collision) {
