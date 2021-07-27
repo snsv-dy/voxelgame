@@ -12,6 +12,12 @@ It's running a bit slower than native application, also it doesn't help that eve
 <img src="screen3.jpg"/>
 <img src="screen4.jpg"/>
 
+## Compilation
+#### Linux
+Make sure you have all libraries that are listed in makefile under the LFLAGS variable, and type make.
+#### Webassembly
+Should be working on any system, but em++ should be set in terminal before. To compile this version type make web.
+
 ## Acknowledgements / Libraries
 * https://learnopengl.com/
 * https://glad.dav1d.de/
