@@ -24,8 +24,8 @@
 
 #include "terrain/Terrain.h"
 #include "terrain/Lighter.hpp"
-#include "src/terrain/WorldLoader.h"
-#include "src/terrain/Chunk.h"
+#include "terrain/WorldLoader.h"
+#include "terrain/Chunk.h"
 
 #include "utilities/Camera.h"
 #include "utilities/fonts.h"
@@ -33,6 +33,22 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+
+#ifdef __EMSCRIPTEN__
+const char* TEXT_TEXTURE_PATH = "font.png";
+const char* TEXT_VS_PATH = "src/shaders/text.vs";
+const char* TEXT_FS_PATH = "src/shaders/text.fs";
+const char* CHUNK_VS_PATH = "src/shaders/chunkvs.vs";
+const char* CHUNK_FS_PATH = "src/shaders/chunkfs.fs";
+const char* TEXTURES_PATH = "texture.png";
+#else
+const char* TEXT_TEXTURE_PATH = "../font.png";
+const char* TEXT_VS_PATH = "../src/shaders/text.vs";
+const char* TEXT_FS_PATH = "../src/shaders/text.fs";
+const char* CHUNK_VS_PATH = "../src/shaders/chunkvs.vs";
+const char* CHUNK_FS_PATH = "../src/shaders/chunkfs.fs";
+const char* TEXTURES_PATH = "../texture.png";
+#endif
 
 
 static void error_callback(int error, const char* description)
@@ -212,8 +228,8 @@ int main(void) {
 
 int opengl_context_scope(GLFWwindow *window)
 {
-	const std::string CHUNK_VERTEX_SHADER = std::string("src/shaders/chunkvs.vs");
-	const std::string CHUNK_FRAGMENT_SHADER = std::string("src/shaders/chunkfs.fs");
+	const std::string CHUNK_VERTEX_SHADER = std::string(CHUNK_VS_PATH);
+	const std::string CHUNK_FRAGMENT_SHADER = std::string(CHUNK_FS_PATH);
 	
 	// Setting params struct and callbacks.
 	
@@ -263,7 +279,7 @@ int opengl_context_scope(GLFWwindow *window)
 	glEnable(GL_DEPTH_TEST);
 	
 	FontMesh fontmesh1 = {0};
-	if(initText(fontmesh1, "font.png", "src/shaders/text.vs", "src/shaders/text.fs", glm::ortho(0.0f, static_cast<float>(screen_width), 0.0f, static_cast<float>(screen_height))) != 0){
+	if(initText(fontmesh1, TEXT_TEXTURE_PATH, TEXT_VS_PATH, TEXT_FS_PATH, glm::ortho(0.0f, static_cast<float>(screen_width), 0.0f, static_cast<float>(screen_height))) != 0){
 		printf("Initialization of text failed.\n");
 		
 		glfwDestroyWindow(window);
@@ -278,7 +294,7 @@ int opengl_context_scope(GLFWwindow *window)
 			getShaderFromFile(CHUNK_FRAGMENT_SHADER, ShaderType::FRAGMENT)
 			)
 		);
-	unsigned int textures = loadTexture(std::string("texture.png"));
+	unsigned int textures = loadTexture(std::string(TEXTURES_PATH));
 	
 	glm::mat4 projection = glm::perspective(glm::radians(55.0f), static_cast<float>(screen_width) / screen_height, 0.1f, 1000.0f);
 	

@@ -4,14 +4,15 @@ VPATH = %.cpp src src/objects src/terrain  src/utilities
 OBJ_PATH := Debug
 WS_PATH := WSDebug
 
-SRCS := $(wildcard src/**/*.cpp) $(wildcard src/*.cpp)  $(wildcard src/*.c)
-SRCS := $(notdir $(SRCS))
-BINS := $(SRCS:%.cpp=$(OBJ_PATH)/%.o)
-BINS := $(BINS:%.c=$(OBJ_PATH)/%.o)
-
 WS_SRCS := $(wildcard src/**/*.cpp) $(wildcard src/*.cpp)
-WS_SRCS := $(notdir $(SRCS))
+WS_SRCS := $(notdir $(WS_SRCS))
 WS_BINS := $(WS_SRCS:%.cpp=$(WS_PATH)/%.o)
+
+SRCS := $(wildcard src/*.c)
+SRCS := $(notdir $(SRCS))
+BINS := $(WS_SRCS:%.cpp=$(OBJ_PATH)/%.o) $(SRCS:%.c=$(OBJ_PATH)/%.o)
+# BINS := 
+
 
 # $(info VAR is $(SRCS))
 $(info BINS is $(BINS))
@@ -30,13 +31,13 @@ all: $(OBJ_PATH) ${PROGNAME}
 web: $(WS_PATH) ${WS_PROGNAME}
 
 ${WS_PROGNAME}: ${WS_BINS}
-	$(EMCC) $(EMFLAGS) $(EMLFLAGS) $? -o $@
+	$(EMCC) $(EMFLAGS) $(EMLFLAGS) $^ -o $@
 
 ${WS_PATH}/%.o: %.cpp
 	$(EMCC) $(EMFLAGS) -c $< -o $(WS_PATH)/$(@F)
 
 ${PROGNAME}: ${BINS}
-	$(CC) $? -lm $(LFLAGS) -o $@
+	$(CC) $^ -lm $(LFLAGS) -o $@
 
 $(OBJ_PATH):
 	mkdir $@
