@@ -1,7 +1,12 @@
 #ifndef _BASIC_UTIL_
 #define _BASIC_UTIL_
 
+#ifdef __EMSCRIPTEN__
+#include <GLES3/gl3.h>
+#else
 #include <glad/glad.h>
+#endif
+
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -12,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <tuple>
+#include <string>
 
 #include "../terrain/TerrainConfig.hpp"
 	

@@ -1,7 +1,12 @@
 #ifndef MESH_H
 #define MESH_H
 
+#ifdef __EMSCRIPTEN__
+#include <GLES3/gl3.h>
+#else
 #include <glad/glad.h>
+#endif
+
 #include "../utilities/basic_util.h"
 
 #include <glm/glm.hpp>

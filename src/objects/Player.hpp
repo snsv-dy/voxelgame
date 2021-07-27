@@ -25,11 +25,13 @@ private:
 	float pitch = 0.0f;
 	glm::mat4 view = glm::lookAt(position, position + orientation, up);
 	
-	glm::vec3 position = glm::vec3(0.0f, 5.0f, 0.0f);
+	// const float movingForce = 2.0f;
+public:
+	glm::vec3 position = glm::vec3(0.0f, 60.0f, 0.0f);
 	glm::vec3 force = glm::vec3(0.0f);
 	const float maxVelocity = 12.7f;
 	const float maxFalling = 55.0f;
-	const float movingForce = 20.0f;
+	const float movingForce = 2.0f;
 	const float jumpForce = movingForce;
 	float mass = 1.0f;
 

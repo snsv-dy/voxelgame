@@ -120,13 +120,13 @@ int initText(FontMesh& fontParams, std::string fontTexturePath, std::string vert
 	
 	unsigned int vertex_shader = getShaderFromFile((char *)vertexShaderPath.c_str(), ShaderType::VERTEX);
 	if(vertex_shader == 0){
-		printf("Error when loading vertex shader: '%s', for font: '%s'\n", vertexShaderPath, fontTexturePath);
+		printf("Error when loading vertex shader: '%s', for font: '%s'\n", vertexShaderPath.c_str(), fontTexturePath.c_str());
 		return 2;
 	}
 	
 	unsigned int fragment_shader = getShaderFromFile((char *)fragmentShaderPath.c_str(), ShaderType::FRAGMENT);
 	if(fragment_shader == 0){
-		printf("Error when loading fragment shader: '%s', for font: '%s'\n", vertexShaderPath, fontTexturePath);
+		printf("Error when loading fragment shader: '%s', for font: '%s'\n", vertexShaderPath.c_str(), fontTexturePath.c_str());
 		return 2;
 	}
 	

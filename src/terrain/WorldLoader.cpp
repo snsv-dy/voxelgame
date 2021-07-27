@@ -87,7 +87,7 @@ void WorldLoader::updateTerrain(const int& block_type, const glm::ivec3 &pos, Bl
 //		containing_region.modified = true;
 		// Bug is when loading/meshing/most likely calculating sunlight for new chunk with blocklight
 		// fixed?
-		blocks_changed.push_back({block_pos, action == BlockAction::PLACE, block_type, block_before});
+		blocks_changed.push_back({block_pos, action == BlockAction::PLACE, (const region_dtype)block_type, block_before});
 		
 		// Not enough adjacent chunks are updated. ( Check -1 0/1 -1 cursor position)
 		
@@ -178,9 +178,10 @@ void WorldLoader::update(glm::vec3 cameraPos){
 //		if(abs_change.x > 1 || abs_change.y > 1 || abs_change.z > 1 || first) {
 		if (first) {
 			abs_change = glm::ivec3(radius * 2, 0, 0); // This refreshed whole observable terrain.
-		}else{
-			abs_change = glm::ivec3(0);
 		}
+		// else{
+		// 	abs_change = glm::ivec3(0);
+		// }
 		
 		
 //		printf("change: %d %d %d\n", change[0], change[1], change[2]);

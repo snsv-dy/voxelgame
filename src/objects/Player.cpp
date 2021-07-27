@@ -73,8 +73,8 @@ void Player::setPosition(glm::vec3 newPosition) {
 
 glm::vec3 Player::updatePhysics(const float& dt) {
 	glm::vec3 a = force / mass;
-//	const float gravity = 10.0f;
-//	a.y -= gravity / mass;
+	const float gravity = 1.0f;
+	a.y -= gravity / mass;
 	
 	glm::vec3 dv = a * dt;
 	
@@ -87,7 +87,7 @@ glm::vec3 Player::updatePhysics(const float& dt) {
 	}
 		
 	// friction
-	const float frictionValue = 2.6f;
+	const float frictionValue = 0.6f;
 	float fMax = frictionValue * dt;
 	glm::vec3 friction = -velocity;
 	float frictionMag = glm::length(friction);

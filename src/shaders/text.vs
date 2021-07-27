@@ -1,6 +1,6 @@
-#version 330 core
+#version 300 es
 
-layout (location = 0) in vec4 pos;
+in vec4 pos;
 
 out vec2 texCoord;
 uniform mat4 projection;

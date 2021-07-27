@@ -47,7 +47,7 @@ unsigned int getShaderFromFile(const std::string& filename, const ShaderType& ty
 	int success;
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 	if(!success){
-		printf("Some shader failed: %s\n", filename);
+		printf("Some shader failed: %s\n", filename.c_str());
 		char infoLog[512];
 		glGetShaderInfoLog(shader, 512, NULL, infoLog);
 		printf("%s\n", infoLog);

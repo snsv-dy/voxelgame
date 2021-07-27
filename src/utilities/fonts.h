@@ -4,7 +4,11 @@
 //#define STB_IMAGE_IMPLEMENTATION
 //#include "stb_image.h"
 
+#ifdef __EMSCRIPTEN__
+#else
 #include <glad/glad.h>
+#endif
+
 #include "basic_util.h"
 #include <string>
 #include <list>
