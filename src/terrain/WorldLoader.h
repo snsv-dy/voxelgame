@@ -1,11 +1,12 @@
 #ifndef WORLDLOADER_H
 #define WORLDLOADER_H
 
+#include <condition_variable>
 #include <map>
 #include <set>
 #include <unordered_map>
 #include <cmath> // for sweep
-#include "worldProvider.h"
+#include "worldProvider.hpp"
 #include "Chunk.h"
 #include "../objects/Player.hpp"
 #include "../objects/AABB.hpp"
@@ -35,7 +36,10 @@ class WorldLoader
 {
 	struct shaderParams shParams;
 	std::map<glm::ivec3, Chunk, compareVec3> chunks;
-	std::set<glm::ivec3, compareVec3> chunks_to_update;
+	std::set<glm::ivec3, compareVec3> chunks_to_update; // Chunks that need to have vertices (re)generated.
+	std::set<glm::ivec3, compareVec3> prepared_chunks; // Chunks that need to have data sent to buffer by drawing thread (Thread in which opengl was initialized).
+	std::set<glm::ivec3, compareVec3> disposable_chunks;
+	std::mutex disposableChunksMutex;
 //	std::set<glm::ivec3, compareVec> lights_to_propagate;
 //	std::map<glm::ivec3, Chunk*, compareVec3> chunksToDraw;
 	glm::mat4 *projection;
@@ -44,7 +48,6 @@ class WorldLoader
 	worldProvider provider;
 //	Lighter lighter;
 	
-	glm::ivec3 last_camera_pos;
 	bool first = true;
 	
 	int highest_y = 0; // should be lowest int?
@@ -52,6 +55,13 @@ class WorldLoader
 	std::set<glm::ivec3, compareVec3> light_needed;
 	std::list<ChangedBlock> blocks_changed;
 public:
+
+	//
+	// MOVE TO PRIVATE
+	glm::ivec3 last_camera_pos {0.0f, 0.0f, 0.0f};
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//
+
 	WorldLoader(glm::mat4 *projection, glm::mat4 *view, unsigned int textures, struct shaderParams params);
 	
 	const int radius = 2;
@@ -59,9 +69,18 @@ public:
 	const int unloadRadiusSquared = unloadRadius*unloadRadius;
 	const int chunkSize = TerrainConfig::ChunkSize;
 	
-	void update(glm::vec3 cameraPos);
+	std::mutex updateMutex;
+	std::mutex prepareSetMutex;
+	std::condition_variable updateNotifier;
+	bool notified = true;
+	glm::ivec3 cur_camera_pos {0.0f, 0.0f, 0.0f};
+
+	void checkForUpdate(glm::vec3 cameraPos);
+	void update(glm::ivec3 change);
+	void disposeChunks();
 	void loadChunk(const glm::ivec3& pos, std::set<glm::ivec3, compareVec3> *light_needed=nullptr);
 	std::set<glm::ivec3, compareVec3> getUnlitColumns();
+	void prepareGeometry();
 	void updateGeometry();
 	std::list<ChangedBlock> getChangedBlocks();
 	void addUpdatedChunks(std::set<glm::ivec3, compareVec3> updatedChunks);

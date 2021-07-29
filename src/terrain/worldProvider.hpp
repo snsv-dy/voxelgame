@@ -14,16 +14,12 @@
 #include "Region.h"
 
 
-class worldProvider{
+class worldProvider {
 	bool firstLoop = true;
-//	char region[regionSize][regionHeight][regionSize];
-
-//	std::map<glm::ivec3, std::shared_ptr<Region>, compareVec3> regions;
 	std::map<glm::ivec3, Region, compareVec3> regions;
 	Region nullRegion;
 	
 	inline static const std::string world_path = "../world2";
-	
 public:
 	static const int chunkSize = TerrainConfig::ChunkSize;
 	static constexpr int regionN = Region::reg_size;
@@ -50,7 +46,7 @@ public:
 	
 	// Return chunk poses to remove
 	// Pos position in chunk coordinates
-	void update(glm::ivec3 pos){
+	void update(glm::ivec3 pos) {
 //	std::vector<glm::ivec3> update(glm::ivec3 pos){
 		
 //		std::vector<glm::ivec3> chunks_to_remove;
@@ -83,21 +79,21 @@ public:
 			
 //			printf("Regions beg\n");
 		
-			for(auto i = regions.begin(); i != regions.end(); i++){
+			for (auto i = regions.begin(); i != regions.end(); i++) {
 				i->second.removeable = true;
 			}
 			
 			std::vector<glm::ivec3> new_regions;
 			
-			for(int z = -radius; z < radius; z++){
-				for(int x = -radius; x < radius; x++){
+			for (int z = -radius; z < radius; z++) {
+				for (int x = -radius; x < radius; x++) {
 					
 					glm::ivec3 position = glm::ivec3(x, 0, z);
 					position.x += player_region.x;
 					position.z += player_region.z;
-					if(auto reg_it = regions.find(position); reg_it != regions.end()){
+					if (auto reg_it = regions.find(position); reg_it != regions.end()) {
 						reg_it->second.removeable = false;
-					}else{
+					} else {
 						regions[position] = Region(position);
 						
 						new_regions.push_back(position);
@@ -108,9 +104,9 @@ public:
 			}
 			
 			
-			for(auto i = regions.begin(), nexti = i; i != regions.end(); i = nexti){
+			for (auto i = regions.begin(), nexti = i; i != regions.end(); i = nexti) {
 				nexti++;
-				if(i->second.removeable == true){
+				if (i->second.removeable == true) {
 					glm::ivec3 pos = i->second.position;
 //					printf("Removing region %d %d %d\n", pos.x, pos.y, pos.z); 
 //					for(const glm::ivec3 &p : i->second.getLoadedChunks())
@@ -168,7 +164,7 @@ public:
 		return {nullptr, 0};
 	}
 	
-	region_dtype valueAt(int x, int y, int z){
+	region_dtype valueAt(int x, int y, int z) {
 		glm::ivec3 chpos, dpos;
 		std::tie(chpos, dpos) = toChunkCoords(glm::ivec3(x, y, z), regionSize);
 		

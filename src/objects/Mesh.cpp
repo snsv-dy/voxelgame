@@ -77,9 +77,8 @@ void Mesh::updateVao(std::vector<float>& data, std::vector<unsigned int>& int_da
 	}
 }
 
-Mesh::~Mesh()
-{
-	if(buffers_set){
+Mesh::~Mesh() {
+	if (buffers_set) {
 		if(VBO != 0)
 			glDeleteBuffers(1, &this->VBO);
 			

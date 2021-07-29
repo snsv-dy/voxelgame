@@ -6,7 +6,7 @@
 #include <memory>
 
 #include "TerrainConfig.hpp"
-#include "worldProvider.h"
+#include "worldProvider.hpp"
 #include "../objects/Mesh.h"
 #include <glm/glm.hpp>
 
@@ -42,7 +42,6 @@ private:
 	int data_offset = 0; // offset in data pointer, that indicates start of this chunk's data.
 	
 	std::unique_ptr<Mesh> mesh = nullptr;
-	std::tuple<std::vector<float>, std::vector<unsigned int>> getShaderData();
 	
 	glm::ivec3 worldOffset = glm::ivec3(0);
 	WorldLoader *parentLoader = nullptr;
@@ -50,7 +49,13 @@ private:
 	
 	
 public:
+	std::pair<std::vector<float>, std::vector<unsigned int>> getShaderData();
 	void update_data();
+	void prepareUpdateData();
+	// std::tuple<unsigned int, unsigned int, unsigned int> getBuffers(); // buffers from mesh to be disposed by main thread.
+	bool pendingUpdate = false;
+	std::vector<unsigned int> intMeshData;
+	std::vector<float> floatMeshData;
 	
 //	glm::ivec3 getOffset(){
 //		return this->gridOffset;

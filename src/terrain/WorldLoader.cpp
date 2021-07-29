@@ -88,6 +88,7 @@ void WorldLoader::updateTerrain(const int& block_type, const glm::ivec3 &pos, Bl
 		// Bug is when loading/meshing/most likely calculating sunlight for new chunk with blocklight
 		// fixed?
 		blocks_changed.push_back({block_pos, action == BlockAction::PLACE, (const region_dtype)block_type, block_before});
+		chunks_to_update.insert(chunk_pos);
 		
 		// Not enough adjacent chunks are updated. ( Check -1 0/1 -1 cursor position)
 		
@@ -119,10 +120,11 @@ void WorldLoader::updateTerrain(const int& block_type, const glm::ivec3 &pos, Bl
 			update_condition[2] = true;
 		}
 		
-		for(int i = 0; i < 3; i++){
-			if(update_condition[i]){
-				if(auto c = chunks.find(update_positions[i]); c != chunks.end()){
-					c->second.update_data();
+		for(int i = 0; i < 3; i++) {
+			if(update_condition[i]) {
+				if(auto c = chunks.find(update_positions[i]); c != chunks.end()) {
+					chunks_to_update.insert(update_positions[i]);
+					// c->second.update_data();
 				}
 			}
 		}
@@ -160,24 +162,42 @@ inline float ivec3len2(glm::ivec3 a){
 	return a.x*a.x + a.b*a.b + a.z*a.z;
 }
 
-void WorldLoader::update(glm::vec3 cameraPos){
+void WorldLoader::checkForUpdate(glm::vec3 cameraPos) {
 	glm::ivec3 chpos;
 	
 	cameraPos.y = 0.0f;
 	
 	std::tie(chpos, std::ignore) = toChunkCoords(cameraPos, TerrainConfig::ChunkSize);
+	glm::ivec3 change = chpos - last_camera_pos;
+	glm::ivec3 abs_change = glm::abs(change);
+	if (!notified && (last_camera_pos != chpos || first || !chunks_to_update.empty())) {
+		cur_camera_pos = chpos;
+		notified = true;
+		updateNotifier.notify_one();
+		printf("notifying at: %d %d %d \n", chpos[0], chpos[1], chpos[2]);
+	}
+}
+
+void WorldLoader::update(glm::ivec3 change) {
+	// glm::ivec3 chpos;
 	
-	std::list<propagateParam> lights_to_propagate;
-	if (last_camera_pos != chpos || first) {
+	// cameraPos.y = 0.0f;
+	
+	// std::tie(chpos, std::ignore) = toChunkCoords(cameraPos, TerrainConfig::ChunkSize);
+	
+	// std::list<propagateParam> lights_to_propagate;
+	if (true) {
+		printf("updating: %d %d %d \n", change[0], change[1], change[2]);
+	// if (last_camera_pos != chpos || first) {
 		light_needed.clear();
-		provider.update(chpos);
+		provider.update(cur_camera_pos);
 		
-		glm::ivec3 change = chpos - last_camera_pos;
+		// glm::ivec3 change = chpos - last_camera_pos;
 		glm::ivec3 abs_change = glm::abs(change);
 		
 //		if(abs_change.x > 1 || abs_change.y > 1 || abs_change.z > 1 || first) {
 		if (first) {
-			abs_change = glm::ivec3(radius * 2, 0, 0); // This refreshed whole observable terrain.
+			abs_change = glm::ivec3(radius * 2, 0, 0); // This refreshes whole observable terrain.
 		}
 		// else{
 		// 	abs_change = glm::ivec3(0);
@@ -205,7 +225,7 @@ void WorldLoader::update(glm::vec3 cameraPos){
 				for (cursor[biTan] = -radius; cursor[biTan] <= radius; cursor[biTan]++) {
 					for (cursor[tan] = -radius; cursor[tan] <= radius; cursor[tan]++) {
 						cursor[norm] *= back;
-						glm::ivec3 pos = chpos + cursor;
+						glm::ivec3 pos = cur_camera_pos + cursor;
 						cursor[norm] *= back;
 						
 						if (chunks.find(pos) == chunks.end()) {
@@ -218,32 +238,68 @@ void WorldLoader::update(glm::vec3 cameraPos){
 		}
 		
 		// Removing chunks
-		if(false){
-			for(auto i = chunks.begin(), nexti = i; i != chunks.end(); i = nexti){
+		if(true) {
+			disposableChunksMutex.lock();
+			for(auto i = chunks.begin(), nexti = i; i != chunks.end(); i = nexti) {
 				nexti++;
-				if(ivec3len2(i->first - chpos) > unloadRadiusSquared){
-					glm::ivec3 pos = i->first;
-					chunks.erase(i);
+				if(ivec3len2(i->first - cur_camera_pos) > unloadRadiusSquared) {
+					disposable_chunks.insert(i->first);
 				}
 			}
-			
+			disposableChunksMutex.unlock();
 		}
 		
-		last_camera_pos = chpos;
+		last_camera_pos = cur_camera_pos;
 		
 		first = false;
 	}
 }
 
-void WorldLoader::updateGeometry() {
-	if(!chunks_to_update.empty()){
-		for(const glm::ivec3& c : chunks_to_update){
-			if(auto it = chunks.find(c); it != chunks.end())
-				it->second.update_data();
+void WorldLoader::disposeChunks() {
+	disposableChunksMutex.lock(); // trylock
+	if (!disposable_chunks.empty()) {
+		for (const glm::ivec3& i : disposable_chunks) {
+		// for(auto i = chunks.begin(), nexti = i; i != chunks.end(); i = nexti) {
+			chunks.erase(i);
 		}
+		disposable_chunks.clear();
+	}
+	disposableChunksMutex.unlock();
+}
+
+void WorldLoader::prepareGeometry() {
+	if(!chunks_to_update.empty()) {
+		for(const glm::ivec3& c : chunks_to_update) {
+			if(auto it = chunks.find(c); it != chunks.end()) {
+				it->second.prepareUpdateData();
+				// std::pair<std::vector<float>,std::vector<unsigned int>> data = it->second.getShaderData();
+				// meshQueueMutex.lock();
+				// meshQueue.push_back({c, data.first, data.second});
+				// // meshQueue.push_back(std::make_tuple(c, data.first, data.second));
+				// meshQueueMutex.unlock();
+			}
+		}
+		prepareSetMutex.lock();
+		for(const glm::ivec3& c : chunks_to_update) {
+			prepared_chunks.insert(c);
+		}
+		prepareSetMutex.unlock();
+
 		chunks_to_update.clear();
 	}
 	light_needed.clear();
+}
+
+void WorldLoader::updateGeometry() {
+	if(!prepared_chunks.empty()) {
+		prepareSetMutex.lock();
+		for(const glm::ivec3& c : prepared_chunks) {
+			if(auto it = chunks.find(c); it != chunks.end()) {
+				it->second.update_data();
+			}
+		}
+		prepareSetMutex.unlock();
+	}
 }
 
 std::list<ChangedBlock> WorldLoader::getChangedBlocks() {

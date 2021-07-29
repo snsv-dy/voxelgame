@@ -15,6 +15,9 @@
 #include <sstream>
 #include <string>
 #include <list>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 #include "utilities/basic_util.h"
 
@@ -56,33 +59,10 @@ static void error_callback(int error, const char* description)
     fputs(description, stderr);
 }
 
-
-//void mouse_cursor_callback(GLFWwindow *window, double xpos, double ypos);
-//static void mouse_callback(GLFWwindow* window, int button, int action, int mods);
-//void scroll_callback(GLFWwindow* window, double x, double y);
-//void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
-//int processInput(GLFWwindow* window);
-
-//double mx = -1, my = -1;
-
-//bool mouse_down = false;
-//bool mouse_right_down = false;
-	
-//double yscroll = 0;
-//bool keys[256] = {false};
-//
-//bool spressed = false;
-
 int opengl_context_scope(GLFWwindow *window);
 
 const int screen_width = 1270;
 const int screen_height = 720;
-
-//void arrChan(int a[3]) {
-//	a[0] = 5;
-//	a[1] = 2;
-//	a[2] = 0;
-//}
 
 struct LoopParams {
 	WorldLoader* wl;
@@ -97,124 +77,10 @@ struct LoopParams {
 	glm::mat4& playersView;
 };
 
-std::function<void()> loop;
-void main_loop(void* params) {
-	LoopParams* loopP = (LoopParams*)params;
-	WorldLoader& wl = *loopP->wl;
-	Lighter& light = *loopP->light;
-	Player& player = *loopP->player;
-	GLFWwindow* window = loopP->window;
-	char* textBuffer = loopP->textBuffer;
-	FontMesh fontmesh1 = *loopP->fontMesh;
-	ControlsStruct& controls = *loopP->controls;
-	Cursor& cursor = *loopP->cursor;
-	glm::mat4& playersView = loopP->playersView;
-	const float dt = 1000.0f / 12 / 1000;
-	// float deltaTime = 0.0f;
-	// float lastFrame = 0.0f;
-	// float currentFrame = glfwGetTime();
-	// deltaTime = currentFrame - lastFrame;
-	// lastFrame = currentFrame;
-	wl.update(player.positionFromHead);
-	auto unlitColumns = wl.getUnlitColumns();
-	if(unlitColumns.size() > 0) {
-		light.updateLightColumns(unlitColumns);
-	}
-	
-	std::list<ChangedBlock> blocks_changed = wl.getChangedBlocks();
-	if (!blocks_changed.empty()) {
-		light.updateLightForBlock(blocks_changed);
-	}
-	
-	light.propagateLights();
-	
-	wl.addUpdatedChunks(light.getUpdatedChunks());
-	wl.updateGeometry();
-	
-	int debugkeys = processInput(window);
-	glm::vec3 dx = player.updatePhysics(dt);
-	bool jumpReset = dx[1] < 0;
-	dx = wl.collideAABB(player.aabb, player.velocity, dx);
-	if (jumpReset && abs(dx[1]) < 0.0001) {
-		player.jumped = false;
-	}
-//		printf("dx: [%2.2f, %2.2f, %2.2f]\n", dx[0], dx[1], dx[2]);
-	player.applyTranslation(dx);
-
-	// auto [groundIntersected, intersectionAmount] = wl.playerIntersects(player);
-//		if (groundIntersected) {
-////			player.position += intersectionAmount;
-//			player.applyMove(true, intersectionAmount);
-//		}else{
-//		}
-//		player.applyMove(false);
-
-	
-	player.updateView();
-	
-	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
-	wl.draw(player.positionFromHead, playersView);
-//		
-	sprintf(textBuffer, "ground intersection: %.02f, y: %.02f, z: %.02f", dx.x, dx.y, dx.z);
-	renderText(fontmesh1, std::string(textBuffer), 20, 130, 0.5);
-	
-	glm::vec3 kameraPos = player.positionFromHead;
-	glm::vec3 playerPos = player.getPosition();
-	sprintf(textBuffer, "playerPos: x: %.02f, y: %.02f, z: %.02f", playerPos.x, playerPos.y, playerPos.z);
-	renderText(fontmesh1, std::string(textBuffer), 20, 50, 0.5);
-	
-	glm::ivec3 playerBlockPos = {floor(playerPos.x), floor(playerPos.y), floor(playerPos.z)};
-	std::tie(std::ignore, playerBlockPos) = toChunkCoordsReal(playerBlockPos, TerrainConfig::ChunkSize);
-	sprintf(textBuffer, "playerOrdżin: x: %2d, y: %2d, z: %2d", playerBlockPos.x, playerBlockPos.y, playerBlockPos.z);
-	renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
-//		
-	glm::vec3 kameraFront = player.orientation;
-	sprintf(textBuffer, "cameraFront: x: %.02f, y: %.02f, z: %.02f", kameraFront.x, kameraFront.y, kameraFront.z);
-	renderText(fontmesh1, std::string(textBuffer), 20, 20, 0.5);
-	
-//		glm::ivec3 c_pos;
-	region_dtype block_under_cursor;
-	std::tie(controls.cursor_pos, controls.prev_cursor_pos, block_under_cursor) = wl.collideRay(kameraPos, kameraFront, 7);
-//		controls.cursor_pos = c_pos;
-	
-//		sprintf(textBuffer, "cursor  : x: %2d, y: %2d, z: %2d ", controls.cursor_pos.x, controls.cursor_pos.y, controls.cursor_pos.z);
-//		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
-	
-	sprintf(textBuffer, "block under cursor: [%d, %x]", block_under_cursor & 0xff, block_under_cursor >> 8);
-	renderText(fontmesh1, std::string(textBuffer), 20, 90, 0.5);
-	
-	glm::ivec3 chpos;
-	std::tie(chpos, std::ignore) = toChunkCoords(controls.cursor_pos, TerrainConfig::ChunkSize);
-	sprintf(textBuffer, "chunk cursor: x: %2d, y: %2d, z: %2d ", chpos.x, chpos.y, chpos.z);
-	renderText(fontmesh1, std::string(textBuffer), 20, 110, 0.5);
-	
-	// Cursor drawing
-	// cursor.draw(loopP->projection, &playersView);
-	// End of cursor drawing
-	
-	
-	glfwSwapBuffers(window);
-	glfwPollEvents();
-}
+void main_loop(void* params);
+void terrain_thread(WorldLoader& wl, Lighter& light, Player& player, bool& exitHamlet);
 
 int main(void) {
-//	int a[3] {1, 2, 3};
-//	for(int i = 0; i < 3; i++){
-//		printf("%d, ", a[i]);
-//	}
-//	
-//	arrChan(a);
-//	printf("\n");
-//	for(int i = 0; i < 3; i++){
-//		printf("%d, ", a[i]);
-//	}
-//	
-//	getchar();
-//	return 0;
-	
-//	srand(time(NULL));
 	GLFWwindow* window;
 	glfwSetErrorCallback(error_callback);
 	if (!glfwInit())
@@ -333,14 +199,17 @@ int opengl_context_scope(GLFWwindow *window)
 	// Frustrum culling
 	// Make handling cursor nicer.
 	// 2d Hud
-	// Lighting
-	// Physics
-	// Mesh/Chunk allocator? (reusing vertex buffers)
-	// Make greedy meshing work with lightning!
+	// Make greedy meshing work with lightning!!!!! (This not done??? xD)
 	// Change .h files to .hpp*
 	// Split worldProvider to 2 files.
 	// Reverse light values. ( 0 should be no light)
 	// Removing block on chunk's edge doesn't update light in neighbouring chunk.
+	// Sometimes light doesn't get propagated when placing torch. (after multithreading implementation)
+	// ---------------------------------------------------------
+	// Ideaz
+	// --------
+	// Mesh/Chunk allocator? (reusing vertex buffers)
+	// World provider should return chunk objects, and region should consist of chunks. (Chunk objects should be in Region object).
 	// 
 	
 	
@@ -348,6 +217,9 @@ int opengl_context_scope(GLFWwindow *window)
 	glm::mat4& playersView = player.getView();
 	
 	char textBuffer[2000] = {};
+
+	std::map<glm::ivec3, Mesh, compareVec3> meshes;
+	// Prepare mesh data in thread, and call opengl methods in main thread.
 
 	LoopParams loopP {
 		.wl = &wl,
@@ -362,90 +234,18 @@ int opengl_context_scope(GLFWwindow *window)
 		.playersView = playersView
 	};
 
-    // while (!glfwWindowShouldClose(window))
-// 	loop = [&] {
-// 		wl.update(player.positionFromHead);
-// 		auto unlitColumns = wl.getUnlitColumns();
-// 		if(unlitColumns.size() > 0) {
-// 			light.updateLightColumns(unlitColumns);
-// 		}
-		
-// 		std::list<ChangedBlock> blocks_changed = wl.getChangedBlocks();
-// 		if (!blocks_changed.empty()) {
-// 			light.updateLightForBlock(blocks_changed);
-// 		}
-		
-// 		light.propagateLights();
-		
-// 		wl.addUpdatedChunks(light.getUpdatedChunks());
-// 		wl.updateGeometry();
-		
-// 		int debugkeys = processInput(window);
-		
-// 		auto [groundIntersected, intersectionAmount] = wl.playerIntersects(player);
-// //		if (groundIntersected) {
-// ////			player.position += intersectionAmount;
-// //			player.applyMove(true, intersectionAmount);
-// //		}else{
-// //		}
-// //		player.applyMove(false);
+	bool exitHamlet = false;
 
-		
-// 		player.updateView();
-		
-// 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-// 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
-// 		wl.draw(player.positionFromHead, playersView);
-// //		
-// 		sprintf(textBuffer, "ground intersection: %.02f, y: %.02f, z: %.02f", intersectionAmount.x, intersectionAmount.y, intersectionAmount.z);
-// 		renderText(fontmesh1, std::string(textBuffer), 20, 130, 0.5);
-		
-// 		glm::vec3 kameraPos = player.positionFromHead;
-// 		glm::vec3 playerPos = player.getPosition();
-// 		sprintf(textBuffer, "playerPos: x: %.02f, y: %.02f, z: %.02f", playerPos.x, playerPos.y, playerPos.z);
-// 		renderText(fontmesh1, std::string(textBuffer), 20, 50, 0.5);
-		
-// 		glm::ivec3 playerBlockPos = {floor(playerPos.x), floor(playerPos.y), floor(playerPos.z)};
-// 		std::tie(std::ignore, playerBlockPos) = toChunkCoordsReal(playerBlockPos, TerrainConfig::ChunkSize);
-// 		sprintf(textBuffer, "playerOrdżin: x: %2d, y: %2d, z: %2d", playerBlockPos.x, playerBlockPos.y, playerBlockPos.z);
-// 		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
-// //		
-// 		glm::vec3 kameraFront = player.orientation;
-// 		sprintf(textBuffer, "cameraFront: x: %.02f, y: %.02f, z: %.02f", kameraFront.x, kameraFront.y, kameraFront.z);
-// 		renderText(fontmesh1, std::string(textBuffer), 20, 20, 0.5);
-		
-// //		glm::ivec3 c_pos;
-// 		region_dtype block_under_cursor;
-// 		std::tie(controls.cursor_pos, controls.prev_cursor_pos, block_under_cursor) = wl.collideRay(kameraPos, kameraFront, 7);
-// //		controls.cursor_pos = c_pos;
-		
-// //		sprintf(textBuffer, "cursor  : x: %2d, y: %2d, z: %2d ", controls.cursor_pos.x, controls.cursor_pos.y, controls.cursor_pos.z);
-// //		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
-		
-// 		sprintf(textBuffer, "block under cursor: [%d, %x]", block_under_cursor & 0xff, block_under_cursor >> 8);
-// 		renderText(fontmesh1, std::string(textBuffer), 20, 90, 0.5);
-		
-// 		glm::ivec3 chpos;
-// 		std::tie(chpos, std::ignore) = toChunkCoords(controls.cursor_pos, TerrainConfig::ChunkSize);
-// 		sprintf(textBuffer, "chunk cursor: x: %2d, y: %2d, z: %2d ", chpos.x, chpos.y, chpos.z);
-// 		renderText(fontmesh1, std::string(textBuffer), 20, 110, 0.5);
-		
-// 		// Cursor drawing
-// 		cursor.draw(projection, &playersView);
-// 		// End of cursor drawing
-		
-		
-//         glfwSwapBuffers(window);
-//         glfwPollEvents();
-//     };
-
+	std::thread terrain_task {terrain_thread, std::ref(wl), std::ref(light), std::ref(player), std::ref(exitHamlet)};
 	#ifdef __EMSCRIPTEN__ 
 		emscripten_set_main_loop_arg(main_loop, (void*)&loopP, 0, true);
 	#else
 		while(!glfwWindowShouldClose(window)){
 			main_loop((void*)&loopP);
 		}
+		exitHamlet = true;
+		wl.updateNotifier.notify_one();
+		terrain_task.join();
 	#endif
 	
 	glDeleteTextures(1, &textures);
@@ -453,26 +253,119 @@ int opengl_context_scope(GLFWwindow *window)
     return 0;
 }
 
-//void updateThread(WorldLoader *loader){
-//	while(1)
-//		loader.update(kamera.get_pos());
-//}
+void terrain_thread(WorldLoader& wl, Lighter& light, Player& player, bool& exitHamlet) {
+	while(true) {
+		wl.notified = false;
+		printf("waiting for update\n");
+		std::unique_lock lock{wl.updateMutex};
+		wl.updateNotifier.wait(lock);
+		if (exitHamlet) {
+			break;
+		}
 
+		printf("updating\n");
 
+		wl.update(wl.cur_camera_pos - wl.last_camera_pos);
 
-//bool firstMouse = true;
+		auto unlitColumns = wl.getUnlitColumns();
+		if(unlitColumns.size() > 0) {
+			light.updateLightColumns(unlitColumns);
+		}
+		
+		std::list<ChangedBlock> blocks_changed = wl.getChangedBlocks();
+		if (!blocks_changed.empty()) {
+			light.updateLightForBlock(blocks_changed);
+		}
+		
+		light.propagateLights();
+		
+		wl.addUpdatedChunks(light.getUpdatedChunks());
+		wl.prepareGeometry();
 
+		wl.notified = false;
 
-//void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
-////	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-////        glfwSetWindowShouldClose(window, GL_TRUE);
-////	
-////	
-////	if(action == GLFW_PRESS){
-////		keys[key] = true;
-////		spressed = key == GLFW_KEY_S;
-////	}else if(action == GLFW_RELEASE){
-////		keys[key] = false;
-////	}
-//}
-/* https://asciiart.club/ */
+		lock.unlock();
+	}
+}
+
+void main_loop(void* params) {
+	// Unpacking variables
+	LoopParams* loopP = (LoopParams*)params;
+	WorldLoader& wl = *loopP->wl;
+	Lighter& light = *loopP->light;
+	Player& player = *loopP->player;
+	GLFWwindow* window = loopP->window;
+	char* textBuffer = loopP->textBuffer;
+	FontMesh fontmesh1 = *loopP->fontMesh;
+	ControlsStruct& controls = *loopP->controls;
+	Cursor& cursor = *loopP->cursor;
+	glm::mat4& playersView = loopP->playersView;
+	const float dt = 1000.0f / 12 / 1000;
+	// float deltaTime = 0.0f;
+	// float lastFrame = 0.0f;
+	// float currentFrame = glfwGetTime();
+	// deltaTime = currentFrame - lastFrame;
+	// lastFrame = currentFrame;
+
+	wl.disposeChunks();
+	wl.updateGeometry();
+	wl.checkForUpdate(player.positionFromHead);
+	
+	int debugkeys = processInput(window);
+	glm::vec3 dx = player.updatePhysics(dt);
+	bool jumpReset = dx[1] < 0;
+	dx = wl.collideAABB(player.aabb, player.velocity, dx);
+	if (jumpReset && abs(dx[1]) < 0.0001) {
+		player.jumped = false;
+	}
+	player.applyTranslation(dx);
+
+	
+	player.updateView();
+	
+	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+	wl.draw(player.positionFromHead, playersView);
+//		
+	sprintf(textBuffer, "ground intersection: %.02f, y: %.02f, z: %.02f", dx.x, dx.y, dx.z);
+	renderText(fontmesh1, std::string(textBuffer), 20, 130, 0.5);
+	
+	glm::vec3 kameraPos = player.positionFromHead;
+	glm::vec3 playerPos = player.getPosition();
+	sprintf(textBuffer, "playerPos: x: %.02f, y: %.02f, z: %.02f", playerPos.x, playerPos.y, playerPos.z);
+	renderText(fontmesh1, std::string(textBuffer), 20, 50, 0.5);
+	
+	glm::ivec3 playerBlockPos = {floor(playerPos.x), floor(playerPos.y), floor(playerPos.z)};
+	std::tie(std::ignore, playerBlockPos) = toChunkCoordsReal(playerBlockPos, TerrainConfig::ChunkSize);
+	sprintf(textBuffer, "playerOrdżin: x: %2d, y: %2d, z: %2d", playerBlockPos.x, playerBlockPos.y, playerBlockPos.z);
+	renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
+//		
+	glm::vec3 kameraFront = player.orientation;
+	sprintf(textBuffer, "cameraFront: x: %.02f, y: %.02f, z: %.02f", kameraFront.x, kameraFront.y, kameraFront.z);
+	renderText(fontmesh1, std::string(textBuffer), 20, 20, 0.5);
+	
+//		glm::ivec3 c_pos;
+	region_dtype block_under_cursor;
+	std::tie(controls.cursor_pos, controls.prev_cursor_pos, block_under_cursor) = wl.collideRay(kameraPos, kameraFront, 7);
+//		controls.cursor_pos = c_pos;
+	
+//		sprintf(textBuffer, "cursor  : x: %2d, y: %2d, z: %2d ", controls.cursor_pos.x, controls.cursor_pos.y, controls.cursor_pos.z);
+//		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
+	
+	sprintf(textBuffer, "block under cursor: [%d, %x]", block_under_cursor & 0xff, block_under_cursor >> 8);
+	renderText(fontmesh1, std::string(textBuffer), 20, 90, 0.5);
+	
+	glm::ivec3 chpos;
+	std::tie(chpos, std::ignore) = toChunkCoords(controls.cursor_pos, TerrainConfig::ChunkSize);
+	sprintf(textBuffer, "chunk cursor: x: %2d, y: %2d, z: %2d ", chpos.x, chpos.y, chpos.z);
+	renderText(fontmesh1, std::string(textBuffer), 20, 110, 0.5);
+	
+	// Cursor drawing
+	// cursor.draw(loopP->projection, &playersView);
+	// End of cursor drawing
+	
+	
+	glfwSwapBuffers(window);
+	glfwPollEvents();
+}

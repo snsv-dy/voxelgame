@@ -129,14 +129,26 @@ void Chunk::changeBlock(const int& block_type, const glm::ivec3& data_pos, Block
 	update_data();
 }
 
-void Chunk::update_data(){
-	std::vector<unsigned int> intdata;
-	std::vector<float> floatdata;
+// std::tuple<unsigned int, unsigned int, unsigned int> Chunk::getBuffers () {
+// 	return mesh->getBuffers();
+// }
+
+// Called from separate thread.
+void Chunk::prepareUpdateData() {
+	std::tie(floatMeshData, intMeshData) = getShaderData();
 	
-	std::tie(floatdata, intdata) = this->getShaderData();
-	
-	if(floatdata.size() > 0){
-		this->mesh->updateVao(floatdata, intdata);
+	if (floatMeshData.size() > 0) {
+		pendingUpdate = true;
+	}
+}
+
+// Called from drawing thread.
+void Chunk::update_data() {
+	if (pendingUpdate) {
+		this->mesh->updateVao(floatMeshData, intMeshData);
+		pendingUpdate = false;
+		floatMeshData.clear();
+		intMeshData.clear();
 	}
 }
 
@@ -272,12 +284,13 @@ inline void add_vertex(std::vector<float>& vertices, std::vector<unsigned int>& 
 
 // https://0fps.net/2012/06/30/meshing-in-a-minecraft-game/
 // https://github.com/AThilenius/greedy_meshing/blob/master/greedy_meshing.ts
-std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData(){
+std::pair<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData(){
 	std::vector<float> ret; // Vertices and thier texture coordinates.
 	std::vector<unsigned int> int_ret; // Parameters for each vertex ( texture id, ao) not to be interpolated along the triangle.
 
 	if(!data){
-		return std::make_tuple(ret, int_ret);
+		// return std::make_tuple(ret, int_ret);
+		return {ret, int_ret};
 	}
 	
 	region_dtype prev_layer[size][size];
@@ -442,7 +455,7 @@ std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData()
 						int width = 1;
 //						for(int tx = x + 1; tx < size && mask[y][tx] == blockType; ){
 						for(int tx = x + 1; tx < size && mask[y][tx] == blockType; ){
-							break;
+							break; // The greedy meshing is inactive due to me working on light for past month and i forgot about it.
 							if(ao_mask[y][tx] != aoVal[0] || ao_mask[y][tx + 1] != aoVal[1] || ao_mask[y + 1][tx] != aoVal[2] || ao_mask[y + 1][tx + 1] != aoVal[3])
 								break;
 							tx++, width++;
@@ -451,7 +464,7 @@ std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData()
 						int height = 1;
 						bool valid = true;
 						for(int ty = y + 1; ty < size && valid; ty++){
-							break;
+							break; // Yeah
 							for(int tx = x; tx < x + width; tx++){
 								if((mask[ty][tx] != blockType)){
 									valid = false;
@@ -554,7 +567,8 @@ std::tuple<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData()
 	
 	fullOrEmpty = ret.size() == 0;
 	
-	return std::make_tuple(ret, int_ret);
+	// return std::make_tuple(ret, int_ret);
+	return {ret, int_ret};
 }
 
 std::tuple<region_dtype*, int> Chunk::giveData(){

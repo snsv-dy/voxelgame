@@ -33,6 +33,7 @@ public:
 	void initVao(std::vector<float>& data, std::vector<unsigned int>& int_data);
 	void updateVao(std::vector<float>& data, std::vector<unsigned int>& int_data);
 	void draw();
+	std::tuple<unsigned int, unsigned int, unsigned int> getBuffers();
 	
 	Mesh() =default;
 	Mesh& operator=(Mesh&& mesh);

@@ -105,20 +105,7 @@ public:
 	
 private:
 	region_dtype data[data_size];
-//	region_dtype light_output[6][region_size * region_size] {0}; // 6 sides of the region, each side 1 block high layer
-//															 // values from this array will be taken by other regions.
-//															 // Saving this variable should be also implemented.
-//	bool light_taken[6] {false};
-//	std::array<std::list<propagateParam>, 6> light_output; // For each side there will be a list with lights to be propagated 
-//														   // to adjecent chunks.
-//														   // Order: 0 - left, 1 - front, 2 - right, 3 - back, 4 - top, 5 - bottom.
-//	void addToOutputList(glm::ivec3 pos, const region_dtype& light);
-//		
 	std::array<region_dtype, chunk_size * chunk_size> getChunkSide(glm::ivec3 pos, int norm, int side);
-//	
-//	std::list<propagateParam> propagateLight(std::list<propagateParam>& queue);
-//	bool is_near_light(int x, int z, int mask[chunk_size][chunk_size]);
-//	std::list<propagateParam>  calculateSunInChunk(int gx, int gy, int gz, int mask[chunk_size][chunk_size]);
 };
 
 #endif // REGION_H
