@@ -62,7 +62,7 @@ class Region{
 private:
 	std::string fileName = std::string("");
 	
-//	std::vector<glm::ivec3> loaded_chunks;
+	// std::vector<glm::ivec3> loaded_chunks;
 	std::set<glm::ivec3, compareVec> loaded_chunks;
 	char terrain(int x, int y, int z);
 	
@@ -83,7 +83,6 @@ public:
 	
 	bool modified = false;
 	bool brand_new = false; // Not loaded from disk, generated using generate(), needs to calculate world light. Change name of this
-//	std::list<propagateParam> pending_lights;
 	
 	glm::ivec3 position = glm::ivec3(0);
 	
@@ -92,9 +91,6 @@ public:
 	
 	Region()=default;
 	Region(glm::ivec3 pos);
-	
-//	std::list<propagateParam> calculateSunlight();
-//	void propagatePendingLight();
 	
 	region_dtype& valueAt(int x, int y, int z);
 //	const std::vector<glm::ivec3>& getLoadedChunks();

@@ -74,7 +74,9 @@ void Player::setPosition(glm::vec3 newPosition) {
 glm::vec3 Player::updatePhysics(const float& dt) {
 	glm::vec3 a = force / mass;
 	const float gravity = 1.0f;
-	a.y -= gravity / mass;
+	if (!noclip) {
+		a.y -= gravity / mass;
+	}
 	
 	glm::vec3 dv = a * dt;
 	

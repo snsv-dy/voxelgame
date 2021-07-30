@@ -39,6 +39,7 @@ public:
 	int touching[3] {0}; // direction in which player is colliding with ground.
 //	glm::vec3 _impulses;
 public:
+	bool noclip = false;
 	bool jumped = false;
 
 	AABB aabb;

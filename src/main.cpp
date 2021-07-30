@@ -234,6 +234,8 @@ int opengl_context_scope(GLFWwindow *window)
 		.playersView = playersView
 	};
 
+	player.noclip = true;
+
 	bool exitHamlet = false;
 
 	std::thread terrain_task {terrain_thread, std::ref(wl), std::ref(light), std::ref(player), std::ref(exitHamlet)};
@@ -254,11 +256,12 @@ int opengl_context_scope(GLFWwindow *window)
 }
 
 void terrain_thread(WorldLoader& wl, Lighter& light, Player& player, bool& exitHamlet) {
-	while(true) {
+	while(!exitHamlet) {
 		wl.notified = false;
 		printf("waiting for update\n");
 		std::unique_lock lock{wl.updateMutex};
 		wl.updateNotifier.wait(lock);
+
 		if (exitHamlet) {
 			break;
 		}
@@ -313,10 +316,12 @@ void main_loop(void* params) {
 	
 	int debugkeys = processInput(window);
 	glm::vec3 dx = player.updatePhysics(dt);
-	bool jumpReset = dx[1] < 0;
-	dx = wl.collideAABB(player.aabb, player.velocity, dx);
-	if (jumpReset && abs(dx[1]) < 0.0001) {
-		player.jumped = false;
+	if (!player.noclip) {
+		bool jumpReset = dx[1] < 0;
+		dx = wl.collideAABB(player.aabb, player.velocity, dx);
+		if (jumpReset && abs(dx[1]) < 0.0001) {
+			player.jumped = false;
+		}
 	}
 	player.applyTranslation(dx);
 
@@ -362,7 +367,7 @@ void main_loop(void* params) {
 	renderText(fontmesh1, std::string(textBuffer), 20, 110, 0.5);
 	
 	// Cursor drawing
-	// cursor.draw(loopP->projection, &playersView);
+	cursor.draw(loopP->projection, &playersView);
 	// End of cursor drawing
 	
 	

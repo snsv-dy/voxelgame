@@ -255,13 +255,13 @@ region_dtype Chunk::valueAt(const glm::ivec3& pos){
 	return data[data_offset + arr_index];
 }
 
-inline int calculate_ao(int side1, int side2, int corner){
-	side1 = block_type(side1) != 0;
-	side2 = block_type(side2) != 0;
-	corner = block_type(corner) != 0;
-//	side1 = block_type(side1);
-//	side2 = block_type(side2);
-//	corner = block_type(corner);
+inline int calculate_ao(int side1, int side2, int corner) {
+	// side1 = block_type(side1) != 0;
+	// side2 = block_type(side2) != 0;
+	// corner = block_type(corner) != 0;
+	side1 = block_type(side1) != 0 && block_type(side1) != BLOCK_NOT_FOUND;
+	side2 = block_type(side2) != 0 && block_type(side2) != BLOCK_NOT_FOUND;
+	corner = block_type(corner) != 0 && block_type(corner) != BLOCK_NOT_FOUND;
 	
 	if(side1 && side2)
 		return 0;
@@ -363,9 +363,9 @@ std::pair<std::vector<float>, std::vector<unsigned int>> Chunk::getShaderData(){
 				
 				// Creating ambient occlusion mask
 				int y;
-				for(cursor[biTan] = 0, y = 0; cursor[biTan] < size; cursor[biTan]++, y++){
+				for(cursor[biTan] = 0, y = 0; cursor[biTan] < size; cursor[biTan]++, y++) {
 					int x;
-					for(cursor[tan] = 0, x = 0; cursor[tan] < size; cursor[tan]++, x++){
+					for(cursor[tan] = 0, x = 0; cursor[tan] < size; cursor[tan]++, x++) {
 						if(mask[y][x] == 0)
 							continue;
 							

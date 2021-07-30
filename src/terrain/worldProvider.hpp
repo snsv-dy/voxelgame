@@ -75,7 +75,7 @@ public:
 			}
 			
 			glm::ivec3 player_region;
-			std::tie(player_region, std::ignore) = toChunkCoords(pos, 4); // 8 = CHUNKS IN REGION, LITERAL VALUE MAY BE SOURCE OF BUGS HERE!!!
+			std::tie(player_region, std::ignore) = toChunkCoords(pos, TerrainConfig::RegionSize); // 8 = CHUNKS IN REGION, LITERAL VALUE MAY BE SOURCE OF BUGS HERE!!!
 			
 //			printf("Regions beg\n");
 		
@@ -120,33 +120,6 @@ public:
 		
 //		return chunks_to_remove;
 	}
-	
-//	void propagateLights(std::list<PropagateParam>){
-//		
-//	}
-	
-//	Region& getRegion(int x, int y, int z){
-//		// 	CHANGE NAME
-//		glm::ivec3 chpos, dpos;
-//		
-//		std::tie(chpos, dpos) = toChunkCoords(glm::ivec3(x, y, z), regionSize);
-//		
-//		if(auto reg_it = regions.find(chpos); reg_it != regions.end()){
-//			return reg_it->second;
-//		}
-//		
-//		return nullRegion;
-//	}
-	
-//	Region& getRegion(glm::ivec3 pos){
-//		return getRegion(pos.x, pos.y, pos.z);
-//	}
-		
-//	bool isThereAChunk(glm::ivec3 pos){
-//		Region& regp = getRegion(pos.x, pos.y, pos.z);
-//		
-//		return regp.type != RegionType::NULL_REGION && regp.getChunkOffset(glm::ivec3(pos.x, pos.y, pos.z)) != -1; // TEMP
-//	}
 	
 	// position - global chunk coordiates
 	// returns data pointer, offset of chunk in data

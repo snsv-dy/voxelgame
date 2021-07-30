@@ -38,7 +38,7 @@ class WorldLoader
 	std::map<glm::ivec3, Chunk, compareVec3> chunks;
 	std::set<glm::ivec3, compareVec3> chunks_to_update; // Chunks that need to have vertices (re)generated.
 	std::set<glm::ivec3, compareVec3> prepared_chunks; // Chunks that need to have data sent to buffer by drawing thread (Thread in which opengl was initialized).
-	std::set<glm::ivec3, compareVec3> disposable_chunks;
+	std::set<glm::ivec3, compareVec3> disposable_chunks; // Chunks that need to have thier mesh buffers disposed.
 	std::mutex disposableChunksMutex;
 //	std::set<glm::ivec3, compareVec> lights_to_propagate;
 //	std::map<glm::ivec3, Chunk*, compareVec3> chunksToDraw;

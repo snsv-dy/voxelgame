@@ -19,7 +19,7 @@ $(info BINS is $(BINS))
 
 EMCC := em++
 EMFLAGS := -I include -I . -g -O0 -Wall -std=c++17 -s USE_WEBGL2=1 -s USE_GLFW=3 -s WASM=1 -s FULL_ES3=1 -s ALLOW_MEMORY_GROWTH=1 -s MAX_WEBGL_VERSION=2
-EMLFLAGS := --preload-file font.png --preload-file src/shaders --preload-file texture.png
+EMLFLAGS := -pthread -s PROXY_TO_PTHREAD=1 --preload-file font.png --preload-file src/shaders --preload-file texture.png
 
 CC := g++
 CCFLAGS := -I include -I . -g -O0 -Wall -std=c++17

@@ -152,10 +152,15 @@ std::pair<region_dtype&, bool> WorldLoader::getBlock(const glm::vec3& pos) {
 	return getBlock(blockPos);
 }
 
-region_dtype WorldLoader::valueAt(int x, int y, int z){
-	return provider.valueAt(x, y, z);
+region_dtype WorldLoader::valueAt(int x, int y, int z) {
+	auto [chunkPosition, blockPosition] = toChunkCoords(glm::ivec3(x, y, z), TerrainConfig::ChunkSize);
+	if( auto it = chunks.find(chunkPosition); it != chunks.end() ) {
+		auto [data, offset] =  it->second.giveData();
+		return data[offset + blockPosition.z * Chunk::size_squared + blockPosition.y * TerrainConfig::ChunkSize + blockPosition.x];
+	}
 
-	return false;
+	// Returning opaque block when not found seem to be working for removing unnecessary meshes inside chunks, but look into it if some problems emerge.
+	return BLOCK_NOT_FOUND;
 }
 
 inline float ivec3len2(glm::ivec3 a){
@@ -256,15 +261,16 @@ void WorldLoader::update(glm::ivec3 change) {
 }
 
 void WorldLoader::disposeChunks() {
-	disposableChunksMutex.lock(); // trylock
-	if (!disposable_chunks.empty()) {
-		for (const glm::ivec3& i : disposable_chunks) {
-		// for(auto i = chunks.begin(), nexti = i; i != chunks.end(); i = nexti) {
-			chunks.erase(i);
+	if (disposableChunksMutex.try_lock()) { // trylock
+		if (!disposable_chunks.empty()) {
+			for (const glm::ivec3& i : disposable_chunks) {
+			// for(auto i = chunks.begin(), nexti = i; i != chunks.end(); i = nexti) {
+				chunks.erase(i);
+			}
+			disposable_chunks.clear();
 		}
-		disposable_chunks.clear();
+		disposableChunksMutex.unlock();
 	}
-	disposableChunksMutex.unlock();
 }
 
 void WorldLoader::prepareGeometry() {
@@ -272,11 +278,6 @@ void WorldLoader::prepareGeometry() {
 		for(const glm::ivec3& c : chunks_to_update) {
 			if(auto it = chunks.find(c); it != chunks.end()) {
 				it->second.prepareUpdateData();
-				// std::pair<std::vector<float>,std::vector<unsigned int>> data = it->second.getShaderData();
-				// meshQueueMutex.lock();
-				// meshQueue.push_back({c, data.first, data.second});
-				// // meshQueue.push_back(std::make_tuple(c, data.first, data.second));
-				// meshQueueMutex.unlock();
 			}
 		}
 		prepareSetMutex.lock();
@@ -292,13 +293,16 @@ void WorldLoader::prepareGeometry() {
 
 void WorldLoader::updateGeometry() {
 	if(!prepared_chunks.empty()) {
-		prepareSetMutex.lock();
-		for(const glm::ivec3& c : prepared_chunks) {
-			if(auto it = chunks.find(c); it != chunks.end()) {
-				it->second.update_data();
+		if(prepareSetMutex.try_lock()) {
+			// prepareSetMutex.lock();
+			for(const glm::ivec3& c : prepared_chunks) {
+				if(auto it = chunks.find(c); it != chunks.end()) {
+					it->second.update_data();
+				}
 			}
+			prepared_chunks.clear();
+			prepareSetMutex.unlock();
 		}
-		prepareSetMutex.unlock();
 	}
 }
 
@@ -420,8 +424,7 @@ float WorldLoader::fastAABB(const AABB& aabb, glm::vec3 direction, float maxt, i
 		for (cursor.z = beg.z; cursor.z != end.z; cursor.z += step[2]) {
 			for (cursor.y = beg.y; cursor.y != end.y; cursor.y += step[1]) {
 				for (cursor.x = beg.x; cursor.x != end.x; cursor.x += step[0]) {
-					auto [block, found] = getBlock(cursor);
-					if (found && getBlockType(block) != 0) {
+					if (auto [block, found] = getBlock(cursor); found && getBlockType(block) != 0) {
 						// Left collision point in case i would need it in the future.
 //						penetration.x = origin.x + normalDirection.x * t;
 //						penetration.y = origin.y + normalDirection.y * t;
