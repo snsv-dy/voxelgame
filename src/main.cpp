@@ -24,6 +24,7 @@
 #include "objects/Mesh.h"
 #include "objects/Cursor.hpp"
 #include "objects/Player.hpp"
+#include "objects/Hud.hpp"
 
 #include "terrain/Terrain.h"
 #include "terrain/Lighter.hpp"
@@ -33,6 +34,7 @@
 #include "utilities/Camera.h"
 #include "utilities/fonts.h"
 #include "utilities/controls.h"
+#include "utilities/Shader.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -51,6 +53,10 @@ const char* TEXT_FS_PATH = "../src/shaders/text.fs";
 const char* CHUNK_VS_PATH = "../src/shaders/chunkvs.vs";
 const char* CHUNK_FS_PATH = "../src/shaders/chunkfs.fs";
 const char* TEXTURES_PATH = "../texture.png";
+const char* HUD_VS_PATH = "../src/shaders/hud.vs";
+const char* HUD_FS_PATH = "../src/shaders/hud.fs";
+// const char* HUD_TEXTURE_PATH = TEXTURES_PATH;
+const char* HUD_TEXTURE_PATH = "../crosshair.png";
 #endif
 
 
@@ -75,6 +81,7 @@ struct LoopParams {
 	Cursor* cursor;
 	glm::mat4 projection;
 	glm::mat4& playersView;
+	Hud* hud;
 };
 
 void main_loop(void* params);
@@ -105,8 +112,7 @@ int main(void) {
 	return 0;
 }
 
-int opengl_context_scope(GLFWwindow *window)
-{
+int opengl_context_scope(GLFWwindow *window) {
 	const std::string CHUNK_VERTEX_SHADER = std::string(CHUNK_VS_PATH);
 	const std::string CHUNK_FRAGMENT_SHADER = std::string(CHUNK_FS_PATH);
 	
@@ -167,12 +173,15 @@ int opengl_context_scope(GLFWwindow *window)
 		return 0;
 	}
 	
-	shaderParams chunkShaderParams = getShaderParams(
-		getShaderProgram(
-			getShaderFromFile(CHUNK_VERTEX_SHADER, ShaderType::VERTEX),
-			getShaderFromFile(CHUNK_FRAGMENT_SHADER, ShaderType::FRAGMENT)
-			)
-		);
+	Shader chunkShader {CHUNK_VS_PATH, CHUNK_FS_PATH};
+
+	shaderParams chunkShaderParams = getShaderParams(chunkShader.getProgram());
+	// getShaderParams(
+	// 	getShaderProgram(
+	// 		getShaderFromFile(CHUNK_VERTEX_SHADER, ShaderType::VERTEX),
+	// 		getShaderFromFile(CHUNK_FRAGMENT_SHADER, ShaderType::FRAGMENT)
+	// 		)
+	// 	);
 	unsigned int textures = loadTexture(std::string(TEXTURES_PATH));
 	
 	glm::mat4 projection = glm::perspective(glm::radians(55.0f), static_cast<float>(screen_width) / screen_height, 0.1f, 1000.0f);
@@ -217,8 +226,10 @@ int opengl_context_scope(GLFWwindow *window)
 	glm::mat4& playersView = player.getView();
 	
 	char textBuffer[2000] = {};
+	Shader hudShader = Shader{HUD_VS_PATH, HUD_FS_PATH};
+	Hud hud{hudShader, loadTexture(HUD_TEXTURE_PATH), screen_width, screen_height};
 
-	std::map<glm::ivec3, Mesh, compareVec3> meshes;
+	// std::map<glm::ivec3, Mesh, compareVec3> meshes;
 	// Prepare mesh data in thread, and call opengl methods in main thread.
 
 	LoopParams loopP {
@@ -231,10 +242,14 @@ int opengl_context_scope(GLFWwindow *window)
 		.controls = &controls,
 		.cursor = &cursor,
 		.projection = projection,
-		.playersView = playersView
+		.playersView = playersView,
+		.hud = &hud
 	};
 
 	player.noclip = true;
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	bool exitHamlet = false;
 
@@ -256,8 +271,8 @@ int opengl_context_scope(GLFWwindow *window)
 }
 
 void terrain_thread(WorldLoader& wl, Lighter& light, Player& player, bool& exitHamlet) {
+	wl.notified = false;
 	while(!exitHamlet) {
-		wl.notified = false;
 		printf("waiting for update\n");
 		std::unique_lock lock{wl.updateMutex};
 		wl.updateNotifier.wait(lock);
@@ -303,6 +318,8 @@ void main_loop(void* params) {
 	ControlsStruct& controls = *loopP->controls;
 	Cursor& cursor = *loopP->cursor;
 	glm::mat4& playersView = loopP->playersView;
+	Hud& hud = *loopP->hud;
+
 	const float dt = 1000.0f / 12 / 1000;
 	// float deltaTime = 0.0f;
 	// float lastFrame = 0.0f;
@@ -332,12 +349,23 @@ void main_loop(void* params) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	wl.draw(player.positionFromHead, playersView);
-//		
+
+	glm::vec3 kameraPos = player.positionFromHead;
+	glm::vec3 playerPos = player.getPosition();
+	glm::vec3 kameraFront = player.orientation;
+	region_dtype block_under_cursor;
+	std::tie(controls.cursor_pos, controls.prev_cursor_pos, block_under_cursor) = wl.collideRay(kameraPos, kameraFront, 7);
+
+	// Cursor drawing
+	cursor.draw(loopP->projection, &playersView);
+	// End of cursor drawing
+
+	// 2d drawing
+	hud.draw();
+
 	sprintf(textBuffer, "ground intersection: %.02f, y: %.02f, z: %.02f", dx.x, dx.y, dx.z);
 	renderText(fontmesh1, std::string(textBuffer), 20, 130, 0.5);
 	
-	glm::vec3 kameraPos = player.positionFromHead;
-	glm::vec3 playerPos = player.getPosition();
 	sprintf(textBuffer, "playerPos: x: %.02f, y: %.02f, z: %.02f", playerPos.x, playerPos.y, playerPos.z);
 	renderText(fontmesh1, std::string(textBuffer), 20, 50, 0.5);
 	
@@ -346,14 +374,11 @@ void main_loop(void* params) {
 	sprintf(textBuffer, "playerOrdżin: x: %2d, y: %2d, z: %2d", playerBlockPos.x, playerBlockPos.y, playerBlockPos.z);
 	renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
 //		
-	glm::vec3 kameraFront = player.orientation;
 	sprintf(textBuffer, "cameraFront: x: %.02f, y: %.02f, z: %.02f", kameraFront.x, kameraFront.y, kameraFront.z);
 	renderText(fontmesh1, std::string(textBuffer), 20, 20, 0.5);
 	
-//		glm::ivec3 c_pos;
-	region_dtype block_under_cursor;
-	std::tie(controls.cursor_pos, controls.prev_cursor_pos, block_under_cursor) = wl.collideRay(kameraPos, kameraFront, 7);
-//		controls.cursor_pos = c_pos;
+		glm::ivec3 c_pos;
+		controls.cursor_pos = c_pos;
 	
 //		sprintf(textBuffer, "cursor  : x: %2d, y: %2d, z: %2d ", controls.cursor_pos.x, controls.cursor_pos.y, controls.cursor_pos.z);
 //		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
@@ -365,11 +390,6 @@ void main_loop(void* params) {
 	std::tie(chpos, std::ignore) = toChunkCoords(controls.cursor_pos, TerrainConfig::ChunkSize);
 	sprintf(textBuffer, "chunk cursor: x: %2d, y: %2d, z: %2d ", chpos.x, chpos.y, chpos.z);
 	renderText(fontmesh1, std::string(textBuffer), 20, 110, 0.5);
-	
-	// Cursor drawing
-	cursor.draw(loopP->projection, &playersView);
-	// End of cursor drawing
-	
 	
 	glfwSwapBuffers(window);
 	glfwPollEvents();

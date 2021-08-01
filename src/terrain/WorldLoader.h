@@ -40,13 +40,11 @@ class WorldLoader
 	std::set<glm::ivec3, compareVec3> prepared_chunks; // Chunks that need to have data sent to buffer by drawing thread (Thread in which opengl was initialized).
 	std::set<glm::ivec3, compareVec3> disposable_chunks; // Chunks that need to have thier mesh buffers disposed.
 	std::mutex disposableChunksMutex;
-//	std::set<glm::ivec3, compareVec> lights_to_propagate;
-//	std::map<glm::ivec3, Chunk*, compareVec3> chunksToDraw;
+	
 	glm::mat4 *projection;
 	glm::mat4 *view;
 	unsigned int textures;
-	worldProvider provider;
-//	Lighter lighter;
+	WorldProvider provider;
 	
 	bool first = true;
 	
@@ -101,8 +99,3 @@ public:
 };
 
 #endif // WORLDLOADER_H
-
-// for sweep only
-int trailEdgeToInt(int lead, int step);
-int leadEdgeToInt(int lead, int step);
-int stepForward(float tNext[3], float& t, int leading_i[3], float trailing[3], int trailing_i[3], int step[3], float tDelta[3], float normed[3]);
