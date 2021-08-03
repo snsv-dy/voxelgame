@@ -21,7 +21,7 @@ void WorldProvider::update(glm::ivec3 pos) {
 	last_pos = pos;
 	
 //		printf("Provider move: %2d %2d\n", xmoved, zmoved);
-	
+	// printf("yeah\n");
 	if(abs(xmoved) >= move_required || abs(zmoved) >= move_required || firstLoop){
 		if(abs(xmoved) >= move_required){
 			if(xmoved < 0)
@@ -86,7 +86,7 @@ void WorldProvider::update(glm::ivec3 pos) {
 	
 // position - global chunk coordiates
 // returns data pointer, offset of chunk in data
-std::pair<region_dtype*, int> WorldProvider::getChunkData(glm::ivec3 position){
+std::tuple<region_dtype*, int, bool> WorldProvider::getChunkData(glm::ivec3 position){
 	// Loading regions could be done here
 	// 	CHANGE NAME
 	position *= chunkSize;
@@ -94,10 +94,11 @@ std::pair<region_dtype*, int> WorldProvider::getChunkData(glm::ivec3 position){
 	
 	if(auto reg_it = regions.find(reg_pos); reg_it != regions.end()){
 		Region& region = reg_it->second;
-		return {region.getData(), region.getChunkOffset(position)};
+		auto [offset, generated] = region.getChunkOffset(position);
+		return {region.getData(), offset, generated};
 	}
 	
-	return {nullptr, 0};
+	return {nullptr, 0, false};
 }
 	
 region_dtype WorldProvider::valueAt(int x, int y, int z) {
@@ -109,4 +110,11 @@ region_dtype WorldProvider::valueAt(int x, int y, int z) {
 	}
 	
 	return 0;
+}
+
+void WorldProvider::notifyChange(glm::ivec3 chunkPos) {
+	auto [reg_pos, chunk_pos] = toChunkCoords(chunkPos, regionSize);
+	if (auto it = regions.find(reg_pos); it != regions.end()) {
+		it->second.modified = true;
+	}
 }

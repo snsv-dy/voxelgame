@@ -81,7 +81,9 @@ void WorldLoader::updateTerrain(const int& block_type, const glm::ivec3 &pos, Bl
 	
 	if(auto [block, found] = getBlock(block_pos); found) {
 		region_dtype block_before = block;
-		
+		if (action == BlockAction::DESTROY)
+			printf("block destroyed\n");
+
 		chunks[block_pos.chunk].changeBlock(block_type, in_chunk_pos, action);
 //		Region& containing_region = provider.getRegion(pos);
 //		containing_region.modified = true;
@@ -179,7 +181,7 @@ void WorldLoader::checkForUpdate(glm::vec3 cameraPos) {
 		cur_camera_pos = chpos;
 		notified = true;
 		updateNotifier.notify_one();
-		printf("notifying at: %d %d %d \n", chpos[0], chpos[1], chpos[2]);
+		// printf("notifying at: %d %d %d \n", chpos[0], chpos[1], chpos[2]);
 	}
 }
 
@@ -196,6 +198,7 @@ void WorldLoader::update(glm::ivec3 change) {
 	// if (last_camera_pos != chpos || first) {
 		light_needed.clear();
 		provider.update(cur_camera_pos);
+		// printf("provider after\n");
 		
 		// glm::ivec3 change = chpos - last_camera_pos;
 		glm::ivec3 abs_change = glm::abs(change);
@@ -283,6 +286,7 @@ void WorldLoader::prepareGeometry() {
 		prepareSetMutex.lock();
 		for(const glm::ivec3& c : chunks_to_update) {
 			prepared_chunks.insert(c);
+			provider.notifyChange(c);
 		}
 		prepareSetMutex.unlock();
 
@@ -325,10 +329,10 @@ std::set<glm::ivec3, compareVec3> WorldLoader::getUnlitColumns() {
 }
 
 void WorldLoader::loadChunk(const glm::ivec3& pos, std::set<glm::ivec3, compareVec3> *light_needed) {
-	auto [chunk_data, data_offset] = provider.getChunkData(pos);
+	auto [chunk_data, data_offset, generated] = provider.getChunkData(pos);
 	if(chunk_data != nullptr) {
 		chunks[pos] = Chunk(shParams.model, pos, this, chunk_data, data_offset);
-		if(light_needed != nullptr) {
+		if (light_needed != nullptr && generated) {
 			light_needed->insert(glm::ivec3(pos.x, 0, pos.z));
 		}
 		chunks_to_update.insert(pos);

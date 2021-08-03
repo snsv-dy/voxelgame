@@ -20,7 +20,7 @@ class Hud {
 
 	Mesh2d crossHairMesh;
 	glm::mat4 crosshairModel;
-	float crosshairScale = 20.0f;
+	float crosshairScale = 10.0f;
 	void initCrosshair();
 public:
 	Hud(Shader& shader, unsigned int textures, int screenWidth, int screenHeight);

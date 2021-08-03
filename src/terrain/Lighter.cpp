@@ -212,7 +212,7 @@ void Lighter::propagateLights() {
 // Don't be an idiot, don't propagate dim lights ( where light_value == 0)!
 void Lighter::propagateLight(std::list<propagateParam>& lights, const LightType& type) {
 //	#ifdef __DEBUG_PRINTF_
-	printf("[%s] Propagate list size: %d, ", type == LightType::Block ? "BLOCK" : "SUN  ", lights.size());
+	// printf("[%s] Propagate list size: %d, ", type == LightType::Block ? "BLOCK" : "SUN  ", lights.size());
 //	#endif
 	int insertions = 0;
 	int deletions = 0;
@@ -260,11 +260,11 @@ void Lighter::propagateLight(std::list<propagateParam>& lights, const LightType&
 		
 	}
 	
-	printf("insertions: %d, deletions: %d\n", insertions, deletions);
+	// printf("insertions: %d, deletions: %d\n", insertions, deletions);
 }
 
 void Lighter::propagateDark(std::list<propagateParam> darks, const LightType& type) {
-	printf("[%s] Propagate dark size: %d, ", type == LightType::Block ? "BLOCK" : "SUN  ", darks.size());
+	// printf("[%s] Propagate dark size: %d, ", type == LightType::Block ? "BLOCK" : "SUN  ", darks.size());
 	
 	int insertions = 0, deletions = 0;
 	std::list<propagateParam>* lightQueue = &lights;
@@ -322,14 +322,15 @@ void Lighter::propagateDark(std::list<propagateParam> darks, const LightType& ty
 				}
 				
 			} else if (getBlockType(block) == 4 && type == LightType::Block) {
-				printf(" yeah! Next light value: %x, cur light value: %x\n", next_light_value, light);
+				// Nie widziałem tego nigdy w konsoli.
+				// printf(" yeah! Next light value: %x, cur light value: %x\n", next_light_value, light);
 				updatedChunks.insert(param.position.chunk);
 				disperseLight(param.position, *lightQueue, next_light_value);
 			}
 		}
 	}
 	
-	printf("insertions: %d, deletions: %d, lights: %d\n", insertions, deletions, lights.size());
+	// printf("insertions: %d, deletions: %d, lights: %d\n", insertions, deletions, lights.size());
 	
 //	printf("inpropagate dark\n");
 	// Propagating light should probably be done outside this function.

@@ -273,7 +273,8 @@ int opengl_context_scope(GLFWwindow *window) {
 void terrain_thread(WorldLoader& wl, Lighter& light, Player& player, bool& exitHamlet) {
 	wl.notified = false;
 	while(!exitHamlet) {
-		printf("waiting for update\n");
+		wl.notified = false;
+		// printf("waiting for update\n");
 		std::unique_lock lock{wl.updateMutex};
 		wl.updateNotifier.wait(lock);
 
@@ -281,7 +282,7 @@ void terrain_thread(WorldLoader& wl, Lighter& light, Player& player, bool& exitH
 			break;
 		}
 
-		printf("updating\n");
+		// printf("updating\n");
 
 		wl.update(wl.cur_camera_pos - wl.last_camera_pos);
 
@@ -356,6 +357,9 @@ void main_loop(void* params) {
 	region_dtype block_under_cursor;
 	std::tie(controls.cursor_pos, controls.prev_cursor_pos, block_under_cursor) = wl.collideRay(kameraPos, kameraFront, 7);
 
+	// glm::ivec3 c_pos;
+	// controls.cursor_pos = c_pos;
+
 	// Cursor drawing
 	cursor.draw(loopP->projection, &playersView);
 	// End of cursor drawing
@@ -376,10 +380,7 @@ void main_loop(void* params) {
 //		
 	sprintf(textBuffer, "cameraFront: x: %.02f, y: %.02f, z: %.02f", kameraFront.x, kameraFront.y, kameraFront.z);
 	renderText(fontmesh1, std::string(textBuffer), 20, 20, 0.5);
-	
-		glm::ivec3 c_pos;
-		controls.cursor_pos = c_pos;
-	
+
 //		sprintf(textBuffer, "cursor  : x: %2d, y: %2d, z: %2d ", controls.cursor_pos.x, controls.cursor_pos.y, controls.cursor_pos.z);
 //		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
 	

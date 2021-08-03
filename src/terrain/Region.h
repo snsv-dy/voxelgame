@@ -63,7 +63,7 @@ private:
 	std::string fileName = std::string("");
 	
 	// std::vector<glm::ivec3> loaded_chunks;
-	std::set<glm::ivec3, compareVec> loaded_chunks;
+	std::set<glm::ivec3, compareVec3> loaded_chunks;
 	char terrain(int x, int y, int z);
 	
 	// xyz - position of a chunk inside of region used only in generate
@@ -72,6 +72,8 @@ private:
 	void generate();
 	void load();
 	void save();
+	std::vector<region_dtype> compressData(size_t length, region_dtype mask);
+	void expandData(std::vector<region_dtype> compressed, bool overwriteData);
 
 	region_dtype ref0 = 0;
 public:
@@ -94,7 +96,7 @@ public:
 	
 	region_dtype& valueAt(int x, int y, int z);
 //	const std::vector<glm::ivec3>& getLoadedChunks();
-	int getChunkOffset(glm::ivec3 pos);
+	std::pair<int, bool> getChunkOffset(glm::ivec3 pos);
 	region_dtype* getData();
 	
 	~Region();

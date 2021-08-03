@@ -37,7 +37,8 @@ public:
 	glm::ivec3 last_pos = glm::ivec3(0);
 	
 	void update(glm::ivec3 pos);
-	std::pair<region_dtype*, int> getChunkData(glm::ivec3 position);
+	std::tuple<region_dtype*, int, bool> getChunkData(glm::ivec3 position);
+	void notifyChange(glm::ivec3 chunkPos);
 	region_dtype valueAt(int x, int y, int z);
 };
 

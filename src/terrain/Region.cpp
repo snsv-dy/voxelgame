@@ -71,29 +71,38 @@ char Region::terrain(int x, int y, int z){
 	return 0;
 }
 
-Region::Region(glm::ivec3 pos){
+Region::Region(glm::ivec3 pos) {
 	this->position = pos;
 	this->type = RegionType::NORMAL_REGION;
 	
 	fileName = std::to_string(position.x) + "." + std::to_string(position.y) + "." + std::to_string(position.z) + ".reg";
-//	fileName = "-1.0.-1.reg";
-	std::ifstream file_exists(directory + "/" + fileName);
+	// fileName = "-1.0.-1.reg";
+	std::ifstream dataFile(directory + "/" + fileName);
+	bool fileExists = dataFile.good();
+	dataFile.close();
 	
 	// generate();
-//		if(!file_exists.good()){
-//			// generate region
-//			generate();
-////			save();
-////			fileName = "-1.0.-1.reg";
-////			load();
-//		}else{
-//			// load region
+		if(!fileExists){
+			// generate region
+			// generate();
+			// modified = true;
+			// save();
+//			fileName = "-1.0.-1.reg";
 //			load();
-//		}
+			// printf("not loading\n");
+		} else {
+			// printf("loading\n");
+			// load region
+			load();
+			// printf("[%2d %2d %2d] loaded chunks: \n", position.x, position.y, position.z);
+			// for (auto v : loaded_chunks) {
+			// 	printf("%d %d %d\n", v.x, v.y, v.z);
+			// }
+		}
 	
 }
 
-struct FrequencyParams{
+struct FrequencyParams {
 	glm::vec3 position;
 	double frequency, frequency_inc;
 };
@@ -237,30 +246,144 @@ std::array<region_dtype, Region::chunk_size * Region::chunk_size> Region::getChu
 	return ret;
 }
 
-void Region::load(){
-	std::ifstream f;
-	f.open(directory + "/" + fileName, std::ios::in);
-	if(f.good()){
-		f.read((char *)data, data_size * sizeof(region_dtype));
-//		for(int i = 0; i < data_size; i += rand() & 7)
-//			if(data[i])
-//				data[i] = rand() & 3;
-			
-		f.close();
+
+std::vector<region_dtype> Region::compressData(size_t length, region_dtype mask) {
+	std::vector<region_dtype> compressed;
+
+	const region_dtype token = 0xffff;
+	region_dtype runCharacter = data[0] & mask;
+	region_dtype runLength = 1;
+	int runSum = 0;
+	int i;
+	int nothi = 0;
+	int ones = 0;
+	int mores = 0;
+	for (i = 1; i < length; i++) {
+		region_dtype block = data[i] & mask;
+		if (block == runCharacter && runLength < 0xfffe) {
+			runLength++;
+			ones++;
+		} else {
+			runSum += (int)runLength;
+			if (runLength > 1) {
+				compressed.push_back(token);
+				compressed.push_back(runLength);
+			}else{
+				mores++;
+			}
+			compressed.push_back(runCharacter);
+			runCharacter = block;
+			runLength = 1;
+		}
+	}
+
+	if (runLength > 1) {
+		compressed.push_back(token);
+		compressed.push_back(runLength);
+	}
+	compressed.push_back(runCharacter);
+	runSum += runLength;
+	// printf("[%2d %2d %2d] compression i: %d, mask: %x, run: %d, nothing: %d, eh: %d\n", position.x, position.y, position.z, i, mask, runSum, nothi, mores + ones);
+
+	return compressed;
+}
+
+void Region::expandData(std::vector<region_dtype> compressed, bool overwriteData = true) {
+	const region_dtype token = 0xffff;
+	int dataIndex = 0;
+	int i;
+	for (i = 0; i < compressed.size();) {
+		region_dtype& block = compressed[i];
+		if (block == token) {
+			region_dtype length = compressed[i + 1];
+			region_dtype character = compressed[i + 2];
+			for (int j = 0; j < length; j++) {
+				data[dataIndex] = (data[dataIndex] * !overwriteData) | character;
+				dataIndex++;
+			}
+			i += 3;
+		} else {
+			data[dataIndex] = (data[dataIndex] * !overwriteData) | block;
+			dataIndex++;
+			i++;
+		}
+	}
+	printf("expanded end: %d, i: %d, comSize: %d\n", dataIndex, i, compressed.size());
+}
+
+void Region::load() {
+	std::ifstream iw;
+	iw.open(directory + "/" + fileName, std::ios::in);
+	if (iw.good()) {
+		
+		// Read number of chunks
+		size_t chunksNumber = 0;
+		iw.read((char *)&chunksNumber, sizeof(size_t));
+
+		// Read size of data
+		size_t blocksSize = 0;
+		size_t lightSize = 0;
+		iw.read((char *)&blocksSize, sizeof(size_t));
+		iw.read((char *)&lightSize, sizeof(size_t));
+
+		// Read generated chunks
+		// printf("[%2d %2d %2d] loaded chunks: \n", position.x, position.y, position.z);
+		for (int i = 0; i < chunksNumber; i++) {
+			glm::ivec3 v;
+			iw.read((char *)&v, sizeof(glm::ivec3));
+			loaded_chunks.insert(v);
+			// printf("%d %d %d\n", v.x, v.y, v.z);
+		}
+
+		std::vector<region_dtype> compressedBlocks(blocksSize);
+		std::vector<region_dtype> compressedLight(lightSize);
+		iw.read((char *)compressedBlocks.data(), blocksSize * sizeof(region_dtype));
+		iw.read((char *)compressedLight.data(), lightSize * sizeof(region_dtype));
+		expandData(compressedBlocks, true);
+		expandData(compressedLight, false);
+
+		iw.close();
 		printf("F loaded\n");
 	}else{
 		printf("F not good loaded\n");
 	}
 }
 
-void Region::save(){
-	std::ofstream f;
-	f.open(directory + "/" + fileName, std::ios::out);
-	if(f.good()){
-		f.write((char *)data, data_size * sizeof(region_dtype));
+void Region::save() {
+	std::ofstream of;
+	of.open(directory + "/" + fileName, std::ios::out);
+	if	(of.good()) {
+
+		// Write number of chunks.
+		size_t chunksNumber = loaded_chunks.size();
+		of.write((char *)&(chunksNumber), sizeof(size_t));
+
+		const size_t chunkCubed = TerrainConfig::ChunkSize * TerrainConfig::ChunkSize * TerrainConfig::ChunkSize;
+		const size_t regionCubed = TerrainConfig::RegionSize * TerrainConfig::RegionSize * TerrainConfig::RegionSize;
+
+		// Compress data
+		std::vector<region_dtype> compressedBlocks = compressData(data_size, 0xff);
+		std::vector<region_dtype> compressedLight = compressData(data_size, 0xff00);
+		
+		// Write size of data.
+		size_t blocksSize = compressedBlocks.size();
+		size_t lightSize = compressedLight.size();
+		of.write((char *)&(blocksSize), sizeof(size_t));
+		of.write((char *)&(lightSize), sizeof(size_t));
+
+		// Write generated chunks.
+		for (const glm::ivec3& vec : loaded_chunks) {
+			of.write((const char *)&vec, sizeof(glm::ivec3));
+		}
+
+		// Write region data.
+		of.write((const char *)compressedBlocks.data(), blocksSize * sizeof(region_dtype));
+		of.write((const char *)compressedLight.data(), lightSize * sizeof(region_dtype));
+
+		of.close();
+		// f.write((char *)data, data_size * sizeof(region_dtype));
 		printf("F saved\n");
-		f.close();
-	}else{
+	} else {
 		printf("F not good\n");
 	}
 }
@@ -282,7 +405,7 @@ region_dtype& Region::valueAt(int x, int y, int z){
 	return data[pos];
 }
 
-int Region::getChunkOffset(glm::ivec3 pos){
+std::pair<int, bool> Region::getChunkOffset(glm::ivec3 pos) {
 	
 	// odejmij od współrzędnych position * chsize * regsize
 //	bool print = pos.z < 0;
@@ -303,20 +426,23 @@ int Region::getChunkOffset(glm::ivec3 pos){
 	if(index < 0 || index >= data_size){
 //		if(print)
 //			printf("nochunk %02d %02d %02d, pos: %d\n", x, y, z, pos);
-		return -1;
+		return {-1, false};
 	}
 	
-	// This was a failed optimization attempt to generate chunks when they are first loaded.
-	// This could work if when attempting to get not generated block type in meshing, 
-	// instead of returning 0 (which implies empty space) we return block from layer before.
+	bool generated = false;
+
 	if(loaded_chunks.find(pos) == loaded_chunks.end()){
 		// generate
-//		printf("generating: %2d %2d %2d\n", cx, cy, cz);
+		// printf("[%2d %2d %2d] generating: %2d %2d %2d\n", position.x, position.y, position.z, pos.x, pos.y, pos.z);
+		// printf("generating: %2d %2d %2d\n", cx, cy, cz);
 		genChunk(cx, cy, cz);		
 		loaded_chunks.insert(pos);
+		modified = true;
+		generated = true;
 	}
+		// modified = true;
 	
-	return index;
+	return {index, generated};
 }
 
 region_dtype* Region::getData(){
@@ -324,7 +450,8 @@ region_dtype* Region::getData(){
 }
 
 Region::~Region(){
-	if(type == RegionType::NORMAL_REGION && modified){
+	// if(type == RegionType::NORMAL_REGION && modified) {
+	if (type == RegionType::NORMAL_REGION && modified) {
 		save();
 	}
 }
