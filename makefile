@@ -1,5 +1,5 @@
 
-.PHONY = all web
+.PHONY = all web net
 VPATH = %.cpp src src/objects src/terrain  src/utilities
 OBJ_PATH := Debug
 WS_PATH := WSDebug
@@ -25,9 +25,11 @@ CC := g++
 CCFLAGS := -I include -I . -g -O0 -Wall -std=c++17
 LFLAGS :=  -L . -lglfw3 -lGL -lX11 -lXxf86vm -lXrandr -lpthread -lXi -ldl
 PROGNAME := $(OBJ_PATH)/voxelgame
+SERVER := $(OBJ_PATH)/server
 WS_PROGNAME := $(WS_PATH)/voxelgame.html
 
-all: $(OBJ_PATH) ${PROGNAME}
+all: ${PROGNAME}
+net: ${SERVER}
 web: $(WS_PATH) ${WS_PROGNAME}
 
 ${WS_PROGNAME}: ${WS_BINS}
@@ -36,7 +38,13 @@ ${WS_PROGNAME}: ${WS_BINS}
 ${WS_PATH}/%.o: %.cpp
 	$(EMCC) $(EMFLAGS) -c $< -o $(WS_PATH)/$(@F)
 
-${PROGNAME}: ${BINS}
+
+# SERVERSKIP := Debug/main.o Debug/main.o
+# ${SERVER}: $(filter-out , $(BINS))
+${SERVER}: Debug/server.o
+	$(CC) $^ -lm $(LFLAGS) -o $@
+
+${PROGNAME}: $(filter-out Debug/server.o, $(BINS))
 	$(CC) $^ -lm $(LFLAGS) -o $@
 
 $(OBJ_PATH):

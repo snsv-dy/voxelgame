@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <cmath> // for sweep
 #include "worldProvider.hpp"
+#include "LocalWorldProvider.hpp"
+#include "RemoteWorldProvider.hpp"
 #include "Chunk.h"
 #include "../objects/Player.hpp"
 #include "../objects/AABB.hpp"
@@ -14,6 +16,7 @@
 //#include "Mesh.h"
 //#include "../vec3Comp.h"
 #include <glm/gtx/norm.hpp>
+#include <asio.hpp>
 //#include <mutex>
 
 // used in light propagation
@@ -44,7 +47,7 @@ class WorldLoader
 	glm::mat4 *projection;
 	glm::mat4 *view;
 	unsigned int textures;
-	WorldProvider provider;
+	std::unique_ptr<WorldProvider> provider;
 	
 	bool first = true;
 	
@@ -60,7 +63,7 @@ public:
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//
 
-	WorldLoader(glm::mat4 *projection, glm::mat4 *view, unsigned int textures, struct shaderParams params);
+	WorldLoader(glm::mat4 *projection, glm::mat4 *view, unsigned int textures, struct shaderParams params, asio::ip::tcp::socket socket, asio::ip::tcp::resolver::results_type endpoints);
 	
 	const int radius = 4;
 	const int unloadRadius = (radius * 2);
@@ -94,7 +97,7 @@ public:
 	glm::vec3 collideAABB(const AABB& aabb, glm::vec3& velocity, glm::vec3 dx);
 	float fastRay(glm::vec3 origin, glm::vec3 direction, float maxt, glm::vec3& penetration, int& collision_axis, glm::ivec3& hit);
 	float fastAABB(const AABB& origin, glm::vec3 direction, float maxt, int& collision_axis);
-	
+	// ~WorldLoader();
 	// sweeep stuff
 };
 

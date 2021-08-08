@@ -1,5 +1,3 @@
-#include <functional>
-
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #else
@@ -7,6 +5,12 @@
 #endif
 
 #include <GLFW/glfw3.h>
+
+#define ASIO_STANDALONE
+#include <asio.hpp>
+#include <asio/ts/buffer.hpp>
+#include <asio/ts/internet.hpp>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <vector>
@@ -18,6 +22,9 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <functional>
+
+#include "terrain/worldProvider.hpp"
 
 #include "utilities/basic_util.h"
 
@@ -194,7 +201,27 @@ int opengl_context_scope(GLFWwindow *window) {
 	view = kamera.get_view();
 	cameraPos = kamera.get_pos();
 	
-	WorldLoader wl(&projection, view, textures, chunkShaderParams);
+	// Internet initialization (needed for now in world loader)
+	
+	// Internet initialization
+	asio::io_context ioContext;
+	asio::ip::tcp::resolver resolver(ioContext);
+	asio::ip::tcp::resolver::results_type endpoints;// = resolver.resolve("localhost", "25013");
+	try {
+		endpoints = resolver.resolve("localhost", "25013");
+	} catch (std::exception e) {
+		printf("Resolve error: %s\n", e.what());
+	}
+	asio::ip::tcp::socket socket(ioContext);
+
+	// Provider initialization.
+	// std::shared_ptr<RemoteWorldProvider> worldProvider = std::make_shared<RemoteWorldProvider>(std::move(socket), endpoints);
+
+	// end of internet initialization
+	// internet initialization end
+
+	// Might be good to provide WorldLoader with provider so it will have less things to worry about.
+	WorldLoader wl(&projection, view, textures, chunkShaderParams, std::move(socket), endpoints);
 	Lighter light(wl);
 	
 	controls.world_loader = &wl;
@@ -217,6 +244,7 @@ int opengl_context_scope(GLFWwindow *window) {
 	// ---------------------------------------------------------
 	// Ideaz
 	// --------
+	// wP.hpp:16
 	// Mesh/Chunk allocator? (reusing vertex buffers)
 	// World provider should return chunk objects, and region should consist of chunks. (Chunk objects should be in Region object).
 	// 
@@ -254,6 +282,13 @@ int opengl_context_scope(GLFWwindow *window) {
 	bool exitHamlet = false;
 
 	std::thread terrain_task {terrain_thread, std::ref(wl), std::ref(light), std::ref(player), std::ref(exitHamlet)};
+
+	// hmm~~~~~~~~
+	// yeah don't hog the main thread.
+	std::thread netThread([&] () {
+		ioContext.run();
+	});
+
 	#ifdef __EMSCRIPTEN__ 
 		emscripten_set_main_loop_arg(main_loop, (void*)&loopP, 0, true);
 	#else

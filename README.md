@@ -24,5 +24,5 @@ Should be working on any system, but em++ should be set in terminal before. To c
 * https://www.glfw.org/
 * https://github.com/g-truc/glm
 * https://www.khronos.org/opengl/wiki/Common_Mistakes#The_Object_Oriented_Language_Problem 
-
+* [javidx9's networking tutorial](https://www.youtube.com/watch?v=2hNdkYInj4g) [&#40;Code&#41;](https://github.com/OneLoneCoder/olcPixelGameEngine/tree/master/Videos/Networking/Parts1%262)
 

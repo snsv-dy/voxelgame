@@ -1,15 +1,14 @@
-#include "worldProvider.hpp"
+#include "LocalWorldProvider.hpp"
 	
-int WorldProvider::regions_size() {
+int LocalWorldProvider::regions_size() {
 	return regions.size();
 }
 
 	// WorldProvider() {
 	// }
-	
 // Return chunk poses to remove
 // Pos position in chunk coordinates
-void WorldProvider::update(glm::ivec3 pos) {
+void LocalWorldProvider::update(glm::ivec3 pos) {
 //	std::vector<glm::ivec3> update(glm::ivec3 pos){
 	
 //		std::vector<glm::ivec3> chunks_to_remove;
@@ -22,7 +21,8 @@ void WorldProvider::update(glm::ivec3 pos) {
 	
 //		printf("Provider move: %2d %2d\n", xmoved, zmoved);
 	// printf("yeah\n");
-	if(abs(xmoved) >= move_required || abs(zmoved) >= move_required || firstLoop){
+	if(abs(xmoved) >= move_required || abs(zmoved) >= move_required || firstLoop) {
+		printf("regions size: %lu\n", regions.size());
 		if(abs(xmoved) >= move_required){
 			if(xmoved < 0)
 				xmoved += move_required;
@@ -86,7 +86,7 @@ void WorldProvider::update(glm::ivec3 pos) {
 	
 // position - global chunk coordiates
 // returns data pointer, offset of chunk in data
-std::tuple<region_dtype*, int, bool> WorldProvider::getChunkData(glm::ivec3 position){
+std::tuple<region_dtype*, int, bool> LocalWorldProvider::getChunkData(glm::ivec3 position){
 	// Loading regions could be done here
 	// 	CHANGE NAME
 	position *= chunkSize;
@@ -101,7 +101,7 @@ std::tuple<region_dtype*, int, bool> WorldProvider::getChunkData(glm::ivec3 posi
 	return {nullptr, 0, false};
 }
 	
-region_dtype WorldProvider::valueAt(int x, int y, int z) {
+region_dtype LocalWorldProvider::valueAt(int x, int y, int z) {
 	glm::ivec3 chpos, dpos;
 	std::tie(chpos, dpos) = toChunkCoords(glm::ivec3(x, y, z), regionSize);
 	
@@ -112,9 +112,15 @@ region_dtype WorldProvider::valueAt(int x, int y, int z) {
 	return 0;
 }
 
-void WorldProvider::notifyChange(glm::ivec3 chunkPos) {
+void LocalWorldProvider::notifyChange(glm::ivec3 chunkPos) {
 	auto [reg_pos, chunk_pos] = toChunkCoords(chunkPos, regionSize);
+	printf("Change: %2d %2d %2d\n", chunkPos.x, chunkPos.y, chunkPos.z);
 	if (auto it = regions.find(reg_pos); it != regions.end()) {
+		printf("found\n");
 		it->second.modified = true;
 	}
+}
+
+LocalWorldProvider::~LocalWorldProvider() {
+	printf("yoo\n");
 }

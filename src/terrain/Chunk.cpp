@@ -179,7 +179,8 @@ std::array<region_dtype, Chunk::size_squared> Chunk::getBottomLayer(){
 }
 
 // Teraz propagation pomiędzy chunkami.
-std::list<propagateParam> Chunk::sunlightPass(int mask[size][size], bool& allDark){
+	// std::list<propagateParam> sunlightPass(int mask[size][size], bool& allDark);
+std::list<propagateParam> Chunk::sunlightPass(int mask[size][size], bool& allDark) {
 	std::list<propagateParam> spread_queue;
 	
 	for(int y = size - 1; y >= 0; y--){

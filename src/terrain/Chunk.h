@@ -4,9 +4,12 @@
 #include <stdio.h>
 #include <vector>
 #include <memory>
+#include <list>
 
 #include "TerrainConfig.hpp"
-#include "worldProvider.hpp"
+#include "Region.h" // For propagateParam
+// #include "../utilities/basic_util.h"
+// #include "worldProvider.hpp"
 #include "../objects/Mesh.h"
 #include <glm/glm.hpp>
 
@@ -24,7 +27,7 @@ enum class Direction {
 	BACK	// Back is beginning of the array (z = 0)
 };
 
-class Chunk{
+class Chunk {
 private:
 	
 	static constexpr glm::vec2 planeTexcoords[4] = {

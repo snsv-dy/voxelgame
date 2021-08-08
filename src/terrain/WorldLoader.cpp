@@ -1,6 +1,8 @@
 #include "WorldLoader.h"
 
-WorldLoader::WorldLoader(glm::mat4 *projection, glm::mat4 *view, unsigned int textures, struct shaderParams params){
+WorldLoader::WorldLoader(glm::mat4 *projection, glm::mat4 *view, unsigned int textures, struct shaderParams params, asio::ip::tcp::socket socket, asio::ip::tcp::resolver::results_type endpoints) 
+// : provider{std::move(std::make_unique<LocalWorldProvider>())} {
+: provider{std::move(std::make_unique<RemoteWorldProvider>(std::move(socket), endpoints))} {
 	last_camera_pos = glm::ivec3(0);
 	
 	this->projection = projection;
@@ -33,7 +35,7 @@ void WorldLoader::draw(glm::vec3 cameraPos, const glm::mat4& view) {
 //					glUniformMatrix4fv(shParams.view, 1, GL_FALSE, glm::value_ptr(chunk.mesh));
 					chunk.draw();
 				}
-			}
+			} 
 		}
 	}
 }
@@ -63,7 +65,14 @@ std::tuple<glm::ivec3, glm::ivec3, region_dtype> WorldLoader::collideRay(const g
 			int_pos.z -= 1;
 		}
 		
-		last_block = provider.valueAt(int_pos.x, int_pos.y, int_pos.z);
+		// last_block = provider->valueAt(int_pos.x, int_pos.y, int_pos.z);
+		
+		if (auto [block, found] = getBlock(pos); found) {
+			last_block = block;
+		} else {
+			last_block = 0;
+		}
+
 		if(block_type(last_block) != 0){
 			break;
 		}
@@ -85,7 +94,7 @@ void WorldLoader::updateTerrain(const int& block_type, const glm::ivec3 &pos, Bl
 			printf("block destroyed\n");
 
 		chunks[block_pos.chunk].changeBlock(block_type, in_chunk_pos, action);
-//		Region& containing_region = provider.getRegion(pos);
+//		Region& containing_region = provider->getRegion(pos);
 //		containing_region.modified = true;
 		// Bug is when loading/meshing/most likely calculating sunlight for new chunk with blocklight
 		// fixed?
@@ -170,6 +179,8 @@ inline float ivec3len2(glm::ivec3 a){
 }
 
 void WorldLoader::checkForUpdate(glm::vec3 cameraPos) {
+	// Only for net!!
+	provider->update(glm::ivec3(0));
 	glm::ivec3 chpos;
 	
 	cameraPos.y = 0.0f;
@@ -177,7 +188,12 @@ void WorldLoader::checkForUpdate(glm::vec3 cameraPos) {
 	std::tie(chpos, std::ignore) = toChunkCoords(cameraPos, TerrainConfig::ChunkSize);
 	glm::ivec3 change = chpos - last_camera_pos;
 	glm::ivec3 abs_change = glm::abs(change);
-	if (!notified && (last_camera_pos != chpos || first || !chunks_to_update.empty())) {
+	bool remoteChunks = provider->getNewChunks();
+	if (remoteChunks) {
+		first = true;
+	}
+	
+	if (!notified && (last_camera_pos != chpos || first || !chunks_to_update.empty() || remoteChunks)) {
 		cur_camera_pos = chpos;
 		notified = true;
 		updateNotifier.notify_one();
@@ -197,7 +213,7 @@ void WorldLoader::update(glm::ivec3 change) {
 		printf("updating: %d %d %d \n", change[0], change[1], change[2]);
 	// if (last_camera_pos != chpos || first) {
 		light_needed.clear();
-		provider.update(cur_camera_pos);
+		provider->update(cur_camera_pos);
 		// printf("provider after\n");
 		
 		// glm::ivec3 change = chpos - last_camera_pos;
@@ -286,7 +302,7 @@ void WorldLoader::prepareGeometry() {
 		prepareSetMutex.lock();
 		for(const glm::ivec3& c : chunks_to_update) {
 			prepared_chunks.insert(c);
-			provider.notifyChange(c);
+			provider->notifyChange(c);
 		}
 		prepareSetMutex.unlock();
 
@@ -329,7 +345,7 @@ std::set<glm::ivec3, compareVec3> WorldLoader::getUnlitColumns() {
 }
 
 void WorldLoader::loadChunk(const glm::ivec3& pos, std::set<glm::ivec3, compareVec3> *light_needed) {
-	auto [chunk_data, data_offset, generated] = provider.getChunkData(pos);
+	auto [chunk_data, data_offset, generated] = provider->getChunkData(pos);
 	if(chunk_data != nullptr) {
 		chunks[pos] = Chunk(shParams.model, pos, this, chunk_data, data_offset);
 		if (light_needed != nullptr && generated) {
@@ -555,3 +571,5 @@ float WorldLoader::fastRay(glm::vec3 origin, glm::vec3 direction, float maxt, gl
 	
 	return t;
 }
+
+// WorldLoader::~WorldLoader() {}
