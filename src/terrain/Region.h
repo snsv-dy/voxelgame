@@ -76,6 +76,7 @@ private:
 	void expandData(std::vector<region_dtype> compressed, bool overwriteData);
 
 	region_dtype ref0 = 0;
+	bool readonly = true; // For server testing. (disables saving regions to disk)
 public:
 	inline static const std::string directory = std::string("../world3");
 	static const int reg_size = TerrainConfig::RegionSize;

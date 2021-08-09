@@ -76,14 +76,15 @@ bool RemoteWorldProvider::getNewChunks() {
 
 void RemoteWorldProvider::onMessage(Message& msg) {
 	if (msg.header.type == MsgType::Chunk) {
+		printf("chunk just arrived ");
 		std::scoped_lock lock(cachedChunksMutex);
 		glm::ivec3 position;
 		std::vector<region_dtype> data(msg.header.size - sizeof(glm::ivec3));
 		memcpy(data.data(), msg.data.data() + sizeof(glm::ivec3), msg.header.size - sizeof(glm::ivec3));
 		memcpy(&position, msg.data.data(), sizeof(glm::ivec3));
+		printf("position (%2d %2d %2d) \n", position.x, position.y, position.z);
 
 		cachedChunks[position] = data;
-		printf("chunk (%2d %2d %2d) just arrived\n", position.x, position.y, position.z);
 		newChunks = true;
 	} else {
 		printf("message %d just arrived\n", msg.header.type);

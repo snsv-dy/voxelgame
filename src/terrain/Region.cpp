@@ -451,7 +451,7 @@ region_dtype* Region::getData(){
 
 Region::~Region(){
 	// if(type == RegionType::NORMAL_REGION && modified) {
-	if (type == RegionType::NORMAL_REGION && modified) {
+	if (type == RegionType::NORMAL_REGION && modified && !readonly) {
 		save();
 	}
 }

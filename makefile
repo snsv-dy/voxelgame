@@ -1,6 +1,6 @@
 
 .PHONY = all web net
-VPATH = %.cpp src src/objects src/terrain  src/utilities
+VPATH = %.cpp src src/objects src/terrain  src/utilities src/server
 OBJ_PATH := Debug
 WS_PATH := WSDebug
 
@@ -14,8 +14,8 @@ BINS := $(WS_SRCS:%.cpp=$(OBJ_PATH)/%.o) $(SRCS:%.c=$(OBJ_PATH)/%.o)
 # BINS := 
 
 
-# $(info VAR is $(SRCS))
-$(info BINS is $(BINS))
+$(info VAR is $(WS_SRCS))
+# $(info BINS is $(BINS))
 
 EMCC := em++
 EMFLAGS := -I include -I . -g -O0 -Wall -std=c++17 -s USE_WEBGL2=1 -s USE_GLFW=3 -s WASM=1 -s FULL_ES3=1 -s ALLOW_MEMORY_GROWTH=1 -s MAX_WEBGL_VERSION=2
@@ -41,10 +41,10 @@ ${WS_PATH}/%.o: %.cpp
 
 # SERVERSKIP := Debug/main.o Debug/main.o
 # ${SERVER}: $(filter-out , $(BINS))
-${SERVER}: Debug/server.o
+${SERVER}: Debug/server.o Debug/ClientHandler.o Debug/Region.o Debug/LocalWorldProvider.o Debug/basic_util.o Debug/glad.o
 	$(CC) $^ -lm $(LFLAGS) -o $@
 
-${PROGNAME}: $(filter-out Debug/server.o, $(BINS))
+${PROGNAME}: $(filter-out Debug/server.o Debug/ClientHandler.o, $(BINS))
 	$(CC) $^ -lm $(LFLAGS) -o $@
 
 $(OBJ_PATH):
@@ -54,6 +54,7 @@ $(WS_PATH):
 	mkdir $@
 
 $(OBJ_PATH)/%.o: %.cpp
+	@echo eh $<
 	$(CC) $(CCFLAGS) -c $< -o $(OBJ_PATH)/$(@F)
 
 $(OBJ_PATH)/%.o: %.c
