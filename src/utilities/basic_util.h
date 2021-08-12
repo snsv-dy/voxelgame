@@ -69,9 +69,12 @@ struct compareVec{
 };
 
 struct block_position{
-	glm::ivec3 chunk;
-	glm::ivec3 block;
-	
+	glm::ivec3 chunk {0};
+	glm::ivec3 block {0};
+	block_position() {
+		// chunk = glm::ivec3
+	}
+
 	block_position(glm::ivec3 block, glm::ivec3 chunk): block{block}, chunk{chunk}{
 		this->verify_position();
 	}
@@ -111,6 +114,13 @@ private:
 		
 		return {block, chunk};
 	}
+};
+
+struct ChangedBlock {
+	block_position position;
+	bool placed;
+	region_dtype type;
+	region_dtype typeBefore;
 };
 
 #endif

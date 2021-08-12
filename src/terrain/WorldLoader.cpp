@@ -12,6 +12,10 @@ WorldLoader::WorldLoader(glm::mat4 *projection, glm::mat4 *view, unsigned int te
 	this->shParams = params;
 }
 
+WorldLoader::WorldLoader(std::shared_ptr<WorldProvider> provider): provider{std::move(provider)}  {
+
+}
+
 void WorldLoader::draw(glm::vec3 cameraPos, const glm::mat4& view) {
 	
 	glm::ivec3 chunkPos;
@@ -196,7 +200,10 @@ void WorldLoader::checkForUpdate(glm::vec3 cameraPos) {
 	
 	if (!notified && (last_camera_pos != chpos || first || !chunks_to_update.empty() || remoteChunks)) {
 		cur_camera_pos = chpos;
-		notified = true;
+		{
+			std::scoped_lock lock(updateMutex);
+			notified = true;
+		}
 		updateNotifier.notify_one();
 		// printf("notifying at: %d %d %d \n", chpos[0], chpos[1], chpos[2]);
 	}
@@ -337,6 +344,11 @@ void WorldLoader::updateGeometry() {
 
 std::list<ChangedBlock> WorldLoader::getChangedBlocks() {
 	auto ret = blocks_changed;
+
+	for (auto block : blocks_changed) {
+		provider->changeBlock(block);
+	}
+
 	blocks_changed.clear();
 	return ret;
 }

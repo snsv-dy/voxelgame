@@ -16,6 +16,7 @@
 #include "netCommon.hpp"
 #include "../terrain/LocalWorldProvider.hpp"
 #include "../terrain/TerrainConfig.hpp"
+#include "../utilities/basic_util.h"
 
 class ClientHandler;
 

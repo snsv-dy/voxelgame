@@ -128,6 +128,16 @@ void RemoteWorldProvider::notifyChange(glm::ivec3 chunkPos) {
 
 }
 
+void RemoteWorldProvider::changeBlock(ChangedBlock& block) {
+	Message msg;
+	msg.setData(block);
+
+	msg.header.type = MsgType::BlockChange;
+	msg.header.size = msg.data.size();
+
+	sendMessage(msg);
+}
+
 #define IN(x, range) ((x) >= 0 && (x) <= range)
 
 region_dtype RemoteWorldProvider::valueAt(int x, int y, int z) {

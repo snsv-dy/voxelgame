@@ -28,12 +28,6 @@ const glm::ivec3 neighbouring_offsets[6] {
 	glm::ivec3(0, -1, 0),
 	glm::ivec3(0, 1, 0)
 };
-struct ChangedBlock{
-	block_position position;
-	bool placed;
-	region_dtype type;
-	region_dtype typeBefore;
-};
 
 class WorldLoader
 {
@@ -64,6 +58,7 @@ public:
 	//
 
 	WorldLoader(glm::mat4 *projection, glm::mat4 *view, unsigned int textures, struct shaderParams params, std::shared_ptr<WorldProvider> provider);
+	WorldLoader(std::shared_ptr<WorldProvider> provider);
 	
 	const int radius = 4;
 	const int unloadRadius = (radius * 2);

@@ -100,6 +100,19 @@ void ClientHandler::onMessage(Message msg) {
 			playerChunkPosition = chunkPos;
 			// printf("player changed position: %2.2f %2.2f %2.2f \n", playerPosition.x, playerPosition.y, playerPosition.z);
 		}break;
+
+		case MsgType::BlockChange:
+		{
+			ChangedBlock block {msg.getData<ChangedBlock>()};
+			printf("block changed at: %2d %2d %2d, pos: %2d %2d %2d \n", 
+				block.position.chunk.x,
+				block.position.chunk.y,
+				block.position.chunk.z,
+				block.position.block.x,
+				block.position.block.y,
+				block.position.block.z
+				);
+		}break;
 	}
 	// printf("message type: %d\n", msg.header.type);
 }

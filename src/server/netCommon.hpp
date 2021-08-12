@@ -27,7 +27,8 @@ enum class MsgType : uint32_t {
 	Chunk,
 	ChunkRequest,
 	PlayerPosition,
-	PlayerChunkPosition
+	PlayerChunkPosition,
+	BlockChange
 };
 
 struct MsgHeader {

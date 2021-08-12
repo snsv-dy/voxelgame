@@ -41,7 +41,7 @@ ${WS_PATH}/%.o: %.cpp
 
 # SERVERSKIP := Debug/main.o Debug/main.o
 # ${SERVER}: $(filter-out , $(BINS))
-${SERVER}: Debug/server.o Debug/ClientHandler.o Debug/Region.o Debug/LocalWorldProvider.o Debug/basic_util.o Debug/glad.o
+${SERVER}: Debug/WorldLoader.o Debug/Region.o Debug/LocalWorldProvider.o Debug/basic_util.o Debug/glad.o Debug/Chunk.o Debug/Mesh.o Debug/server.o Debug/ClientHandler.o
 	$(CC) $^ -lm $(LFLAGS) -o $@
 
 ${PROGNAME}: $(filter-out Debug/server.o Debug/ClientHandler.o, $(BINS))

@@ -44,6 +44,7 @@ public:
 	virtual void update(glm::ivec3 pos) = 0;
 	virtual std::tuple<region_dtype*, int, bool> getChunkData(glm::ivec3 position) = 0;
 	virtual void notifyChange(glm::ivec3 chunkPos) = 0;
+	virtual void changeBlock(ChangedBlock& block) =0;
 	virtual region_dtype valueAt(int x, int y, int z) = 0;//{ return BLOCK_NOT_FOUND; };
 	virtual ~WorldProvider() {};
 };

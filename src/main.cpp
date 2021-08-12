@@ -300,6 +300,10 @@ int opengl_context_scope(GLFWwindow *window) {
 			main_loop((void*)&loopP);
 		}
 		exitHamlet = true;
+		{
+			std::scoped_lock lock(wl.updateMutex);
+			wl.notified = true;
+		}
 		wl.updateNotifier.notify_one();
 		terrain_task.join();
 	#endif
@@ -312,10 +316,9 @@ int opengl_context_scope(GLFWwindow *window) {
 void terrain_thread(WorldLoader& wl, Lighter& light, Player& player, bool& exitHamlet) {
 	wl.notified = false;
 	while(!exitHamlet) {
-		wl.notified = false;
 		printf("waiting for update\n");
 		std::unique_lock lock{wl.updateMutex};
-		wl.updateNotifier.wait(lock);
+		wl.updateNotifier.wait(lock, [&wl](){ return wl.notified;});
 
 		if (exitHamlet) {
 			break;
@@ -331,6 +334,7 @@ void terrain_thread(WorldLoader& wl, Lighter& light, Player& player, bool& exitH
 		}
 		
 		std::list<ChangedBlock> blocks_changed = wl.getChangedBlocks();
+
 		if (!blocks_changed.empty()) {
 			light.updateLightForBlock(blocks_changed);
 		}

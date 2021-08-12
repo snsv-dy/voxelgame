@@ -19,8 +19,9 @@
 #include "stb_image.h"
 // End o
 
-// #include "terrain/worldProvider.hpp"
+#include "terrain/worldProvider.hpp"
 #include "terrain/LocalWorldProvider.hpp"
+#include "terrain/WorldLoader.h"
 
 
 using namespace std;
@@ -38,13 +39,15 @@ class Server {
 	TsQueue<OwnedMessage> receivedMessages;
 	//  
 	// Thread safe world provider should be there!!!
-	LocalWorldProvider provider;
+	shared_ptr<LocalWorldProvider> provider;
+	// shared_ptr<WorldProvider> provider_ptr;
+	WorldLoader loader;
 	const unsigned int maxRegions = 10; // Must be like at least same as max players?? idk maybye more.
 	// But for now this will suffice. 
 	// 
 	bool running = true;
 public:
-	Server(asio::io_context& context): context{context}, acceptor{context, tcp::endpoint(tcp::v4(), 25013)} {
+	Server(asio::io_context& context): context{context}, acceptor{context, tcp::endpoint(tcp::v4(), 25013)}, provider{make_shared<LocalWorldProvider>()}, loader{provider} {
 		someText = vector<char>(4);
 		// provider.update(glm::ivec3(0));
 		acceptClient();
@@ -70,14 +73,14 @@ public:
 			playerPositions.insert(player->playerChunkPosition);
 		}
 
-		provider.unloadRegions(playerPositions);
+		provider->unloadRegions(playerPositions);
 	}
 
 	void acceptClient() {
 		acceptor.async_accept([this] (error_code err, tcp::socket socket) {
 			if(!err) {
 				// Make sure this doesn't get removed after this function finishes.
-				shared_ptr<ClientHandler> client = make_shared<ClientHandler>(std::move(socket), 12, &receivedMessages, provider);
+				shared_ptr<ClientHandler> client = make_shared<ClientHandler>(std::move(socket), 12, &receivedMessages, *provider);
 				clients.push_back(client);
 
 				acceptClient(); // This is not infinite recursion.
