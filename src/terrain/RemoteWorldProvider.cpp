@@ -22,8 +22,9 @@ void RemoteWorldProvider::initData() {
 void RemoteWorldProvider::update(glm::ivec3 pos) {
 	// printf("provider update\n");
 	// Process incoming messages
+
 	while (!receivedQueue.empty()) {
-		printf("PROCESSING MESSAGE\n");
+		// printf("PROCESSING MESSAGE\n");
 		onMessage(receivedQueue.front());
 		receivedQueue.pop();
 	}
@@ -54,9 +55,10 @@ std::tuple<region_dtype*, int, bool> RemoteWorldProvider::getChunkData(glm::ivec
 	}
 
 	if (
-		position.x >= -2 && position.x <= 2 &&
-		position.y >= -2 && position.y <= 2 &&
-		position.z >= -2 && position.z <= 2 
+		// position.x >= -2 && position.x <= 2 &&
+		// position.y >= -2 && position.y <= 2 &&
+		// position.z >= -2 && position.z <= 2 
+		position.y >= 0
 	) {
 		sendChunkRequest(position);
 	}
@@ -65,29 +67,40 @@ std::tuple<region_dtype*, int, bool> RemoteWorldProvider::getChunkData(glm::ivec
 }
 
 // bool RemoteWorldProvider::newChunks() {
-bool RemoteWorldProvider::getNewChunks() {
-	if (newChunks) {
-		newChunks = false;
-		return true;
-	}
+std::set<glm::ivec3, compareVec3> RemoteWorldProvider::getNewChunks() {
+	std::scoped_lock lock(newChunksMutex);
 
-	return false;
+	auto t = std::move(newChunkPositions);
+	newChunkPositions.clear();
+
+	return t;
+}
+
+bool RemoteWorldProvider::newChunksAvailable() {
+	std::scoped_lock lock(newChunksMutex);
+	return !newChunkPositions.empty();
 }
 
 void RemoteWorldProvider::onMessage(Message& msg) {
 	if (msg.header.type == MsgType::Chunk) {
-		printf("chunk just arrived ");
+		// printf("chunk just arrived ");
 		std::scoped_lock lock(cachedChunksMutex);
 		glm::ivec3 position;
 		std::vector<region_dtype> data(msg.header.size - sizeof(glm::ivec3));
 		memcpy(data.data(), msg.data.data() + sizeof(glm::ivec3), msg.header.size - sizeof(glm::ivec3));
 		memcpy(&position, msg.data.data(), sizeof(glm::ivec3));
-		printf("position (%2d %2d %2d) \n", position.x, position.y, position.z);
+		// printf("position (%2d %2d %2d) \n", position.x, position.y, position.z);
 
 		cachedChunks[position] = data;
-		newChunks = true;
+		newChunksMutex.lock();
+		newChunkPositions.insert(position);
+		newChunksMutex.unlock();
+		// printf("new chunks:\n");
+		// for (const glm::ivec3& pos : newChunkPositions) {
+		// 	printf("%2d %2d %2d \n", pos.x, pos.y, pos.z);
+		// }
 	} else {
-		printf("message %d just arrived\n", msg.header.type);
+		// printf("message %d just arrived\n", msg.header.type);
 	}
 }
 
@@ -96,6 +109,16 @@ void RemoteWorldProvider::sendChunkRequest(glm::ivec3 chunkPosition) {
 	msg.setData(chunkPosition);
 
 	msg.header.type = MsgType::ChunkRequest;
+	msg.header.size = msg.data.size();
+
+	sendMessage(msg);
+}
+
+void RemoteWorldProvider::sendPlayerPosition(glm::vec3 playerPosition) {
+	Message msg;
+	msg.setData(playerPosition);
+
+	msg.header.type = MsgType::PlayerPosition;
 	msg.header.size = msg.data.size();
 
 	sendMessage(msg);

@@ -26,7 +26,8 @@ enum class MsgType : uint32_t {
 	Id,
 	Chunk,
 	ChunkRequest,
-	PlayerPosition
+	PlayerPosition,
+	PlayerChunkPosition
 };
 
 struct MsgHeader {
@@ -119,7 +120,7 @@ public:
 			[this] (error_code err, size_t length) {
 				if (!err) {
 					// printf("sent header(type: %d, size: %d) %lu\n", header.type, header.size, length);
-					printf("Message sent(%d)[%d]\n", length, sendQueue.front().header.type);
+					// printf("Message sent(%d)[%d]\n", length, sendQueue.front().header.type);
 					sendQueue.pop();
 					if (!sendQueue.empty()) {
 						sendHeader();
@@ -136,7 +137,7 @@ public:
 		asio::async_read(socket, asio::buffer(&temp_message.header, sizeof(MsgHeader)), 
 			[this](error_code err, size_t length) {
 				if (!err) {
-					printf("got header(type: %d, size: %d) %lu\n", temp_message.header.type, temp_message.header.size, length);
+					// printf("got header(type: %d, size: %d) %lu\n", temp_message.header.type, temp_message.header.size, length);
 					temp_message.data.resize(temp_message.header.size);
 					readBody();
 				} else {
@@ -153,7 +154,7 @@ public:
 			[&] (error_code err, size_t length) {
 				if (!err) {
 					addToReceivedQueue();
-					printf("Body received(%d)[%d]\n", length, temp_message.header.type);
+					// printf("Body received(%d)[%d]\n", length, temp_message.header.type);
 					// onMessage(std::move(temp_message));
 					readHeader();
 				} else {

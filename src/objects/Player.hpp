@@ -41,6 +41,7 @@ public:
 public:
 	bool noclip = false;
 	bool jumped = false;
+	bool moved = false;
 
 	AABB aabb;
 	glm::vec3 velocity = glm::vec3(0.0f);

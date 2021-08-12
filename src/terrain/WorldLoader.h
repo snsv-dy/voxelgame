@@ -47,7 +47,7 @@ class WorldLoader
 	glm::mat4 *projection;
 	glm::mat4 *view;
 	unsigned int textures;
-	std::unique_ptr<WorldProvider> provider;
+	std::shared_ptr<WorldProvider> provider;
 	
 	bool first = true;
 	
@@ -63,7 +63,7 @@ public:
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//
 
-	WorldLoader(glm::mat4 *projection, glm::mat4 *view, unsigned int textures, struct shaderParams params, asio::ip::tcp::socket socket, asio::ip::tcp::resolver::results_type endpoints);
+	WorldLoader(glm::mat4 *projection, glm::mat4 *view, unsigned int textures, struct shaderParams params, std::shared_ptr<WorldProvider> provider);
 	
 	const int radius = 4;
 	const int unloadRadius = (radius * 2);

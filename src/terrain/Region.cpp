@@ -434,7 +434,7 @@ std::pair<int, bool> Region::getChunkOffset(glm::ivec3 pos) {
 	if(loaded_chunks.find(pos) == loaded_chunks.end()){
 		// generate
 		// printf("[%2d %2d %2d] generating: %2d %2d %2d\n", position.x, position.y, position.z, pos.x, pos.y, pos.z);
-		// printf("generating: %2d %2d %2d\n", cx, cy, cz);
+		printf("generating: %2d %2d %2d\n", cx, cy, cz);
 		genChunk(cx, cy, cz);		
 		loaded_chunks.insert(pos);
 		modified = true;

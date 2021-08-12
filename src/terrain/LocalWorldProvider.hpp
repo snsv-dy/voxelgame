@@ -1,5 +1,6 @@
 #ifndef __LOCAL_WORLD_PROVIDER_HPP__
 #define __LOCAL_WORLD_PROVIDER_HPP__
+#include <cstdio>
 #include "worldProvider.hpp"
 
 class LocalWorldProvider: public WorldProvider {
@@ -19,6 +20,7 @@ public:
 		printf("elo\n");
 	}
 	
+	// 
 	int radius = 2;
 	
 	int xmoved = 0, zmoved = 0;
@@ -31,6 +33,12 @@ public:
 	void notifyChange(glm::ivec3 chunkPos);
 	region_dtype valueAt(int x, int y, int z);
 	~LocalWorldProvider();
+
+	// Not part of interface.
+	//
+	const unsigned int unloadDistance = 3;
+	// playerPosition is actually position of a chunk in which player is.
+	void unloadRegions(std::set<glm::ivec3, compareVec3> playerPositions);
 };
 
 #endif

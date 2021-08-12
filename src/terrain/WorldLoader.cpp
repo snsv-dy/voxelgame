@@ -1,8 +1,8 @@
 #include "WorldLoader.h"
 
-WorldLoader::WorldLoader(glm::mat4 *projection, glm::mat4 *view, unsigned int textures, struct shaderParams params, asio::ip::tcp::socket socket, asio::ip::tcp::resolver::results_type endpoints) 
+WorldLoader::WorldLoader(glm::mat4 *projection, glm::mat4 *view, unsigned int textures, struct shaderParams params, std::shared_ptr<WorldProvider> provider) 
 // : provider{std::move(std::make_unique<LocalWorldProvider>())} {
-: provider{std::move(std::make_unique<RemoteWorldProvider>(std::move(socket), endpoints))} {
+: provider{std::move(provider)} {
 	last_camera_pos = glm::ivec3(0);
 	
 	this->projection = projection;
@@ -188,9 +188,10 @@ void WorldLoader::checkForUpdate(glm::vec3 cameraPos) {
 	std::tie(chpos, std::ignore) = toChunkCoords(cameraPos, TerrainConfig::ChunkSize);
 	glm::ivec3 change = chpos - last_camera_pos;
 	glm::ivec3 abs_change = glm::abs(change);
-	bool remoteChunks = provider->getNewChunks();
+	bool remoteChunks = provider->newChunksAvailable();
 	if (remoteChunks) {
-		first = true;
+		printf("New chunks available\n");
+		// first = true;
 	}
 	
 	if (!notified && (last_camera_pos != chpos || first || !chunks_to_update.empty() || remoteChunks)) {
@@ -230,7 +231,16 @@ void WorldLoader::update(glm::ivec3 change) {
 		
 //		printf("change: %d %d %d\n", change[0], change[1], change[2]);
 		
-		for(int i = 0; i < 3; i++){
+
+		if (provider->newChunksAvailable()) {
+			printf("getting new Chunks\n");
+			for (const glm::ivec3& pos : provider->getNewChunks()) {
+				printf("NEW CHUNKZ: %2d %2d %2d \n", pos.x, pos.y, pos.z);
+				loadChunk(pos, &light_needed);
+			}
+		}
+
+		for(int i = 0; i < 3; i++) {
 			if(abs_change[i] == 0){
 				continue;
 			}
@@ -258,7 +268,6 @@ void WorldLoader::update(glm::ivec3 change) {
 					}
 				}
 			}
-			
 		}
 		
 		// Removing chunks

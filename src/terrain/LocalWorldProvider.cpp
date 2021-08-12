@@ -86,18 +86,38 @@ void LocalWorldProvider::update(glm::ivec3 pos) {
 	
 // position - global chunk coordiates
 // returns data pointer, offset of chunk in data
-std::tuple<region_dtype*, int, bool> LocalWorldProvider::getChunkData(glm::ivec3 position){
+std::tuple<region_dtype*, int, bool> LocalWorldProvider::getChunkData(glm::ivec3 position) {
 	// Loading regions could be done here
 	// 	CHANGE NAME
 	position *= chunkSize;
 	auto [reg_pos, chunk_pos] = toChunkCoords(position, regionSize);
 	
-	if(auto reg_it = regions.find(reg_pos); reg_it != regions.end()){
+	if(auto reg_it = regions.find(reg_pos); reg_it != regions.end()) {
 		Region& region = reg_it->second;
 		auto [offset, generated] = region.getChunkOffset(position);
 		return {region.getData(), offset, generated};
+	} else {
+		// Generating region
+		// if (regions.size() >= maxRegions) {
+			// unloadRegions();
+		// }
+
+		// Loading must be here but for chunks in regions that are less than unload distance range.
+		// (Don't load regions that will be removed in next loop iteration.)
+		// Well if there probably is player near if he want's to load some chunk.
+		// ( his render distance might be higher than what server allows, but that is pain to implement right now)
+		// bool inPlayersVicinity = !glm::any(glm::bvec3(glm::greaterThanEqual(glm::abs(r.position - regPos), unloadDistance)));
+		regions[reg_pos] = Region(reg_pos);
+		printf("New region: %2d %2d %2d \n", reg_pos.x, reg_pos.y, reg_pos.z);
+		Region& region = regions[reg_pos];
+		auto [offset, generated] = region.getChunkOffset(position);
+
+		// Might unload just generated region.
+		// unloadRegions();
+		return {region.getData(), offset, generated};
 	}
 	
+	// ????
 	return {nullptr, 0, false};
 }
 	
@@ -123,4 +143,40 @@ void LocalWorldProvider::notifyChange(glm::ivec3 chunkPos) {
 
 LocalWorldProvider::~LocalWorldProvider() {
 	printf("yoo\n");
+}
+
+// Make some algorithm that removes unused regions,
+// or can specify how many regions you want to unload.
+// This was something that I came up in a hurry.
+// Removes regions that are at a certain distance from player.
+void LocalWorldProvider::unloadRegions(std::set<glm::ivec3, compareVec3> playerPositions) {
+	for (auto [position, region] : regions) {
+		region.removeable = true;
+	}
+
+	for (auto [position, region] : regions) {
+		for (const glm::ivec3& playerPosition : playerPositions) {
+			auto [playerRegPos, inRegPos] = toChunkCoords(playerPosition, TerrainConfig::ChunkSize * TerrainConfig::RegionSize);
+			bool inPlayersVicinity = !glm::any(glm::bvec3(glm::greaterThanEqual(glm::abs(region.position - playerRegPos), glm::ivec3(unloadDistance))));
+			if (inPlayersVicinity) {
+				region.removeable = false;
+			}
+		}
+	}
+
+	// Removing regions
+	for (auto i = regions.begin(), nexti = i; i != regions.end(); i = nexti) {
+		nexti++;
+		if (i->second.removeable == true) {
+			glm::ivec3 pos = i->second.position;
+					printf("Removing region %d %d %d\n", pos.x, pos.y, pos.z); 
+//					for(const glm::ivec3 &p : i->second.getLoadedChunks())
+//						chunks_to_remove.push_back(p);
+			
+			regions.erase(i);
+		}
+	}
+	// for (Region& r : regions) {
+	// 	r.removeable = true;
+	// }
 }

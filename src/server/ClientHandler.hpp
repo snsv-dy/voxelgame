@@ -27,13 +27,22 @@ struct OwnedMessage {
 
 class ClientHandler : public enable_shared_from_this<ClientHandler>, public Connection {
 	// asio::ip::tcp::socket mclient;
-	MsgHeader header {MsgType::Id, 0};
+	// MsgHeader header {MsgType::Id, 0};
+	const unsigned int drawDistance = 2; // Chunks
+	const glm::ivec3 vecDrawDistance {drawDistance};
 	uint32_t id;
 	vector<uint16_t> t_chunk;
 	TsQueue<OwnedMessage>* serverReceivedQueue = nullptr;
 	LocalWorldProvider& worldProvider;
+
+	// glm::ivec3 prevPlayerChunkPosition;
+	bool firstPosition = true;
+
+	std::set<glm::ivec3, compareVec3> loadedChunks;
 	// Connection conn;
 public:
+	glm::ivec3 playerChunkPosition;
+	glm::vec3 playerPosition;
 	ClientHandler(tcp::socket client, uint32_t id, TsQueue<OwnedMessage>* serverQueue, LocalWorldProvider& worldProvider);
 	void genSampleChunk();
 	void sendId();

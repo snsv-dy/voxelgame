@@ -72,6 +72,7 @@ void Player::setPosition(glm::vec3 newPosition) {
 }
 
 glm::vec3 Player::updatePhysics(const float& dt) {
+	moved = false;
 	glm::vec3 a = force / mass;
 	const float gravity = 1.0f;
 	if (!noclip) {
@@ -121,5 +122,7 @@ glm::vec3 Player::updatePhysics(const float& dt) {
 }
 
 void Player::applyTranslation(const glm::vec3& dx) {
+	if (dx.x > 0.001f || dx.y > 0.001f || dx.z > 0.001f)
+		moved = true;
 	this->setPosition(position + dx);
 }

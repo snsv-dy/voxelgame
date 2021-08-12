@@ -58,7 +58,7 @@ enum class RegionType{
 //if chunk gets destroyed
 //(Remove coordiantes of that chunk from list of loaded chunks)
 
-class Region{
+class Region {
 private:
 	std::string fileName = std::string("");
 	

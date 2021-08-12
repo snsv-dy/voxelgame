@@ -89,6 +89,7 @@ struct LoopParams {
 	glm::mat4 projection;
 	glm::mat4& playersView;
 	Hud* hud;
+	RemoteWorldProvider* provider;
 };
 
 void main_loop(void* params);
@@ -215,13 +216,14 @@ int opengl_context_scope(GLFWwindow *window) {
 	asio::ip::tcp::socket socket(ioContext);
 
 	// Provider initialization.
-	// std::shared_ptr<RemoteWorldProvider> worldProvider = std::make_shared<RemoteWorldProvider>(std::move(socket), endpoints);
+	std::shared_ptr<RemoteWorldProvider> provider = std::make_shared<RemoteWorldProvider>(std::move(socket), endpoints);
 
 	// end of internet initialization
 	// internet initialization end
 
 	// Might be good to provide WorldLoader with provider so it will have less things to worry about.
-	WorldLoader wl(&projection, view, textures, chunkShaderParams, std::move(socket), endpoints);
+	// WorldLoader wl(&projection, view, textures, chunkShaderParams, std::move(socket), endpoints);
+	WorldLoader wl(&projection, view, textures, chunkShaderParams, provider);
 	Lighter light(wl);
 	
 	controls.world_loader = &wl;
@@ -271,7 +273,8 @@ int opengl_context_scope(GLFWwindow *window) {
 		.cursor = &cursor,
 		.projection = projection,
 		.playersView = playersView,
-		.hud = &hud
+		.hud = &hud,
+		.provider = provider.get()
 	};
 
 	player.noclip = true;
@@ -287,6 +290,7 @@ int opengl_context_scope(GLFWwindow *window) {
 	// yeah don't hog the main thread.
 	std::thread netThread([&] () {
 		ioContext.run();
+		printf("ioContext ended\n");
 	});
 
 	#ifdef __EMSCRIPTEN__ 
@@ -309,7 +313,7 @@ void terrain_thread(WorldLoader& wl, Lighter& light, Player& player, bool& exitH
 	wl.notified = false;
 	while(!exitHamlet) {
 		wl.notified = false;
-		// printf("waiting for update\n");
+		printf("waiting for update\n");
 		std::unique_lock lock{wl.updateMutex};
 		wl.updateNotifier.wait(lock);
 
@@ -317,7 +321,7 @@ void terrain_thread(WorldLoader& wl, Lighter& light, Player& player, bool& exitH
 			break;
 		}
 
-		// printf("updating\n");
+		printf("updating\n");
 
 		wl.update(wl.cur_camera_pos - wl.last_camera_pos);
 
@@ -339,6 +343,7 @@ void terrain_thread(WorldLoader& wl, Lighter& light, Player& player, bool& exitH
 		wl.notified = false;
 
 		lock.unlock();
+		printf("updated\n");
 	}
 }
 
@@ -355,6 +360,7 @@ void main_loop(void* params) {
 	Cursor& cursor = *loopP->cursor;
 	glm::mat4& playersView = loopP->playersView;
 	Hud& hud = *loopP->hud;
+	RemoteWorldProvider* provider = loopP->provider;
 
 	const float dt = 1000.0f / 12 / 1000;
 	// float deltaTime = 0.0f;
@@ -377,6 +383,9 @@ void main_loop(void* params) {
 		}
 	}
 	player.applyTranslation(dx);
+	if (player.moved) {
+		provider->sendPlayerPosition(player.getPosition());
+	}
 
 	
 	player.updateView();

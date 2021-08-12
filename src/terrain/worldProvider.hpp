@@ -39,7 +39,8 @@ public:
 	
 	// glm::ivec3 last_pos = glm::ivec3(0);
 	
-	virtual bool getNewChunks() {return false; }; // For remote
+	virtual std::set<glm::ivec3, compareVec3> getNewChunks() {return {}; }; // For remote
+	virtual bool newChunksAvailable() { return false; };
 	virtual void update(glm::ivec3 pos) = 0;
 	virtual std::tuple<region_dtype*, int, bool> getChunkData(glm::ivec3 position) = 0;
 	virtual void notifyChange(glm::ivec3 chunkPos) = 0;

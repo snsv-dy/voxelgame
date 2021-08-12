@@ -37,14 +37,16 @@ void ClientHandler::sendChunk(glm::ivec3 chunkPosition) {
 		size_t chunkDataSize = TerrainConfig::ChunkCubed * sizeof(unsigned short);
 		size_t dataSize = chunkDataSize + sizeof(glm::ivec3);
 		msg.data.resize(dataSize);
-		printf("	Sending chunk size: %d %d\n", t_chunk.size(), msg.data.size());
+		// printf("	Sending chunk size: %d %d\n", t_chunk.size(), msg.data.size());
 		memcpy(msg.data.data(), &chunkPosition, sizeof(glm::ivec3));
 		memcpy(msg.data.data() + sizeof(glm::ivec3), data + offset, chunkDataSize);
 
 		msg.header.type = MsgType::Chunk;
 		msg.header.size = dataSize; // should be region_dtype
-		printf("header, data: %d %d\n", msg.header.size, msg.data.size());
+		// printf("header, data: %d %d\n", msg.header.size, msg.data.size());
 		sendMessage(msg);
+	} else {
+		printf("data at: %2d %2d %2d is nullptr\n", chunkPosition.x, chunkPosition.y, chunkPosition.z);
 	}
 }
 
@@ -56,16 +58,48 @@ void ClientHandler::addToReceivedQueue() {
 void ClientHandler::onMessage(Message msg) {
 	switch (msg.header.type) {
 		case MsgType::ChunkRequest:
-			glm::ivec3 position = msg.getData<glm::ivec3>();
-			printf("Received chunk requested position: %2d, %2d, %2d\n", position.x, position.y, position.z);
+		{
+			glm::ivec3 chunkPosition = msg.getData<glm::ivec3>();
+			// glm::ivec3 relativeDistance = position - playerChunkPosition;
+			
+			bool inVicinity = chunkPosition.y >= 0;//!glm::any(glm::bvec3(glm::greaterThanEqual(glm::abs(chunkPosition - playerChunkPosition), vecDrawDistance)));
+			printf("Received chunk requested position: %2d, %2d, %2d\n", chunkPosition.x, chunkPosition.y, chunkPosition.z);
 			if (
-				position.x >= -2 && position.x <= 2 &&
-				position.x >= -2 && position.x <= 2 &&
-				position.z >= -2 && position.z <= 2 
+				inVicinity
+				// position.x >= -2 && position.x <= 2 &&
+				// position.x >= -2 && position.x <= 2 &&
+				// position.z >= -2 && position.z <= 2 
 			) {
-				sendChunk(position);
+				sendChunk(chunkPosition);
+				// loadedChunks.insert(chunkPosition);
 			}
-		break;
+		}break;
+
+		case MsgType::PlayerChunkPosition:
+		{
+			// if (!firstPosition) {
+			// 	prevPlayerChunkPosition = playerChunkPosition;
+			// }
+			
+			// playerChunkPosition = msg.getData<glm::ivec3>();
+
+			// if (!firstPosition) {
+			// 	std::set<glm::ivec3, compareVec3> unloadableChunks;
+			// 	for (const glm::ivec3& chunkPosition : loadedChunks) {
+			// 		bool canBeUnloaded = !glm::any(glm::bvec3(glm::greaterThanEqual(glm::abs(chunkPosition - playerChunkPosition), vecDrawDistance)));
+			// 	}
+			// }
+
+			// firstPosition = false;
+		}break;
+
+		case MsgType::PlayerPosition:
+		{
+			playerPosition = msg.getData<glm::vec3>();
+			auto [chunkPos, inChunk] = toChunkCoords(playerPosition, TerrainConfig::ChunkSize);
+			playerChunkPosition = chunkPos;
+			// printf("player changed position: %2.2f %2.2f %2.2f \n", playerPosition.x, playerPosition.y, playerPosition.z);
+		}break;
 	}
 	// printf("message type: %d\n", msg.header.type);
 }

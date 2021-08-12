@@ -24,6 +24,9 @@ class RemoteWorldProvider: public WorldProvider, public Connection {
 	std::map<glm::ivec3, std::vector<region_dtype>, compareVec3> cachedChunks;
 	std::mutex cachedChunksMutex;
 	Region nullRegion;
+
+	std::set<glm::ivec3, compareVec3> newChunkPositions;
+	std::mutex newChunksMutex;
 	
 	std::vector<region_dtype> dummy_data;
 
@@ -31,7 +34,7 @@ class RemoteWorldProvider: public WorldProvider, public Connection {
 	std::unique_ptr<NetClient> net;
 	std::thread netThread;
 public:
-	bool newChunks = false;
+	// bool newChunks = false;
 	static const int chunkSize = TerrainConfig::ChunkSize;
 	static constexpr int regionN = Region::reg_size;
 	static constexpr int regionSize = regionN * chunkSize; // Region size in single blocks, not in chunks.
@@ -43,6 +46,7 @@ public:
 
 	void onMessage(Message& msg);
 	void sendChunkRequest(glm::ivec3 chunkPosition);
+	void sendPlayerPosition(glm::vec3 playerPosition);
 	
 	int radius = 2;
 	
@@ -51,7 +55,8 @@ public:
 	
 	glm::ivec3 last_pos = glm::ivec3(0);
 	
-	bool getNewChunks();
+	std::set<glm::ivec3, compareVec3> getNewChunks();
+	bool newChunksAvailable();
 	void update(glm::ivec3 pos);
 	std::tuple<region_dtype*, int, bool> getChunkData(glm::ivec3 position);
 	void notifyChange(glm::ivec3 chunkPos);

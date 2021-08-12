@@ -39,13 +39,14 @@ class Server {
 	//  
 	// Thread safe world provider should be there!!!
 	LocalWorldProvider provider;
+	const unsigned int maxRegions = 10; // Must be like at least same as max players?? idk maybye more.
 	// But for now this will suffice. 
 	// 
 	bool running = true;
 public:
 	Server(asio::io_context& context): context{context}, acceptor{context, tcp::endpoint(tcp::v4(), 25013)} {
 		someText = vector<char>(4);
-		provider.update(glm::ivec3(0));
+		// provider.update(glm::ivec3(0));
 		acceptClient();
 	}
 
@@ -57,7 +58,19 @@ public:
 				omsg.owner->onMessage(omsg.msg);
 				receivedMessages.pop();
 			}
+
+			unloadRegions();
 		}
+	}
+
+	// This could probably be improved but i don't have better idea now.
+	void unloadRegions() {
+		std::set<glm::ivec3, compareVec3> playerPositions;
+		for (auto player : clients) {
+			playerPositions.insert(player->playerChunkPosition);
+		}
+
+		provider.unloadRegions(playerPositions);
 	}
 
 	void acceptClient() {
@@ -79,6 +92,13 @@ public:
 
 int main() {
 	// try {
+		// glm::ivec3 a(-1, 0, 0);
+		// glm::ivec3 pos(1, 0, 2);
+		// bool rel = ;
+		// printf("eee: %2d %2d %2d \n", rel);
+
+
+		// return 0;
 		asio::io_context context;
 		Server s(context);
 		// acceptor = tcp::acceptor(context, tcp::endpoint(tcp::v4(), 16013));
