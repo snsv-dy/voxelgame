@@ -108,7 +108,7 @@ std::tuple<region_dtype*, int, bool> LocalWorldProvider::getChunkData(glm::ivec3
 		// ( his render distance might be higher than what server allows, but that is pain to implement right now)
 		// bool inPlayersVicinity = !glm::any(glm::bvec3(glm::greaterThanEqual(glm::abs(r.position - regPos), unloadDistance)));
 		regions[reg_pos] = Region(reg_pos);
-		printf("New region: %2d %2d %2d \n", reg_pos.x, reg_pos.y, reg_pos.z);
+		// printf("New region: %2d %2d %2d \n", reg_pos.x, reg_pos.y, reg_pos.z);
 		Region& region = regions[reg_pos];
 		auto [offset, generated] = region.getChunkOffset(position);
 
@@ -139,6 +139,10 @@ void LocalWorldProvider::notifyChange(glm::ivec3 chunkPos) {
 		printf("found\n");
 		it->second.modified = true;
 	}
+}
+
+void LocalWorldProvider::changeBlock(ChangedBlock& block) {
+
 }
 
 LocalWorldProvider::~LocalWorldProvider() {

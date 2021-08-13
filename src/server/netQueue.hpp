@@ -38,8 +38,10 @@ public:
 
 	void wait() {
 		while (empty()) {
-			std::unique_lock lock(waitMutex);
-			waitOn.wait(lock);
+			std::unique_lock lock(queueMutex);
+			waitOn.wait(lock, [this]() {
+				return !q.empty();
+			});
 		// waitOn.wait(lock, [this]{!q.empty();});
 		}
 		// lock.unlock();

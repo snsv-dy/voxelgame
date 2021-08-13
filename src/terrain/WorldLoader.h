@@ -68,7 +68,7 @@ public:
 	std::mutex updateMutex;
 	std::mutex prepareSetMutex;
 	std::condition_variable updateNotifier;
-	bool notified = true;
+	bool notified = false;
 	glm::ivec3 cur_camera_pos {0.0f, 0.0f, 0.0f};
 
 	void checkForUpdate(glm::vec3 cameraPos);

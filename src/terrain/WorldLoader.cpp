@@ -184,7 +184,7 @@ inline float ivec3len2(glm::ivec3 a){
 
 void WorldLoader::checkForUpdate(glm::vec3 cameraPos) {
 	// Only for net!!
-	provider->update(glm::ivec3(0));
+	// provider->update(glm::ivec3(0));
 	glm::ivec3 chpos;
 	
 	cameraPos.y = 0.0f;
@@ -193,7 +193,7 @@ void WorldLoader::checkForUpdate(glm::vec3 cameraPos) {
 	glm::ivec3 change = chpos - last_camera_pos;
 	glm::ivec3 abs_change = glm::abs(change);
 	bool remoteChunks = provider->newChunksAvailable();
-	if (remoteChunks) {
+	if (remoteChunks && !notified) {
 		printf("New chunks available\n");
 		// first = true;
 	}
@@ -205,7 +205,6 @@ void WorldLoader::checkForUpdate(glm::vec3 cameraPos) {
 			notified = true;
 		}
 		updateNotifier.notify_one();
-		// printf("notifying at: %d %d %d \n", chpos[0], chpos[1], chpos[2]);
 	}
 }
 
@@ -218,10 +217,10 @@ void WorldLoader::update(glm::ivec3 change) {
 	
 	// std::list<propagateParam> lights_to_propagate;
 	if (true) {
-		printf("updating: %d %d %d \n", change[0], change[1], change[2]);
+		// printf("updating: %d %d %d \n", change[0], change[1], change[2]);
 	// if (last_camera_pos != chpos || first) {
 		light_needed.clear();
-		provider->update(cur_camera_pos);
+		// provider->update(cur_camera_pos);
 		// printf("provider after\n");
 		
 		// glm::ivec3 change = chpos - last_camera_pos;
@@ -238,11 +237,11 @@ void WorldLoader::update(glm::ivec3 change) {
 		
 //		printf("change: %d %d %d\n", change[0], change[1], change[2]);
 		
-
-		if (provider->newChunksAvailable()) {
-			printf("getting new Chunks\n");
+		
+		if (true) {
+			// printf("getting new Chunks\n");
 			for (const glm::ivec3& pos : provider->getNewChunks()) {
-				printf("NEW CHUNKZ: %2d %2d %2d \n", pos.x, pos.y, pos.z);
+				// printf("NEW CHUNKZ: %2d %2d %2d \n", pos.x, pos.y, pos.z);
 				loadChunk(pos, &light_needed);
 			}
 		}

@@ -216,7 +216,7 @@ int opengl_context_scope(GLFWwindow *window) {
 	asio::ip::tcp::socket socket(ioContext);
 
 	// Provider initialization.
-	std::shared_ptr<RemoteWorldProvider> provider = std::make_shared<RemoteWorldProvider>(std::move(socket), endpoints);
+	std::shared_ptr<RemoteWorldProvider> provider = std::make_shared<RemoteWorldProvider>(ioContext, std::move(socket), endpoints);
 
 	// end of internet initialization
 	// internet initialization end
@@ -230,17 +230,11 @@ int opengl_context_scope(GLFWwindow *window) {
 	
 	// Shopping list:
 	//
-	// Terrain generation in separate thread
-	// Displaying text on screen for debug (1/2) (2 - Writing text from functions in other files, than this.)
-	// Terrain genereation using perlin noise
-	// Terrain compression when saving?
 	// Frustrum culling
 	// Make handling cursor nicer.
 	// 2d Hud
 	// Make greedy meshing work with lightning!!!!! (This not done??? xD)
 	// Change .h files to .hpp*
-	// Split worldProvider to 2 files.
-	// Reverse light values. ( 0 should be no light)
 	// Removing block on chunk's edge doesn't update light in neighbouring chunk.
 	// Sometimes light doesn't get propagated when placing torch. (after multithreading implementation)
 	// ---------------------------------------------------------
@@ -290,7 +284,8 @@ int opengl_context_scope(GLFWwindow *window) {
 	// yeah don't hog the main thread.
 	std::thread netThread([&] () {
 		ioContext.run();
-		printf("ioContext ended\n");
+		printf("\t\t\tioContext ended NO INTERNET!!!\n");
+		exit(1);
 	});
 
 	#ifdef __EMSCRIPTEN__ 
@@ -314,7 +309,7 @@ int opengl_context_scope(GLFWwindow *window) {
 }
 
 void terrain_thread(WorldLoader& wl, Lighter& light, Player& player, bool& exitHamlet) {
-	wl.notified = false;
+	// wl.notified = false;
 	while(!exitHamlet) {
 		printf("waiting for update\n");
 		std::unique_lock lock{wl.updateMutex};
@@ -375,6 +370,7 @@ void main_loop(void* params) {
 
 	wl.disposeChunks();
 	wl.updateGeometry();
+	provider->update(glm::ivec3(0));
 	wl.checkForUpdate(player.positionFromHead);
 	
 	int debugkeys = processInput(window);

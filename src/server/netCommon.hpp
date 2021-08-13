@@ -59,6 +59,7 @@ struct Message {
 
 class Connection {
 	tcp::socket socket;
+	asio::io_context& context;
 	
 	TsQueue<Message> sendQueue;
 	bool server = false; // is this connection part of server
@@ -67,7 +68,7 @@ protected:
 	Message temp_message;
 	TsQueue<Message> receivedQueue;
 public:
-	Connection(tcp::socket socket): socket{move(socket)} {
+	Connection(asio::io_context& context, tcp::socket socket): context{context}, socket{move(socket)} {
 		// printf("Connection made\n");
 	}
 	
@@ -90,12 +91,14 @@ public:
 	}
 
 	void sendMessage(const Message& msg) {
-		bool was_empty = sendQueue.empty();
-		sendQueue.push(msg);
+		asio::post(context, [this, msg]() {
+			bool was_empty = sendQueue.empty();
+			sendQueue.push(msg);
 
-		if (was_empty) {
-			sendHeader();
-		}
+			if (was_empty) {
+				sendHeader();
+			}
+		});
 	}
 
 	void sendHeader() {
@@ -105,6 +108,10 @@ public:
 			asio::async_write(socket, asio::buffer(&sendQueue.front().header, sizeof(MsgHeader)), 
 				[this] (error_code err, size_t length) {
 					if (!err) {
+						if (sendQueue.front().header.type == MsgType::Chunk) {
+							glm::ivec3* pos = (glm::ivec3*)sendQueue.front().data.data();
+							printf("sending chunk: %2d %2d %2d \n", pos->x, pos->y, pos->z);
+						}
 						// printf("sent header(type: %d, size: %d) %lu\n", header.type, header.size, length);
 						sendBody();
 					} else {
@@ -152,8 +159,13 @@ public:
 		// Resize buffer.
 
 		asio::async_read(socket, asio::buffer(temp_message.data.data(), temp_message.data.size()),
-			[&] (error_code err, size_t length) {
+			[this] (error_code err, size_t length) {
 				if (!err) {
+					if (temp_message.header.type == MsgType::ChunkRequest) {
+						glm::ivec3 pos {0};
+						memcpy(&pos, temp_message.data.data(), sizeof(glm::ivec3));
+						printf("chunk requested: %2d %2d %2d \n", pos.x, pos.y, pos.z);
+					}
 					addToReceivedQueue();
 					// printf("Body received(%d)[%d]\n", length, temp_message.header.type);
 					// onMessage(std::move(temp_message));
@@ -168,6 +180,11 @@ public:
 	virtual void addToReceivedQueue() {
 		if (server) {
 		} else {
+			// if (temp_message.header.type == MsgType::Chunk) {
+			// 	glm::ivec3 pos {0};
+			// 	memcpy(&pos, temp_message.data.data(), sizeof(glm::ivec3));
+			// 	printf("chunk arrived: %2d %2d %2d \n", pos.x, pos.y, pos.z);
+			// }
 			receivedQueue.push(temp_message);
 		}
 	}

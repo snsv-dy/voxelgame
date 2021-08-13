@@ -41,7 +41,7 @@ public:
 	static const int regionHeight = regionN * chunkSize;
 	
 	int regions_size();
-	RemoteWorldProvider(asio::ip::tcp::socket socket, asio::ip::tcp::resolver::results_type endpoints);
+	RemoteWorldProvider(asio::io_context& context, asio::ip::tcp::socket socket, asio::ip::tcp::resolver::results_type endpoints);
 	void initData();
 
 	void onMessage(Message& msg);

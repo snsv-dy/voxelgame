@@ -62,7 +62,7 @@ public:
 				receivedMessages.pop();
 			}
 
-			unloadRegions();
+			// unloadRegions();
 		}
 	}
 
@@ -80,7 +80,7 @@ public:
 		acceptor.async_accept([this] (error_code err, tcp::socket socket) {
 			if(!err) {
 				// Make sure this doesn't get removed after this function finishes.
-				shared_ptr<ClientHandler> client = make_shared<ClientHandler>(std::move(socket), 12, &receivedMessages, *provider);
+				shared_ptr<ClientHandler> client = make_shared<ClientHandler>(context, std::move(socket), 12, &receivedMessages, *provider);
 				clients.push_back(client);
 
 				acceptClient(); // This is not infinite recursion.

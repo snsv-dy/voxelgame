@@ -1,6 +1,6 @@
 #include "ClientHandler.hpp"
 
-ClientHandler::ClientHandler(tcp::socket client, uint32_t id, TsQueue<OwnedMessage>* serverQueue, LocalWorldProvider& worldProvider): id{id}, worldProvider{worldProvider}, Connection{std::move(client)}, serverReceivedQueue{serverQueue} {
+ClientHandler::ClientHandler(asio::io_context& context, tcp::socket client, uint32_t id, TsQueue<OwnedMessage>* serverQueue, LocalWorldProvider& worldProvider): id{id}, worldProvider{worldProvider}, Connection{context, std::move(client)}, serverReceivedQueue{serverQueue} {
 	// printf("client connected: %s:%d\n", mclient.local_endpoint().address().to_string().c_str(), mclient.local_endpoint().port());
 	printf("client made\n");
 	genSampleChunk();
@@ -63,7 +63,7 @@ void ClientHandler::onMessage(Message msg) {
 			// glm::ivec3 relativeDistance = position - playerChunkPosition;
 			
 			bool inVicinity = chunkPosition.y >= 0;//!glm::any(glm::bvec3(glm::greaterThanEqual(glm::abs(chunkPosition - playerChunkPosition), vecDrawDistance)));
-			printf("Received chunk requested position: %2d, %2d, %2d\n", chunkPosition.x, chunkPosition.y, chunkPosition.z);
+			// printf("Received chunk requested position: %2d, %2d, %2d\n", chunkPosition.x, chunkPosition.y, chunkPosition.z);
 			if (
 				inVicinity
 				// position.x >= -2 && position.x <= 2 &&

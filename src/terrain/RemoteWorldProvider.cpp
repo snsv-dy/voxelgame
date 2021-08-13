@@ -1,7 +1,7 @@
 #include "RemoteWorldProvider.hpp"
 
 int regions_size();
-RemoteWorldProvider::RemoteWorldProvider(asio::ip::tcp::socket socket, asio::ip::tcp::resolver::results_type endpoints): Connection(std::move(socket)) {
+RemoteWorldProvider::RemoteWorldProvider(asio::io_context& context, asio::ip::tcp::socket socket, asio::ip::tcp::resolver::results_type endpoints): Connection(context, std::move(socket)) {
 	dummy_data = std::vector<region_dtype>(chunkSize * chunkSize * chunkSize);
 	initData();
 	cachedChunks[glm::ivec3(0, 0, 0)] = std::move(dummy_data);
@@ -25,8 +25,9 @@ void RemoteWorldProvider::update(glm::ivec3 pos) {
 
 	while (!receivedQueue.empty()) {
 		// printf("PROCESSING MESSAGE\n");
-		onMessage(receivedQueue.front());
-		receivedQueue.pop();
+		Message msg = receivedQueue.pop();
+		onMessage(msg);
+		// receivedQueue.pop();
 	}
 
 	// printf("PROVIDER UPDATED\n");
@@ -70,7 +71,7 @@ std::tuple<region_dtype*, int, bool> RemoteWorldProvider::getChunkData(glm::ivec
 std::set<glm::ivec3, compareVec3> RemoteWorldProvider::getNewChunks() {
 	std::scoped_lock lock(newChunksMutex);
 
-	auto t = std::move(newChunkPositions);
+	std::set<glm::ivec3, compareVec3> t = newChunkPositions;
 	newChunkPositions.clear();
 
 	return t;
@@ -93,6 +94,7 @@ void RemoteWorldProvider::onMessage(Message& msg) {
 
 		cachedChunks[position] = data;
 		newChunksMutex.lock();
+		printf("new chunks: %2d %2d %2d \n", position.x, position.y, position.z);
 		newChunkPositions.insert(position);
 		newChunksMutex.unlock();
 		// printf("new chunks:\n");

@@ -44,7 +44,7 @@ class ClientHandler : public enable_shared_from_this<ClientHandler>, public Conn
 public:
 	glm::ivec3 playerChunkPosition;
 	glm::vec3 playerPosition;
-	ClientHandler(tcp::socket client, uint32_t id, TsQueue<OwnedMessage>* serverQueue, LocalWorldProvider& worldProvider);
+	ClientHandler(asio::io_context& context, tcp::socket client, uint32_t id, TsQueue<OwnedMessage>* serverQueue, LocalWorldProvider& worldProvider);
 	void genSampleChunk();
 	void sendId();
 	void sendChunk(glm::ivec3 chunkPosition);
