@@ -93,7 +93,7 @@ Region::Region(glm::ivec3 pos) {
 		} else {
 			// printf("loading\n");
 			// load region
-			load();
+			load(); // 		>>>>>>>>>>>>>>>>>> TU BYŁO TO ODKOMENTUJ <<<<<<<<<<<<<<<<<<<<<<<<<
 			// printf("[%2d %2d %2d] loaded chunks: \n", position.x, position.y, position.z);
 			// for (auto v : loaded_chunks) {
 			// 	printf("%d %d %d\n", v.x, v.y, v.z);
@@ -147,6 +147,7 @@ void Region::genChunk(int x, int y, int z) {
 //				char value = ((Y) <= abs( ( (X+8) % 16) - 8)) + 16 && ((Y) <= abs((Z+8) % 16 - 8)) + 16 && ((Y) >= -abs( ( (X+8) % 16) - 8)) + 16 && ((Y) >= -abs((Z+8) % 16 - 8)) + 16;
 				
 //				region_dtype light_value = (rand() & 0xf) << 8;//(rand() & 0xf) << 8;
+				// region_dtype light_value = 0x0f00;
 				region_dtype light_value = 0x0000;
 //				if(X < 16 && Z < 16 && (X + Z < 15))
 //					light_value = ((X + Z) & 0xf) << 8;//(rand() & 0xf) << 8;
@@ -182,7 +183,7 @@ void Region::genChunk(int x, int y, int z) {
 					float cave = perlin.noise3D_0_1(fpos.x, fpos.y, fpos.z);
 	//				if((ypos) < (GROUND_LEVEL + mountain) && !(cave > THRESHOLD && (ypos < GROUND_LEVEL + 10))){
 					if(ypos == 0 || cave < THRESHOLD){
-						ival = 1;
+						ival = 2;
 						if(ypos < GROUND_LEVEL / 2){
 							ival = 3;
 						}
@@ -308,7 +309,7 @@ void Region::expandData(std::vector<region_dtype> compressed, bool overwriteData
 			i++;
 		}
 	}
-	printf("expanded end: %d, i: %d, comSize: %d\n", dataIndex, i, compressed.size());
+	// printf("expanded end: %d, i: %d, comSize: %d\n", dataIndex, i, compressed.size());
 }
 
 void Region::load() {
@@ -431,10 +432,12 @@ std::pair<int, bool> Region::getChunkOffset(glm::ivec3 pos) {
 	
 	bool generated = false;
 
-	if(loaded_chunks.find(pos) == loaded_chunks.end()){
+	if(loaded_chunks.find(pos) == loaded_chunks.end()) {
+		// return {-1, false};
 		// generate
 		// printf("[%2d %2d %2d] generating: %2d %2d %2d\n", position.x, position.y, position.z, pos.x, pos.y, pos.z);
 		// printf("generating: %2d %2d %2d\n", cx, cy, cz);
+		printf("genChunk: %2d %2d %2d\n", pos.x, pos.y, pos.z);
 		genChunk(cx, cy, cz);		
 		loaded_chunks.insert(pos);
 		modified = true;
@@ -449,7 +452,7 @@ region_dtype* Region::getData(){
 	return this->data;
 }
 
-Region::~Region(){
+Region::~Region() {
 	// if(type == RegionType::NORMAL_REGION && modified) {
 	if (type == RegionType::NORMAL_REGION && modified && !readonly) {
 		save();

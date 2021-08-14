@@ -22,6 +22,7 @@
 #include "terrain/worldProvider.hpp"
 #include "terrain/LocalWorldProvider.hpp"
 #include "terrain/WorldLoader.h"
+#include "terrain/Lighter.hpp"
 
 
 using namespace std;
@@ -42,12 +43,14 @@ class Server {
 	shared_ptr<LocalWorldProvider> provider;
 	// shared_ptr<WorldProvider> provider_ptr;
 	WorldLoader loader;
+	Lighter light;
+	std::list<std::pair<std::shared_ptr<ClientHandler>, glm::ivec3>> pendingChunkRequests;
 	const unsigned int maxRegions = 10; // Must be like at least same as max players?? idk maybye more.
 	// But for now this will suffice. 
 	// 
 	bool running = true;
 public:
-	Server(asio::io_context& context): context{context}, acceptor{context, tcp::endpoint(tcp::v4(), 25013)}, provider{make_shared<LocalWorldProvider>()}, loader{provider} {
+	Server(asio::io_context& context): context{context}, acceptor{context, tcp::endpoint(tcp::v4(), 25013)}, provider{make_shared<LocalWorldProvider>()}, loader{provider}, light{loader} {
 		someText = vector<char>(4);
 		// provider.update(glm::ivec3(0));
 		acceptClient();
@@ -58,11 +61,75 @@ public:
 			receivedMessages.wait();
 			while (!receivedMessages.empty()) {
 				OwnedMessage& omsg = receivedMessages.front();
-				omsg.owner->onMessage(omsg.msg);
+				switch (omsg.msg.header.type) {
+					case MsgType::ChunkRequest:
+					{
+						glm::ivec3 chunkPosition = omsg.msg.getData<glm::ivec3>();
+						requestChunk(omsg.owner, chunkPosition);
+					}break;
+					default:
+					{
+						omsg.owner->onMessage(omsg.msg);
+					}
+				}
 				receivedMessages.pop();
 			}
 
+			// Light update
+			auto unlitColumns = loader.getUnlitColumns();
+			if(unlitColumns.size() > 0) {
+				light.updateLightColumns(unlitColumns);
+				printf("\t\tcolumns updated\n");
+			}
+			
+			std::list<ChangedBlock> blocks_changed = loader.getChangedBlocks();
+
+			if (!blocks_changed.empty()) {
+				light.updateLightForBlock(blocks_changed);
+			}
+			
+			light.propagateLights();
+
+			// Sending chunks after hypothetical terrain generation
+
+			for (auto req : pendingChunkRequests) {
+				sendChunk(req.first, req.second);
+			}
+			pendingChunkRequests.clear();
+
 			// unloadRegions();
+		}
+	}
+
+	void requestChunk(shared_ptr<ClientHandler> client, glm::ivec3 chunkPosition) {
+		bool inVicinity = chunkPosition.y >= 0;//!glm::any(glm::bvec3(glm::greaterThanEqual(glm::abs(chunkPosition - playerChunkPosition), vecDrawDistance)));
+		if (inVicinity) {
+			// 
+			if (!loader.getChunk(chunkPosition).second) {
+				loader.loadChunk(chunkPosition);
+			}
+			std::pair<std::shared_ptr<ClientHandler>, glm::ivec3> req = {client, chunkPosition};
+			pendingChunkRequests.push_back(req);
+		}
+	}
+
+	void sendChunk(shared_ptr<ClientHandler> client, glm::ivec3 chunkPosition) {
+		auto [data, offset, generated] = provider->getChunkData(chunkPosition);
+		if (data != nullptr) {
+			Message msg;
+			size_t chunkDataSize = TerrainConfig::ChunkCubed * sizeof(unsigned short);
+			size_t dataSize = chunkDataSize + sizeof(glm::ivec3);
+			msg.data.resize(dataSize);
+			// printf("	Sending chunk size: %d %d\n", t_chunk.size(), msg.data.size());
+			memcpy(msg.data.data(), &chunkPosition, sizeof(glm::ivec3));
+			memcpy(msg.data.data() + sizeof(glm::ivec3), data + offset, chunkDataSize);
+
+			msg.header.type = MsgType::Chunk;
+			msg.header.size = dataSize; // should be region_dtype
+			// printf("header, data: %d %d\n", msg.header.size, msg.data.size());
+			client->sendMessage(msg);
+		} else {
+			printf("data at: %2d %2d %2d is nullptr\n", chunkPosition.x, chunkPosition.y, chunkPosition.z);
 		}
 	}
 

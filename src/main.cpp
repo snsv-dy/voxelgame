@@ -285,7 +285,6 @@ int opengl_context_scope(GLFWwindow *window) {
 	std::thread netThread([&] () {
 		ioContext.run();
 		printf("\t\t\tioContext ended NO INTERNET!!!\n");
-		exit(1);
 	});
 
 	#ifdef __EMSCRIPTEN__ 

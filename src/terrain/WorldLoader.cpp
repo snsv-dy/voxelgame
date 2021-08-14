@@ -44,7 +44,7 @@ void WorldLoader::draw(glm::vec3 cameraPos, const glm::mat4& view) {
 	}
 }
 
-std::tuple<glm::ivec3, glm::ivec3, region_dtype> WorldLoader::collideRay(const glm::vec3& origin, const glm::vec3& direction, const int& range){
+std::tuple<glm::ivec3, glm::ivec3, region_dtype> WorldLoader::collideRay(const glm::vec3& origin, const glm::vec3& direction, const int& range) {
 	float step = 0.1f;
 	float range_mul = step;
 	int n = (int)((float)range / step);
@@ -83,6 +83,12 @@ std::tuple<glm::ivec3, glm::ivec3, region_dtype> WorldLoader::collideRay(const g
 		
 		prev_pos = int_pos;
 	}
+
+	// if (block_type(last_block) == 0) {
+	// 	printf("no collision\n");
+	// } else {
+	// 	printf("eee, chiaki out!\n");
+	// }
 	
 	return std::make_tuple(int_pos, prev_pos, last_block);
 }
@@ -146,7 +152,7 @@ void WorldLoader::updateTerrain(const int& block_type, const glm::ivec3 &pos, Bl
 	}
 }
 //
-std::pair<region_dtype&, bool> WorldLoader::getBlock(const block_position& pos){
+std::pair<region_dtype&, bool> WorldLoader::getBlock(const block_position& pos) {
 	if(auto it = chunks.find(pos.chunk); it != chunks.end()){
 		region_dtype *data;
 		int data_offset;
@@ -162,7 +168,9 @@ std::pair<region_dtype&, bool> WorldLoader::getBlock(const block_position& pos){
 }
 
 std::pair<region_dtype&, bool> WorldLoader::getBlock(const glm::vec3& pos) {
+	// printf("getBlock pos: %2.2f %2.2f %2.2f\n", pos.x, pos.y, pos.z);
 	auto [chunkPosition, blockPosition] = toChunkCoordsReal(pos, TerrainConfig::ChunkSize);
+	// printf("getBlock bpos: %2d %2d %2d\n", blockPosition.x, blockPosition.y, blockPosition.z);
 	block_position blockPos = block_position(blockPosition, chunkPosition);
 	return getBlock(blockPos);
 }
@@ -242,7 +250,7 @@ void WorldLoader::update(glm::ivec3 change) {
 			// printf("getting new Chunks\n");
 			for (const glm::ivec3& pos : provider->getNewChunks()) {
 				// printf("NEW CHUNKZ: %2d %2d %2d \n", pos.x, pos.y, pos.z);
-				loadChunk(pos, &light_needed);
+				loadChunk(pos);
 			}
 		}
 
@@ -269,7 +277,7 @@ void WorldLoader::update(glm::ivec3 change) {
 						cursor[norm] *= back;
 						
 						if (chunks.find(pos) == chunks.end()) {
-							loadChunk(pos, &light_needed);
+							loadChunk(pos);
 						}
 					}
 				}
@@ -364,15 +372,17 @@ std::set<glm::ivec3, compareVec3> WorldLoader::getUnlitColumns() {
 	return ret;
 }
 
-void WorldLoader::loadChunk(const glm::ivec3& pos, std::set<glm::ivec3, compareVec3> *light_needed) {
+bool WorldLoader::loadChunk(const glm::ivec3& pos) {
 	auto [chunk_data, data_offset, generated] = provider->getChunkData(pos);
 	if(chunk_data != nullptr) {
 		chunks[pos] = Chunk(shParams.model, pos, this, chunk_data, data_offset);
-		if (light_needed != nullptr && generated) {
-			light_needed->insert(glm::ivec3(pos.x, 0, pos.z));
+		if (generated) {
+			light_needed.insert(glm::ivec3(pos.x, 0, pos.z));
 		}
 		chunks_to_update.insert(pos);
 	}
+
+	return false;
 }
 
 std::pair<Chunk&, bool> WorldLoader::getChunk(glm::ivec3 position) {

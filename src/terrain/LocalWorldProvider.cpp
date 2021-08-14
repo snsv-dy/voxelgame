@@ -97,7 +97,7 @@ std::tuple<region_dtype*, int, bool> LocalWorldProvider::getChunkData(glm::ivec3
 		auto [offset, generated] = region.getChunkOffset(position);
 		return {region.getData(), offset, generated};
 	} else {
-		// Generating region
+		// Generating/loading from disk region
 		// if (regions.size() >= maxRegions) {
 			// unloadRegions();
 		// }
@@ -114,6 +114,7 @@ std::tuple<region_dtype*, int, bool> LocalWorldProvider::getChunkData(glm::ivec3
 
 		// Might unload just generated region.
 		// unloadRegions();
+		// return {region.getData(), offset, generated};
 		return {region.getData(), offset, generated};
 	}
 	

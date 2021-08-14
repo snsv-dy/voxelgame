@@ -16,7 +16,6 @@
 #include <mutex>
 #include "worldProvider.hpp"
 #include "../server/netCommon.hpp"
-#include "NetClient.hpp"
 
 class RemoteWorldProvider: public WorldProvider, public Connection {
 	bool firstLoop = true;
@@ -31,7 +30,6 @@ class RemoteWorldProvider: public WorldProvider, public Connection {
 	std::vector<region_dtype> dummy_data;
 
 	inline static const std::string world_path = "../world2";
-	std::unique_ptr<NetClient> net;
 	std::thread netThread;
 public:
 	// bool newChunks = false;

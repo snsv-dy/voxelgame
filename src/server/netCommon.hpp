@@ -110,7 +110,7 @@ public:
 					if (!err) {
 						if (sendQueue.front().header.type == MsgType::Chunk) {
 							glm::ivec3* pos = (glm::ivec3*)sendQueue.front().data.data();
-							printf("sending chunk: %2d %2d %2d \n", pos->x, pos->y, pos->z);
+							// printf("sending chunk: %2d %2d %2d \n", pos->x, pos->y, pos->z);
 						}
 						// printf("sent header(type: %d, size: %d) %lu\n", header.type, header.size, length);
 						sendBody();
@@ -164,7 +164,7 @@ public:
 					if (temp_message.header.type == MsgType::ChunkRequest) {
 						glm::ivec3 pos {0};
 						memcpy(&pos, temp_message.data.data(), sizeof(glm::ivec3));
-						printf("chunk requested: %2d %2d %2d \n", pos.x, pos.y, pos.z);
+						// printf("chunk requested: %2d %2d %2d \n", pos.x, pos.y, pos.z);
 					}
 					addToReceivedQueue();
 					// printf("Body received(%d)[%d]\n", length, temp_message.header.type);

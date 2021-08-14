@@ -1,6 +1,6 @@
 #include "ClientHandler.hpp"
 
-ClientHandler::ClientHandler(asio::io_context& context, tcp::socket client, uint32_t id, TsQueue<OwnedMessage>* serverQueue, LocalWorldProvider& worldProvider): id{id}, worldProvider{worldProvider}, Connection{context, std::move(client)}, serverReceivedQueue{serverQueue} {
+ClientHandler::ClientHandler(asio::io_context& context, tcp::socket client, uint32_t id, TsQueue<OwnedMessage>* serverQueue, LocalWorldProvider& worldProvider): id{id}, worldProvider{worldProvider}, Connection{context, std::move(client)}, serverReceivedQueue{serverQueue}{
 	// printf("client connected: %s:%d\n", mclient.local_endpoint().address().to_string().c_str(), mclient.local_endpoint().port());
 	printf("client made\n");
 	genSampleChunk();
@@ -70,7 +70,7 @@ void ClientHandler::onMessage(Message msg) {
 				// position.x >= -2 && position.x <= 2 &&
 				// position.z >= -2 && position.z <= 2 
 			) {
-				sendChunk(chunkPosition);
+				// sendChunk(chunkPosition);
 				// loadedChunks.insert(chunkPosition);
 			}
 		}break;
