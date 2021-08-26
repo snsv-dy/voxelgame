@@ -1,76 +1,5 @@
 #include "Region.h"
 
-//Region::directory = "../world2";
-	
-char terrainballs2(int x, int y, int z){
-//	if(y == 0 && z == 0)
-//		printf("x: %d\n", x);
-	
-//	int ir = 100;
-//	int margin = -29;
-	int ir = 30;
-	int margin = 0;
-	
-	if(x < 0)
-		x *= -1;
-//	if(y < 0)
-//		y *= -1;
-	if(z < 0)
-		z *= -1;
-	
-	x %= (ir + margin) * 2;
-//	y %= (ir + margin) * 2;
-	z %= (ir + margin) * 2;
-	
-//	float fx = (float)x;
-//	float fy = (float)y;
-//	float fz = (float)z;
-////	float xyval = (rand() % 100) / 25.0f + 4; sin((fz + fx) / 5.0)* 4 + 4;
-//	float xyval = sin((fz) / 5.0)* 3 * cos((fx) / 5.0)* 3 + 7;
-//	float xyval = ((x) % 16) * 1.0f + 8;
-	x -= ir + margin;
-//	y -= ir + margin;
-	int ysph = y;
-	z -= ir + margin;
-//	return 1;
-//	if((x*x + y*y + z*z) <= (ir*ir) || y <= 0){
-	if((x*x + ysph*ysph + z*z) <= (ir*ir) || y <= 0){
-//		float ts = sinf(x / 10.f) * cosf(z / 10.0f) * sinf(y / 10.0f);
-//		char type = (ts > 0) + rand() % 2 + 1;
-		
-//		return type;
-		return 2;
-	}
-
-	return 0;
-}
-
-char Region::terrain(int x, int y, int z){
-//	char terrain(int x, int y, int z){
-////		float xp = (sin(x / 5.0f))* 1 + (cos(x/100.0f) + 0) * 2 ;
-////		float yp = (sin(z / 5.0f)) * 1 + (cos(z/100.0f) + 0) * 2 ;
-////		
-////		float xy = xp*yp;
-//		float xy = 		(sin(x / 70.0f)) * (cos(z / 70.0f)) * 20 + 20;
-//		xy +=  (sin(x / 5.0f)) * 2 * (cos(z / 5.0f)) + 2;
-//		
-//		//float yval = sin(y / 100.0f) * 50.0f;
-//		
-//		if(y < xy){
-//			if(y < 7)
-//				return 2;
-//			return 1;
-//		}
-//			
-//		return 0;
-//	if(y < 5 && x & 2 && z & 2){
-	if(y < 5){
-		return 2;
-	}
-	
-	return 0;
-}
-
 Region::Region(glm::ivec3 pos) {
 	this->position = pos;
 	this->type = RegionType::NORMAL_REGION;
@@ -82,22 +11,23 @@ Region::Region(glm::ivec3 pos) {
 	dataFile.close();
 	
 	// generate();
-		if(!fileExists){
+		if(!fileExists) {
 			// generate region
 			// generate();
 			// modified = true;
 			// save();
-//			fileName = "-1.0.-1.reg";
-//			load();
+			// fileName = "0.0.0.reg";
+			// load();
+			// printf("regioned\n");
 			// printf("not loading\n");
 		} else {
 			// printf("loading\n");
 			// load region
-			load(); // 		>>>>>>>>>>>>>>>>>> TU BYŁO TO ODKOMENTUJ <<<<<<<<<<<<<<<<<<<<<<<<<
-			// printf("[%2d %2d %2d] loaded chunks: \n", position.x, position.y, position.z);
-			// for (auto v : loaded_chunks) {
-			// 	printf("%d %d %d\n", v.x, v.y, v.z);
-			// }
+			load();
+			printf("[%2d %2d %2d] loaded chunks: \n", position.x, position.y, position.z);
+			for (auto v : loaded_chunks) {
+				printf("%d %d %d\n", v.x, v.y, v.z);
+			}
 		}
 	
 }
@@ -432,14 +362,19 @@ std::pair<int, bool> Region::getChunkOffset(glm::ivec3 pos) {
 	
 	bool generated = false;
 
-	if(loaded_chunks.find(pos) == loaded_chunks.end()) {
+	if(loaded_chunks.find({cx, cy, cz}) == loaded_chunks.end()) {
 		// return {-1, false};
 		// generate
 		// printf("[%2d %2d %2d] generating: %2d %2d %2d\n", position.x, position.y, position.z, pos.x, pos.y, pos.z);
 		// printf("generating: %2d %2d %2d\n", cx, cy, cz);
-		printf("genChunk: %2d %2d %2d\n", pos.x, pos.y, pos.z);
+		// printf("genChunk: %2d %2d %2d\n", pos.x, pos.y, pos.z);
+		// return {-1, false}; // This disables generation of new chunks.
 		genChunk(cx, cy, cz);		
-		loaded_chunks.insert(pos);
+		loaded_chunks.insert({cx, cy, cz});
+		printf("[%2d %2d %2d] loaded chunks changed: \n", position.x, position.y, position.z);
+		for (auto v : loaded_chunks) {
+			printf("%d %d %d\n", v.x, v.y, v.z);
+		}
 		modified = true;
 		generated = true;
 	}

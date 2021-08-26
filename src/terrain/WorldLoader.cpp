@@ -377,6 +377,7 @@ bool WorldLoader::loadChunk(const glm::ivec3& pos) {
 	if(chunk_data != nullptr) {
 		chunks[pos] = Chunk(shParams.model, pos, this, chunk_data, data_offset);
 		if (generated) {
+			// printf("gened chunk: %2d %2d %2d\n", pos.x, pos.y, pos.z);
 			light_needed.insert(glm::ivec3(pos.x, 0, pos.z));
 		}
 		chunks_to_update.insert(pos);
@@ -601,5 +602,12 @@ float WorldLoader::fastRay(glm::vec3 origin, glm::vec3 direction, float maxt, gl
 	
 	return t;
 }
+
+
+// void addPlayer(const std::shared_ptr<ClientHandler>& player) {
+// 	players.push_back(player);
+// }
+
+// void removePlayer(const std::shared_ptr<ClientHandler>& player) {}
 
 // WorldLoader::~WorldLoader() {}

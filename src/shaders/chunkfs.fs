@@ -40,6 +40,7 @@ void main() {
 	
 	int sun_value = (block_param >> 24) & 0xf;
 	float sun_intensity = 0.95 * (float(sun_value) / 15.0) + 0.05;
+	//float sun_intensity = 0.95;
 	//float sun_intensity = float(sun_value) / 20.0 + 0.25;
 	vec3 sun_light = vec3(sun_intensity);
 	

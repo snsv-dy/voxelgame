@@ -60,7 +60,7 @@ public:
 	WorldLoader(glm::mat4 *projection, glm::mat4 *view, unsigned int textures, struct shaderParams params, std::shared_ptr<WorldProvider> provider);
 	WorldLoader(std::shared_ptr<WorldProvider> provider);
 	
-	const int radius = 4;
+	const int radius = 2;
 	const int unloadRadius = (radius * 2);
 	const int unloadRadiusSquared = unloadRadius*unloadRadius;
 	const int chunkSize = TerrainConfig::ChunkSize;
@@ -94,6 +94,11 @@ public:
 	float fastAABB(const AABB& origin, glm::vec3 direction, float maxt, int& collision_axis);
 	// ~WorldLoader();
 	// sweeep stuff
+
+	// modifications for server
+	// std::list<std::shared_ptr<ClientHandler>> players;
+	// void addPlayer(const std::shared_ptr<ClientHandler>& player);
+	// void removePlayer(const std::shared_ptr<ClientHandler>& player);
 };
 
 #endif // WORLDLOADER_H

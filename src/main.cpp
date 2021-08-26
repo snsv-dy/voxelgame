@@ -217,7 +217,7 @@ int opengl_context_scope(GLFWwindow *window) {
 
 	// Provider initialization.
 	std::shared_ptr<RemoteWorldProvider> provider = std::make_shared<RemoteWorldProvider>(ioContext, std::move(socket), endpoints);
-
+	provider->sendPlayerPosition(player.getPosition());
 	// end of internet initialization
 	// internet initialization end
 
@@ -237,6 +237,7 @@ int opengl_context_scope(GLFWwindow *window) {
 	// Change .h files to .hpp*
 	// Removing block on chunk's edge doesn't update light in neighbouring chunk.
 	// Sometimes light doesn't get propagated when placing torch. (after multithreading implementation)
+	// Some object that makes geometry from chunks (remove this responsibility from world loader)`
 	// ---------------------------------------------------------
 	// Ideaz
 	// --------
@@ -286,6 +287,8 @@ int opengl_context_scope(GLFWwindow *window) {
 		ioContext.run();
 		printf("\t\t\tioContext ended NO INTERNET!!!\n");
 	});
+	// To send player position after connecting to server.
+	player.moved = true;
 
 	#ifdef __EMSCRIPTEN__ 
 		emscripten_set_main_loop_arg(main_loop, (void*)&loopP, 0, true);
@@ -384,6 +387,7 @@ void main_loop(void* params) {
 	player.applyTranslation(dx);
 	if (player.moved) {
 		provider->sendPlayerPosition(player.getPosition());
+		player.moved = false;
 	}
 
 	

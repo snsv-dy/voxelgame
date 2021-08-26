@@ -49,20 +49,11 @@ void RemoteWorldProvider::update(glm::ivec3 pos) {
 std::tuple<region_dtype*, int, bool> RemoteWorldProvider::getChunkData(glm::ivec3 position) {
 	std::scoped_lock lock(cachedChunksMutex);
 
-	// printf("getting: %2d %2d %2d \n", position.x, position.y, position.z);
-
 	if(auto ch_it = cachedChunks.find(position); ch_it != cachedChunks.end()) {
 		return {ch_it->second.data(), 0, false};
 	}
 
-	if (
-		// position.x >= -2 && position.x <= 2 &&
-		// position.y >= -2 && position.y <= 2 &&
-		// position.z >= -2 && position.z <= 2 
-		position.y >= 0
-	) {
-		sendChunkRequest(position);
-	}
+	sendChunkRequest(position);
 
 	return {nullptr, 0, false};
 }
@@ -107,13 +98,15 @@ void RemoteWorldProvider::onMessage(Message& msg) {
 }
 
 void RemoteWorldProvider::sendChunkRequest(glm::ivec3 chunkPosition) {
-	Message msg;
-	msg.setData(chunkPosition);
+	if (chunkPosition.y >= 0) { // -w-
+		Message msg;
+		msg.setData(chunkPosition);
 
-	msg.header.type = MsgType::ChunkRequest;
-	msg.header.size = msg.data.size();
+		msg.header.type = MsgType::ChunkRequest;
+		msg.header.size = msg.data.size();
 
-	sendMessage(msg);
+		sendMessage(msg);
+	}
 }
 
 void RemoteWorldProvider::sendPlayerPosition(glm::vec3 playerPosition) {

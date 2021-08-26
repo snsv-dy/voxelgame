@@ -14,9 +14,11 @@ It's running a bit slower than native application, also it doesn't help that eve
 
 ## Compilation
 #### Linux
-Make sure you have all libraries that are listed in makefile under the LFLAGS variable, and type make.
+Make sure you have all libraries that are listed in makefile under the LFLAGS variable, and type `make`.
+
+To compile server use `make net`.
 #### Webassembly
-Should be working on any system, but em++ should be set in terminal before. To compile this version type make web.
+Should be working on any system, but em++ must be set in terminal before. To compile this version type `make web`.
 
 ## Acknowledgements / Libraries
 * https://learnopengl.com/

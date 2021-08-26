@@ -37,17 +37,30 @@ class ClientHandler : public enable_shared_from_this<ClientHandler>, public Conn
 	LocalWorldProvider& worldProvider;
 
 	// glm::ivec3 prevPlayerChunkPosition;
-	bool firstPosition = true;
-
-	std::set<glm::ivec3, compareVec3> loadedChunks;
+	//
+	// World loader type stuff
+	// was this first position send by player?
+	bool first = true;
+	glm::ivec3 moved {0};
+	const unsigned int moveRequired = TerrainConfig::ChunkSize;
+	const int renderDistance = 4;
 	// Connection conn;
 public:
-	glm::ivec3 playerChunkPosition;
+	std::set<glm::ivec3, compareVec3> loadedChunks;
+	std::set<glm::ivec3, compareVec3> chunksToUnload;
+	// To avoid sending chunk two times if chunk was updated
+	// but not yet, to not change too many things at once.
+	std::set<glm::ivec3, compareVec3> requestedChunks;
+	glm::ivec3 chunkPosition {0};
+	glm::ivec3 lastChunkPosition {0};
+
+	// Wl end
 	glm::vec3 playerPosition;
 	ClientHandler(asio::io_context& context, tcp::socket client, uint32_t id, TsQueue<OwnedMessage>* serverQueue, LocalWorldProvider& worldProvider);
 	void genSampleChunk();
 	void sendId();
 	void sendChunk(glm::ivec3 chunkPosition);
+	bool chunkInRange(glm::ivec3 chunkPosition);
 
 	// Overriden from connection.
 	void addToReceivedQueue();

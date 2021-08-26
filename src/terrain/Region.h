@@ -78,7 +78,7 @@ private:
 	region_dtype ref0 = 0;
 	bool readonly = true; // For server testing. (disables saving regions to disk)
 public:
-	inline static const std::string directory = std::string("../world3");
+	inline static const std::string directory = std::string("../world3_3");
 	static const int reg_size = TerrainConfig::RegionSize;
 	static const int chunk_size = TerrainConfig::ChunkSize;
 	static const unsigned int region_size = chunk_size * reg_size;//worldProvider::regionSize;

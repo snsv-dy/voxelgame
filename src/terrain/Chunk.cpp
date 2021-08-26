@@ -233,6 +233,8 @@ std::list<propagateParam> Chunk::sunlightPass(int mask[size][size], bool& allDar
 		}
 	}
 	
+	modified = true;
+
 	return spread_queue;
 }
 

@@ -95,6 +95,9 @@ std::tuple<region_dtype*, int, bool> LocalWorldProvider::getChunkData(glm::ivec3
 	if(auto reg_it = regions.find(reg_pos); reg_it != regions.end()) {
 		Region& region = reg_it->second;
 		auto [offset, generated] = region.getChunkOffset(position);
+		if (offset == -1) {
+			return {nullptr, 0, false};
+		}
 		return {region.getData(), offset, generated};
 	} else {
 		// Generating/loading from disk region
@@ -111,6 +114,10 @@ std::tuple<region_dtype*, int, bool> LocalWorldProvider::getChunkData(glm::ivec3
 		// printf("New region: %2d %2d %2d \n", reg_pos.x, reg_pos.y, reg_pos.z);
 		Region& region = regions[reg_pos];
 		auto [offset, generated] = region.getChunkOffset(position);
+		if (offset == -1) {
+			// printf("???\n");
+			return {nullptr, 0, false};
+		}
 
 		// Might unload just generated region.
 		// unloadRegions();

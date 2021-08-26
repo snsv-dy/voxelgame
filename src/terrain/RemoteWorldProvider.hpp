@@ -42,6 +42,7 @@ public:
 	RemoteWorldProvider(asio::io_context& context, asio::ip::tcp::socket socket, asio::ip::tcp::resolver::results_type endpoints);
 	void initData();
 
+	// Overrided?
 	void onMessage(Message& msg);
 	void sendChunkRequest(glm::ivec3 chunkPosition);
 	void sendPlayerPosition(glm::vec3 playerPosition);

@@ -64,6 +64,8 @@ public:
 //		return this->gridOffset;
 //	}
 
+	bool modified = false; // Added for networking.
+
 	static const int size = TerrainConfig::ChunkSize;
 	static constexpr int size_cubed = size * size * size;
 	static constexpr int size_squared = size * size;
