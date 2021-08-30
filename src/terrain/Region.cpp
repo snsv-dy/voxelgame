@@ -24,10 +24,10 @@ Region::Region(glm::ivec3 pos) {
 			// printf("loading\n");
 			// load region
 			load();
-			printf("[%2d %2d %2d] loaded chunks: \n", position.x, position.y, position.z);
-			for (auto v : loaded_chunks) {
-				printf("%d %d %d\n", v.x, v.y, v.z);
-			}
+			// printf("[%2d %2d %2d] loaded chunks: \n", position.x, position.y, position.z);
+			// for (auto v : loaded_chunks) {
+			// 	printf("%d %d %d\n", v.x, v.y, v.z);
+			// }
 		}
 	
 }
@@ -371,10 +371,10 @@ std::pair<int, bool> Region::getChunkOffset(glm::ivec3 pos) {
 		// return {-1, false}; // This disables generation of new chunks.
 		genChunk(cx, cy, cz);		
 		loaded_chunks.insert({cx, cy, cz});
-		printf("[%2d %2d %2d] loaded chunks changed: \n", position.x, position.y, position.z);
-		for (auto v : loaded_chunks) {
-			printf("%d %d %d\n", v.x, v.y, v.z);
-		}
+		// printf("[%2d %2d %2d] loaded chunks changed: \n", position.x, position.y, position.z);
+		// for (auto v : loaded_chunks) {
+		// 	printf("%d %d %d\n", v.x, v.y, v.z);
+		// }
 		modified = true;
 		generated = true;
 	}

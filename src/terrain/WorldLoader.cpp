@@ -17,7 +17,9 @@ WorldLoader::WorldLoader(std::shared_ptr<WorldProvider> provider): provider{std:
 }
 
 void WorldLoader::draw(glm::vec3 cameraPos, const glm::mat4& view) {
-	
+	static int printCount = 0;
+	static const int printInterval = 20;
+
 	glm::ivec3 chunkPos;
 	std::tie(chunkPos, std::ignore) = toChunkCoords(cameraPos, WorldLoader::chunkSize);
 	
@@ -30,18 +32,20 @@ void WorldLoader::draw(glm::vec3 cameraPos, const glm::mat4& view) {
 	glUniformMatrix4fv(shParams.projection, 1, GL_FALSE, glm::value_ptr(*projection));
 	glUniformMatrix4fv(shParams.view, 1, GL_FALSE, glm::value_ptr(view));
 	
-	for(off.z = -radius + chunkPos.z; off.z <= radius + chunkPos.z; off.z++){
-		for(off.y = -radius + chunkPos.y; off.y <= radius + chunkPos.y; off.y++){
-			for(off.x = -radius + chunkPos.x; off.x <= radius + chunkPos.x; off.x++){
-				
+	for(off.z = -radius + chunkPos.z; off.z <= radius + chunkPos.z; off.z++) {
+		for(off.y = -radius + chunkPos.y; off.y <= radius + chunkPos.y; off.y++) {
+			for(off.x = -radius + chunkPos.x; off.x <= radius + chunkPos.x; off.x++) {	
 				if(auto chunk_iter = chunks.find(off); chunk_iter != chunks.end()){
+			
 					auto& chunk = chunk_iter->second;
 //					glUniformMatrix4fv(shParams.view, 1, GL_FALSE, glm::value_ptr(chunk.mesh));
 					chunk.draw();
 				}
-			} 
+			}
 		}
+
 	}
+	printCount++;
 }
 
 std::tuple<glm::ivec3, glm::ivec3, region_dtype> WorldLoader::collideRay(const glm::vec3& origin, const glm::vec3& direction, const int& range) {
@@ -269,7 +273,7 @@ void WorldLoader::update(glm::ivec3 change) {
 			
 			int updateRange = radius - abs_change[i];
 			
-			for (cursor[norm] = updateRange; cursor[norm] < radius; cursor[norm]++) {
+			for (cursor[norm] = updateRange; cursor[norm] <= radius; cursor[norm]++) {
 				for (cursor[biTan] = -radius; cursor[biTan] <= radius; cursor[biTan]++) {
 					for (cursor[tan] = -radius; cursor[tan] <= radius; cursor[tan]++) {
 						cursor[norm] *= back;
@@ -285,7 +289,7 @@ void WorldLoader::update(glm::ivec3 change) {
 		}
 		
 		// Removing chunks
-		if(true) {
+		if(false) {
 			disposableChunksMutex.lock();
 			for(auto i = chunks.begin(), nexti = i; i != chunks.end(); i = nexti) {
 				nexti++;
@@ -375,10 +379,12 @@ std::set<glm::ivec3, compareVec3> WorldLoader::getUnlitColumns() {
 bool WorldLoader::loadChunk(const glm::ivec3& pos) {
 	auto [chunk_data, data_offset, generated] = provider->getChunkData(pos);
 	if(chunk_data != nullptr) {
-		chunks[pos] = Chunk(shParams.model, pos, this, chunk_data, data_offset);
-		if (generated) {
-			// printf("gened chunk: %2d %2d %2d\n", pos.x, pos.y, pos.z);
-			light_needed.insert(glm::ivec3(pos.x, 0, pos.z));
+		if (auto it = chunks.find(pos); it == chunks.end()) {
+			chunks[pos] = Chunk(shParams.model, pos, this, chunk_data, data_offset);
+			if (generated) {
+				// printf("gened chunk: %2d %2d %2d\n", pos.x, pos.y, pos.z);
+				light_needed.insert(glm::ivec3(pos.x, 0, pos.z));
+			}
 		}
 		chunks_to_update.insert(pos);
 	}

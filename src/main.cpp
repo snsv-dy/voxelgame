@@ -238,6 +238,7 @@ int opengl_context_scope(GLFWwindow *window) {
 	// Removing block on chunk's edge doesn't update light in neighbouring chunk.
 	// Sometimes light doesn't get propagated when placing torch. (after multithreading implementation)
 	// Some object that makes geometry from chunks (remove this responsibility from world loader)`
+	// Sometimes chunks doesn't load
 	// ---------------------------------------------------------
 	// Ideaz
 	// --------

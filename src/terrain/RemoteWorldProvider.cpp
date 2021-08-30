@@ -82,8 +82,12 @@ void RemoteWorldProvider::onMessage(Message& msg) {
 		memcpy(data.data(), msg.data.data() + sizeof(glm::ivec3), msg.header.size - sizeof(glm::ivec3));
 		memcpy(&position, msg.data.data(), sizeof(glm::ivec3));
 		// printf("position (%2d %2d %2d) \n", position.x, position.y, position.z);
+		if (auto it = cachedChunks.find(position); it != cachedChunks.end()) {
+			memcpy(it->second.data(), msg.data.data() + sizeof(glm::ivec3), msg.header.size - sizeof(glm::ivec3));
+		} else {
+			cachedChunks[position] = data;
+		}
 
-		cachedChunks[position] = data;
 		newChunksMutex.lock();
 		printf("new chunks: %2d %2d %2d \n", position.x, position.y, position.z);
 		newChunkPositions.insert(position);
