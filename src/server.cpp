@@ -56,6 +56,7 @@ public:
 	void handleMessages() {
 		while(running) {
 			receivedMessages.wait();
+
 			while (!receivedMessages.empty()) {
 				OwnedMessage& omsg = receivedMessages.front();
 				switch (omsg.msg.header.type) {
@@ -63,7 +64,15 @@ public:
 					{
 						glm::ivec3 chunkPosition = omsg.msg.getData<glm::ivec3>();
 						requestChunk(omsg.owner, chunkPosition);
+					} break;
+
+					case MsgType::BlockChange:
+					{
+						ChangedBlock block = omsg.msg.getData<ChangedBlock>();
+
+						loader.updateTerrain(block.type, block.position.block + block.position.chunk * TerrainConfig::ChunkSize, block.placed ? BlockAction::PLACE : BlockAction::DESTROY);
 					}break;
+
 					default:
 					{
 						omsg.owner->onMessage(omsg.msg);

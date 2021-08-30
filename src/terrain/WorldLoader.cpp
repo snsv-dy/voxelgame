@@ -55,7 +55,7 @@ std::tuple<glm::ivec3, glm::ivec3, region_dtype> WorldLoader::collideRay(const g
 	glm::ivec3 prev_pos {0};
 	glm::ivec3 int_pos {0};
 	region_dtype last_block = 0;
-	for(int i = 0; i < n; i++, range_mul += 0.1f){
+	for (int i = 0; i < n; i++, range_mul += 0.1f) {
 //		glm::ivec3 chunk_pos;
 //		std::tie(chunk_pos, std::ignore) = toChunkCoords(origin + direction * range_mul, WorldLoader::chunkSize);
 		glm::vec3 pos = origin + direction * range_mul;
@@ -107,7 +107,7 @@ void WorldLoader::updateTerrain(const int& block_type, const glm::ivec3 &pos, Bl
 		if (action == BlockAction::DESTROY)
 			printf("block destroyed\n");
 
-		chunks[block_pos.chunk].changeBlock(block_type, in_chunk_pos, action);
+		// chunks[block_pos.chunk].changeBlock(block_type, in_chunk_pos, action); // UNCOMMENT JUST IN CASE HERE !!!
 //		Region& containing_region = provider->getRegion(pos);
 //		containing_region.modified = true;
 		// Bug is when loading/meshing/most likely calculating sunlight for new chunk with blocklight
@@ -155,7 +155,7 @@ void WorldLoader::updateTerrain(const int& block_type, const glm::ivec3 &pos, Bl
 		}
 	}
 }
-//
+
 std::pair<region_dtype&, bool> WorldLoader::getBlock(const block_position& pos) {
 	if(auto it = chunks.find(pos.chunk); it != chunks.end()){
 		region_dtype *data;
