@@ -107,7 +107,11 @@ void WorldLoader::updateTerrain(const int& block_type, const glm::ivec3 &pos, Bl
 		if (action == BlockAction::DESTROY)
 			printf("block destroyed\n");
 
-		// chunks[block_pos.chunk].changeBlock(block_type, in_chunk_pos, action); // UNCOMMENT JUST IN CASE HERE !!!
+		#ifdef SERVER // Quick patch because i'm doing something else right now.
+					  // This will be compiled into client if this file hasn't changed after it was compiled for server.
+		chunks[block_pos.chunk].changeBlock(block_type, in_chunk_pos, action); // UNCOMMENT JUST IN CASE HERE !!!
+		printf("block officially changed\n");
+		#endif
 //		Region& containing_region = provider->getRegion(pos);
 //		containing_region.modified = true;
 		// Bug is when loading/meshing/most likely calculating sunlight for new chunk with blocklight
@@ -289,7 +293,7 @@ void WorldLoader::update(glm::ivec3 change) {
 		}
 		
 		// Removing chunks
-		if(false) {
+		if(true) {
 			disposableChunksMutex.lock();
 			for(auto i = chunks.begin(), nexti = i; i != chunks.end(); i = nexti) {
 				nexti++;
@@ -312,6 +316,7 @@ void WorldLoader::disposeChunks() {
 			for (const glm::ivec3& i : disposable_chunks) {
 			// for(auto i = chunks.begin(), nexti = i; i != chunks.end(); i = nexti) {
 				chunks.erase(i);
+				// provider->unloadChunk(i); // COMMENTED BECOUSE I'M WORKING ON SERVER RIGHT NOW.
 			}
 			disposable_chunks.clear();
 		}
@@ -390,6 +395,11 @@ bool WorldLoader::loadChunk(const glm::ivec3& pos) {
 	}
 
 	return false;
+}
+
+void WorldLoader::removeChunk(const glm::ivec3& pos) {
+	disposable_chunks.insert(pos);
+	// printf("removing chunk %2d %2d %2d \n", pos.x, pos.y, pos.z);
 }
 
 std::pair<Chunk&, bool> WorldLoader::getChunk(glm::ivec3 position) {

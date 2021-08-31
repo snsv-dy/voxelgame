@@ -71,42 +71,6 @@ bool ClientHandler::chunkInRange(glm::ivec3 chunkPosition) {
 
 void ClientHandler::onMessage(Message msg) {
 	switch (msg.header.type) {
-		case MsgType::ChunkRequest:
-		{
-			glm::ivec3 chunkPosition = msg.getData<glm::ivec3>();
-			// glm::ivec3 relativeDistance = position - playerChunkPosition;
-			
-			bool inVicinity = chunkPosition.y >= 0;//!glm::any(glm::bvec3(glm::greaterThanEqual(glm::abs(chunkPosition - playerChunkPosition), vecDrawDistance)));
-			// printf("Received chunk requested position: %2d, %2d, %2d\n", chunkPosition.x, chunkPosition.y, chunkPosition.z);
-			if (
-				inVicinity
-				// position.x >= -2 && position.x <= 2 &&
-				// position.x >= -2 && position.x <= 2 &&
-				// position.z >= -2 && position.z <= 2 
-			) {
-				// sendChunk(chunkPosition);
-				// loadedChunks.insert(chunkPosition);
-			}
-		}break;
-
-		case MsgType::PlayerChunkPosition:
-		{
-			// if (!firstPosition) {
-			// 	prevPlayerChunkPosition = playerChunkPosition;
-			// }
-			
-			// playerChunkPosition = msg.getData<glm::ivec3>();
-
-			// if (!firstPosition) {
-			// 	std::set<glm::ivec3, compareVec3> unloadableChunks;
-			// 	for (const glm::ivec3& chunkPosition : loadedChunks) {
-			// 		bool canBeUnloaded = !glm::any(glm::bvec3(glm::greaterThanEqual(glm::abs(chunkPosition - playerChunkPosition), vecDrawDistance)));
-			// 	}
-			// }
-
-			// firstPosition = false;
-		}break;
-
 		case MsgType::PlayerPosition:
 		{
 			playerPosition = msg.getData<glm::vec3>();
@@ -116,9 +80,12 @@ void ClientHandler::onMessage(Message msg) {
 			auto [chunkPos, inChunk] = toChunkCoords(playerPosition, TerrainConfig::ChunkSize);
 			chunkPosition = chunkPos;
 			if (chunkPosition != lastChunkPosition) {
-				for (const glm::ivec3& chunkPos : loadedChunks) {
-					if (!chunkInRange(chunkPos)) {
-						chunksToUnload.insert(chunkPos);
+				for (std::set<glm::ivec3>::iterator it = loadedChunks.begin(); it != loadedChunks.end(); ) {
+					if (!chunkInRange(*it)) {
+						chunksToUnload.insert(*it);
+						it = loadedChunks.erase(it);
+					} else {
+						it++;
 					}
 				}
 			}

@@ -57,7 +57,8 @@ void LocalWorldProvider::update(glm::ivec3 pos) {
 				if (auto reg_it = regions.find(position); reg_it != regions.end()) {
 					reg_it->second.removeable = false;
 				} else {
-					regions[position] = Region(position);
+					printf("update call\n");
+					// regions[position] = Region(position);
 					
 					new_regions.push_back(position);
 					
@@ -91,6 +92,8 @@ std::tuple<region_dtype*, int, bool> LocalWorldProvider::getChunkData(glm::ivec3
 	// 	CHANGE NAME
 	position *= chunkSize;
 	auto [reg_pos, chunk_pos] = toChunkCoords(position, regionSize);
+	chunk_pos /= TerrainConfig::ChunkSize; // chunk pos is actually in blocks, but it's a multiple of chunkSize 
+										   // since position was multiplied by chunkSize.
 	
 	if(auto reg_it = regions.find(reg_pos); reg_it != regions.end()) {
 		Region& region = reg_it->second;
@@ -98,6 +101,7 @@ std::tuple<region_dtype*, int, bool> LocalWorldProvider::getChunkData(glm::ivec3
 		if (offset == -1) {
 			return {nullptr, 0, false};
 		}
+		region.setLoadedChunk(chunk_pos);
 		return {region.getData(), offset, generated};
 	} else {
 		// Generating/loading from disk region
@@ -110,14 +114,16 @@ std::tuple<region_dtype*, int, bool> LocalWorldProvider::getChunkData(glm::ivec3
 		// Well if there probably is player near if he want's to load some chunk.
 		// ( his render distance might be higher than what server allows, but that is pain to implement right now)
 		// bool inPlayersVicinity = !glm::any(glm::bvec3(glm::greaterThanEqual(glm::abs(r.position - regPos), unloadDistance)));
-		regions[reg_pos] = Region(reg_pos);
+		auto [iterator, inserted] = regions.emplace(reg_pos, reg_pos); // was regions[reg_pos] = std::move(Region(reg_pos));
 		// printf("New region: %2d %2d %2d \n", reg_pos.x, reg_pos.y, reg_pos.z);
-		Region& region = regions[reg_pos];
+		Region& region = iterator->second;
+		printf("regions len(++): %d\n", regions.size());
 		auto [offset, generated] = region.getChunkOffset(position);
 		if (offset == -1) {
 			// printf("???\n");
 			return {nullptr, 0, false};
 		}
+		region.setLoadedChunk(chunk_pos);
 
 		// Might unload just generated region.
 		// unloadRegions();
@@ -127,6 +133,18 @@ std::tuple<region_dtype*, int, bool> LocalWorldProvider::getChunkData(glm::ivec3
 	
 	// ????
 	return {nullptr, 0, false};
+}
+
+void LocalWorldProvider::unloadChunk(const glm::ivec3& position) {
+	auto [reg_pos, chunk_pos] = toChunkCoords(position * chunkSize, regionSize);
+	chunk_pos /= TerrainConfig::ChunkSize;
+	if (auto it = regions.find(reg_pos); it != regions.end()) {
+		int loadedChunks = it->second.unloadChunk(chunk_pos);
+		if (loadedChunks == 0) {
+			printf("regions len(--): %d\n", regions.size());
+			regions.erase(reg_pos);
+		}
+	}
 }
 	
 region_dtype LocalWorldProvider::valueAt(int x, int y, int z) {
@@ -162,32 +180,32 @@ LocalWorldProvider::~LocalWorldProvider() {
 // This was something that I came up in a hurry.
 // Removes regions that are at a certain distance from player.
 void LocalWorldProvider::unloadRegions(std::set<glm::ivec3, compareVec3> playerPositions) {
-	for (auto [position, region] : regions) {
-		region.removeable = true;
-	}
+// 	for (auto [position, region] : regions) {
+// 		region.removeable = true;
+// 	}
 
-	for (auto [position, region] : regions) {
-		for (const glm::ivec3& playerPosition : playerPositions) {
-			auto [playerRegPos, inRegPos] = toChunkCoords(playerPosition, TerrainConfig::ChunkSize * TerrainConfig::RegionSize);
-			bool inPlayersVicinity = !glm::any(glm::bvec3(glm::greaterThanEqual(glm::abs(region.position - playerRegPos), glm::ivec3(unloadDistance))));
-			if (inPlayersVicinity) {
-				region.removeable = false;
-			}
-		}
-	}
+// 	for (auto [position, region] : regions) {
+// 		for (const glm::ivec3& playerPosition : playerPositions) {
+// 			auto [playerRegPos, inRegPos] = toChunkCoords(playerPosition, TerrainConfig::ChunkSize * TerrainConfig::RegionSize);
+// 			bool inPlayersVicinity = !glm::any(glm::bvec3(glm::greaterThanEqual(glm::abs(region.position - playerRegPos), glm::ivec3(unloadDistance))));
+// 			if (inPlayersVicinity) {
+// 				region.removeable = false;
+// 			}
+// 		}
+// 	}
 
-	// Removing regions
-	for (auto i = regions.begin(), nexti = i; i != regions.end(); i = nexti) {
-		nexti++;
-		if (i->second.removeable == true) {
-			glm::ivec3 pos = i->second.position;
-					printf("Removing region %d %d %d\n", pos.x, pos.y, pos.z); 
-//					for(const glm::ivec3 &p : i->second.getLoadedChunks())
-//						chunks_to_remove.push_back(p);
+// 	// Removing regions
+// 	for (auto i = regions.begin(), nexti = i; i != regions.end(); i = nexti) {
+// 		nexti++;
+// 		if (i->second.removeable == true) {
+// 			glm::ivec3 pos = i->second.position;
+// 					printf("Removing region %d %d %d\n", pos.x, pos.y, pos.z); 
+// //					for(const glm::ivec3 &p : i->second.getLoadedChunks())
+// //						chunks_to_remove.push_back(p);
 			
-			regions.erase(i);
-		}
-	}
+// 			regions.erase(i);
+// 		}
+// 	}
 	// for (Region& r : regions) {
 	// 	r.removeable = true;
 	// }

@@ -43,7 +43,7 @@ class ClientHandler : public enable_shared_from_this<ClientHandler>, public Conn
 	bool first = true;
 	glm::ivec3 moved {0};
 	const unsigned int moveRequired = TerrainConfig::ChunkSize;
-	const int renderDistance = 4;
+	const int renderDistance = 2;
 	// Connection conn;
 public:
 	std::set<glm::ivec3, compareVec3> loadedChunks;

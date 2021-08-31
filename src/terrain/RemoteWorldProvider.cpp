@@ -58,6 +58,10 @@ std::tuple<region_dtype*, int, bool> RemoteWorldProvider::getChunkData(glm::ivec
 	return {nullptr, 0, false};
 }
 
+void RemoteWorldProvider::unloadChunk(const glm::ivec3& position) {
+	cachedChunks.erase(position);
+}
+
 // bool RemoteWorldProvider::newChunks() {
 std::set<glm::ivec3, compareVec3> RemoteWorldProvider::getNewChunks() {
 	std::scoped_lock lock(newChunksMutex);

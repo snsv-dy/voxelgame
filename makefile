@@ -1,5 +1,5 @@
 
-.PHONY = all web net
+.PHONY = all web net net_flags
 VPATH = %.cpp src src/objects src/terrain  src/utilities src/server
 OBJ_PATH := Debug
 WS_PATH := WSDebug
@@ -29,7 +29,10 @@ SERVER := $(OBJ_PATH)/server
 WS_PROGNAME := $(WS_PATH)/voxelgame.html
 
 all: ${PROGNAME}
-net: ${SERVER}
+net: net_flags ${SERVER}
+net_flags:
+	$(eval CCFLAGS := $(CCFLAGS) -D SERVER) 
+
 web: $(WS_PATH) ${WS_PROGNAME}
 
 ${WS_PROGNAME}: ${WS_BINS}

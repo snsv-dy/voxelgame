@@ -75,6 +75,7 @@ public:
 	void update(glm::ivec3 change);
 	void disposeChunks();
 	bool loadChunk(const glm::ivec3& pos);
+	void removeChunk(const glm::ivec3& pos);
 	std::set<glm::ivec3, compareVec3> getUnlitColumns();
 	void prepareGeometry();
 	void updateGeometry();

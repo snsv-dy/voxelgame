@@ -1,6 +1,11 @@
 #include "Region.h"
 
+Region::Region() {
+	printf("It's default xdds\n");
+}
+
 Region::Region(glm::ivec3 pos) {
+	// printf("loaded region: %2d %2d %2d\n", pos.x, pos.y, pos.z);
 	this->position = pos;
 	this->type = RegionType::NORMAL_REGION;
 	
@@ -25,7 +30,7 @@ Region::Region(glm::ivec3 pos) {
 			// load region
 			load();
 			// printf("[%2d %2d %2d] loaded chunks: \n", position.x, position.y, position.z);
-			// for (auto v : loaded_chunks) {
+			// for (auto v : generatedChunks) {
 			// 	printf("%d %d %d\n", v.x, v.y, v.z);
 			// }
 		}
@@ -262,7 +267,7 @@ void Region::load() {
 		for (int i = 0; i < chunksNumber; i++) {
 			glm::ivec3 v;
 			iw.read((char *)&v, sizeof(glm::ivec3));
-			loaded_chunks.insert(v);
+			generatedChunks.insert(v);
 			// printf("%d %d %d\n", v.x, v.y, v.z);
 		}
 
@@ -286,7 +291,7 @@ void Region::save() {
 	if	(of.good()) {
 
 		// Write number of chunks.
-		size_t chunksNumber = loaded_chunks.size();
+		size_t chunksNumber = generatedChunks.size();
 		of.write((char *)&(chunksNumber), sizeof(size_t));
 
 		const size_t chunkCubed = TerrainConfig::ChunkSize * TerrainConfig::ChunkSize * TerrainConfig::ChunkSize;
@@ -303,7 +308,7 @@ void Region::save() {
 		of.write((char *)&(lightSize), sizeof(size_t));
 
 		// Write generated chunks.
-		for (const glm::ivec3& vec : loaded_chunks) {
+		for (const glm::ivec3& vec : generatedChunks) {
 			of.write((const char *)&vec, sizeof(glm::ivec3));
 		}
 
@@ -354,7 +359,7 @@ std::pair<int, bool> Region::getChunkOffset(glm::ivec3 pos) {
 	int data_z = cz * (chunk_cubed * (reg_size * reg_size));
 	
 	int index = data_x + data_y + data_z;
-	if(index < 0 || index >= data_size){
+	if(index < 0 || index >= data_size) {
 //		if(print)
 //			printf("nochunk %02d %02d %02d, pos: %d\n", x, y, z, pos);
 		return {-1, false};
@@ -362,7 +367,7 @@ std::pair<int, bool> Region::getChunkOffset(glm::ivec3 pos) {
 	
 	bool generated = false;
 
-	if(loaded_chunks.find({cx, cy, cz}) == loaded_chunks.end()) {
+	if(generatedChunks.find({cx, cy, cz}) == generatedChunks.end()) {
 		// return {-1, false};
 		// generate
 		// printf("[%2d %2d %2d] generating: %2d %2d %2d\n", position.x, position.y, position.z, pos.x, pos.y, pos.z);
@@ -370,9 +375,9 @@ std::pair<int, bool> Region::getChunkOffset(glm::ivec3 pos) {
 		// printf("genChunk: %2d %2d %2d\n", pos.x, pos.y, pos.z);
 		// return {-1, false}; // This disables generation of new chunks.
 		genChunk(cx, cy, cz);		
-		loaded_chunks.insert({cx, cy, cz});
+		generatedChunks.insert({cx, cy, cz});
 		// printf("[%2d %2d %2d] loaded chunks changed: \n", position.x, position.y, position.z);
-		// for (auto v : loaded_chunks) {
+		// for (auto v : generatedChunks) {
 		// 	printf("%d %d %d\n", v.x, v.y, v.z);
 		// }
 		modified = true;
@@ -383,13 +388,41 @@ std::pair<int, bool> Region::getChunkOffset(glm::ivec3 pos) {
 	return {index, generated};
 }
 
+void Region::setLoadedChunk(const glm::ivec3& position) {
+	// printf("loading chunk: %2d %2d %2d\n", position.x, position.y, position.z);
+	loadedChunksN += !loadedChunks[position.z][position.y][position.x] ? 1 : 0;
+	loadedChunks[position.z][position.y][position.x] = true;
+}
+
 region_dtype* Region::getData(){
 	return this->data;
 }
 
+int Region::unloadChunk(const glm::ivec3& chunkPos) {
+	if (
+		(chunkPos.x >= 0 && chunkPos.x < TerrainConfig::RegionSize) && 
+		(chunkPos.y >= 0 && chunkPos.y < TerrainConfig::RegionSize) && 
+		(chunkPos.z >= 0 && chunkPos.z < TerrainConfig::RegionSize) ) 
+	{
+		int pre = loadedChunksN;
+		loadedChunksN -= loadedChunks[chunkPos.z][chunkPos.y][chunkPos.x] ? 1 : 0;
+		if (loadedChunksN < pre) {
+			// printf("loaded decreesed number: %d\n", loadedChunksN);
+		}
+		loadedChunks[chunkPos.z][chunkPos.y][chunkPos.x] = false; // I'm not sure if this is necessary, but it ensures that loadedChunksN won't be decremented or incremented more times than it should.
+	} else {
+		printf("what are you unloading?: %2d %2d %2d\n", chunkPos.x, chunkPos.y, chunkPos.z);
+	}
+
+	return loadedChunksN;
+}
+
 Region::~Region() {
 	// if(type == RegionType::NORMAL_REGION && modified) {
-	if (type == RegionType::NORMAL_REGION && modified && !readonly) {
-		save();
+	if (type == RegionType::NORMAL_REGION) {
+		// printf("unloaded region: %2d %2d %2d\n", position.x, position.y, position.z);
+		if (modified && !readonly) {
+			save();
+		}
 	}
 }

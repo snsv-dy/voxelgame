@@ -62,8 +62,10 @@ class Region {
 private:
 	std::string fileName = std::string("");
 	
-	// std::vector<glm::ivec3> loaded_chunks;
-	std::set<glm::ivec3, compareVec3> loaded_chunks;
+	// std::vector<glm::ivec3> generatedChunks;
+	std::set<glm::ivec3, compareVec3> generatedChunks;
+	bool loadedChunks[TerrainConfig::RegionSize][TerrainConfig::RegionSize][TerrainConfig::RegionSize] {};
+	int loadedChunksN = 0;
 	char terrain(int x, int y, int z);
 	
 	// xyz - position of a chunk inside of region used only in generate
@@ -92,13 +94,17 @@ public:
 	RegionType type = RegionType::NULL_REGION;
 	bool removeable = false; // Used in world provider to determine if this region should be unloaded.
 	
-	Region()=default;
+	Region();
+	Region(Region&& temp)=delete;
 	Region(glm::ivec3 pos);
 	
 	region_dtype& valueAt(int x, int y, int z);
 //	const std::vector<glm::ivec3>& getLoadedChunks();
 	std::pair<int, bool> getChunkOffset(glm::ivec3 pos);
+	void setLoadedChunk(const glm::ivec3& position);
 	region_dtype* getData();
+	int unloadChunk(const glm::ivec3& chunkPos); // chunkPos is local in region position (0 ... RegionSize-1)
+												 // returns number of loaded chunks.
 	
 	~Region();
 	

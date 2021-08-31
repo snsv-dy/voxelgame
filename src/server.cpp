@@ -95,7 +95,7 @@ public:
 			auto unlitColumns = loader.getUnlitColumns();
 			if(unlitColumns.size() > 0) {
 				light.updateLightColumns(unlitColumns);
-				printf("\t\tcolumns updated\n");
+				// printf("\t\tcolumns updated\n");
 			}
 			
 			std::list<ChangedBlock> blocks_changed = loader.getChangedBlocks();
@@ -120,12 +120,16 @@ public:
 					nplayers -= 1;
 					if(nplayers == 0) {
 						chunkPlayersNumber.erase(chunkPosition);
-						printf("chunk unloaded: %2d %2d %2d\n", chunkPosition.x, chunkPosition.y, chunkPosition.z);
+						// printf("chunk unloaded: %2d %2d %2d\n", chunkPosition.x, chunkPosition.y, chunkPosition.z);
+						provider->unloadChunk(chunkPosition);
+						loader.removeChunk(chunkPosition);
 						// and somehow hint provider/loader to unload this chunk.
 					}
 				}
 				player->chunksToUnload.clear();
 			}
+			
+			loader.disposeChunks();
 
 			// loader.addUpdatedChunks(light.getUpdatedChunks());
 
