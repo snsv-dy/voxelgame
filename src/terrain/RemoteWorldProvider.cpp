@@ -93,7 +93,7 @@ void RemoteWorldProvider::onMessage(Message& msg) {
 		}
 
 		newChunksMutex.lock();
-		printf("new chunks: %2d %2d %2d \n", position.x, position.y, position.z);
+		// printf("new chunks: %2d %2d %2d \n", position.x, position.y, position.z);
 		newChunkPositions.insert(position);
 		newChunksMutex.unlock();
 		// printf("new chunks:\n");
@@ -107,6 +107,7 @@ void RemoteWorldProvider::onMessage(Message& msg) {
 
 void RemoteWorldProvider::sendChunkRequest(glm::ivec3 chunkPosition) {
 	if (chunkPosition.y >= 0) { // -w-
+		requests++;
 		Message msg;
 		msg.setData(chunkPosition);
 

@@ -81,6 +81,7 @@ public:
 	void updateGeometry();
 	std::list<ChangedBlock> getChangedBlocks();
 	void addUpdatedChunks(std::set<glm::ivec3, compareVec3> updatedChunks);
+	int getChunksSize();
 	
 	region_dtype valueAt(int x, int y, int z);
 	void draw(glm::vec3 cameraPos, const glm::mat4& view);

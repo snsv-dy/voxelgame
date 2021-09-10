@@ -210,7 +210,7 @@ void WorldLoader::checkForUpdate(glm::vec3 cameraPos) {
 	glm::ivec3 abs_change = glm::abs(change);
 	bool remoteChunks = provider->newChunksAvailable();
 	if (remoteChunks && !notified) {
-		printf("New chunks available\n");
+		// printf("New chunks available\n");
 		// first = true;
 	}
 	
@@ -243,7 +243,7 @@ void WorldLoader::update(glm::ivec3 change) {
 		glm::ivec3 abs_change = glm::abs(change);
 		
 //		if(abs_change.x > 1 || abs_change.y > 1 || abs_change.z > 1 || first) {
-		if (first) {
+		if (first || true) {
 			abs_change = glm::ivec3(radius * 2, 0, 0); // This refreshes whole observable terrain.
 		}
 		// else{
@@ -316,7 +316,7 @@ void WorldLoader::disposeChunks() {
 			for (const glm::ivec3& i : disposable_chunks) {
 			// for(auto i = chunks.begin(), nexti = i; i != chunks.end(); i = nexti) {
 				chunks.erase(i);
-				// provider->unloadChunk(i); // COMMENTED BECOUSE I'M WORKING ON SERVER RIGHT NOW.
+				provider->unloadChunk(i); // COMMENTED BECOUSE I'M WORKING ON SERVER RIGHT NOW.
 			}
 			disposable_chunks.clear();
 		}
@@ -373,6 +373,10 @@ void WorldLoader::addUpdatedChunks(std::set<glm::ivec3, compareVec3> updatedChun
 	for( const glm::ivec3& pos : updatedChunks) {
 		chunks_to_update.insert(pos);
 	}
+}
+
+int WorldLoader::getChunksSize() {
+	return chunks.size();
 }
 
 std::set<glm::ivec3, compareVec3> WorldLoader::getUnlitColumns() {

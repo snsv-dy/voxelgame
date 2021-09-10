@@ -46,6 +46,11 @@ class Server {
 	// But for now this will suffice. 
 	// 
 	bool running = true;
+
+	// TEMPORARY
+	// FOR DEBUGGING
+	std::set<glm::ivec3, compareVec3> loadedChunks;
+	// REMOVE BEFORE PUSH
 public:
 	Server(asio::io_context& context): context{context}, acceptor{context, tcp::endpoint(tcp::v4(), 25013)}, provider{make_shared<LocalWorldProvider>()}, loader{provider}, light{loader} {
 		// someText = vector<char>(4);
@@ -57,13 +62,16 @@ public:
 		while(running) {
 			receivedMessages.wait();
 
+			int npositions = 0;
+
 			while (!receivedMessages.empty()) {
 				OwnedMessage& omsg = receivedMessages.front();
 				switch (omsg.msg.header.type) {
 					case MsgType::ChunkRequest:
 					{
 						glm::ivec3 chunkPosition = omsg.msg.getData<glm::ivec3>();
-						requestChunk(omsg.owner, chunkPosition);
+						omsg.owner->requestedChunks.insert(chunkPosition);
+						// requestChunk(omsg.owner, chunkPosition);
 					} break;
 
 					case MsgType::BlockChange:
@@ -76,10 +84,19 @@ public:
 					default:
 					{
 						omsg.owner->onMessage(omsg.msg);
+						npositions++;
 					}
 				}
 				receivedMessages.pop();
 			}
+
+			for (std::shared_ptr<ClientHandler>& player : players) {
+				player->unloadChunks();
+				for (auto chunk : player->requestedChunks) {
+					loadChunk(player, chunk);
+				}
+			}
+
 
 			// loading chunks according to player changed position.
 			// for (std::shared_ptr<ClientHandler>& player : players) {
@@ -92,19 +109,19 @@ public:
 			// }
 
 			// Light update
-			auto unlitColumns = loader.getUnlitColumns();
-			if(unlitColumns.size() > 0) {
-				light.updateLightColumns(unlitColumns);
-				// printf("\t\tcolumns updated\n");
-			}
+			// auto unlitColumns = loader.getUnlitColumns();
+			// if(unlitColumns.size() > 0) {
+			// 	light.updateLightColumns(unlitColumns);
+			// 	// printf("\t\tcolumns updated\n");
+			// }
 			
-			std::list<ChangedBlock> blocks_changed = loader.getChangedBlocks();
+			// std::list<ChangedBlock> blocks_changed = loader.getChangedBlocks();
 
-			if (!blocks_changed.empty()) {
-				light.updateLightForBlock(blocks_changed);
-			}
+			// if (!blocks_changed.empty()) {
+			// 	light.updateLightForBlock(blocks_changed);
+			// }
 			
-			light.propagateLights();
+			// light.propagateLights();
 
 			// Sending chunks after hypothetical terrain generation
 			// (Changed chunks that were modified are not resent)
@@ -114,41 +131,80 @@ public:
 			// }
 			// pendingChunkRequests.clear();
 			
-			for (std::shared_ptr<ClientHandler>& player : players) {
-				for (const glm::ivec3& chunkPosition : player->chunksToUnload) {
-					int& nplayers = chunkPlayersNumber[chunkPosition];
-					nplayers -= 1;
-					if(nplayers == 0) {
-						chunkPlayersNumber.erase(chunkPosition);
-						// printf("chunk unloaded: %2d %2d %2d\n", chunkPosition.x, chunkPosition.y, chunkPosition.z);
-						provider->unloadChunk(chunkPosition);
-						loader.removeChunk(chunkPosition);
-						// and somehow hint provider/loader to unload this chunk.
-					}
-				}
-				player->chunksToUnload.clear();
-			}
-			
-			loader.disposeChunks();
 
 			// loader.addUpdatedChunks(light.getUpdatedChunks());
 
-			for (const glm::ivec3 chunkPosition : light.getUpdatedChunks()) {
-				for (std::shared_ptr<ClientHandler>& player : players) {
-					if (player->chunkInRange(chunkPosition)) {
-						player->requestedChunks.insert(chunkPosition);
-						// sendChunk(player, chunkPosition);
-					}
-				}
-			}
+			// for (const glm::ivec3 chunkPosition : light.getUpdatedChunks()) {
+			// 	for (std::shared_ptr<ClientHandler>& player : players) {
+			// 		if (player->chunkInRange(chunkPosition)) {
+			// 		// if (player->loadedChunks.find(chunkPosition) != player->loadedChunks.end()) { // HERE CHANGED
+			// 			player->requestedChunks.insert(chunkPosition);
+			// 			// sendChunk(player, chunkPosition);
+			// 		}
+			// 	}
+			// }
 
+			sentChunks = 0;
 			for (std::shared_ptr<ClientHandler>& player : players) {
 				for (const glm::ivec3 chunkPosition : player->requestedChunks) {
+					// if (player->loadedChunks.find(chunkPosition) == player->loadedChunks.end() && player->chunkInRange(chunkPosition)) {
 					if (player->chunkInRange(chunkPosition)) {
 						sendChunk(player, chunkPosition);
-					}
+					} 
+					// else {
+					// 	printf("requested wrong chunk: %2d %2d %2d [%d %d]\n", chunkPosition.x, chunkPosition.y, chunkPosition.z, player->loadedChunks.find(chunkPosition) == player->loadedChunks.end(), player->chunkInRange(chunkPosition));
+					// }
 				}
+				// printf("Requested chunks: %d\n", player->requestedChunks.size());
 				player->requestedChunks.clear();
+			}
+
+			bool something_happened = false;
+			for (std::shared_ptr<ClientHandler>& player : players) {
+				if (!player->chunksToUnload.empty()) {
+					unsigned long int toUnloadSize = player->chunksToUnload.size();
+					unsigned long int unloaded = 0;
+					for (const glm::ivec3& chunkPosition : player->chunksToUnload) {
+						if (player->requestedChunks.find(chunkPosition) != player->requestedChunks.end()) {
+							printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
+						}
+						int& nplayers = chunkPlayersNumber[chunkPosition];
+						nplayers -= 1;
+						// if(nplayers == 0) {
+						if(true) {
+							unloaded++;
+							something_happened = true;
+							chunkPlayersNumber.erase(chunkPosition);
+							// printf("chunk unloaded: %2d %2d %2d\n", chunkPosition.x, chunkPosition.y, chunkPosition.z);
+							// provider->unloadChunk(chunkPosition);
+							// printf("loaded chunks: %d\n", chunkPlayersNumber.size());
+							loader.removeChunk(chunkPosition);
+							loadedChunks.erase(chunkPosition);
+							// and somehow hint provider/loader to unload this chunk.
+						}
+					}
+
+					if (player->chunksToUnload.size() != unloaded) {
+						printf("player chunks to unload: %2lu, actually unloaded: %2lu\n", player->chunksToUnload.size(), unloaded);
+					}
+
+					// printf("to unload: %lu, unloaded: %lu\n", toUnloadSize, unloaded);
+					// if (something_happened) {
+					// 	printf("player loaded chunks: %d\n", player->loadedChunks.size());
+					// }
+					player->chunksToUnload.clear();
+				}
+			}
+			
+			loader.disposeChunks();
+			if (something_happened) {
+				printf("Loaded chunks size: %d\n", loadedChunks.size());
+			}
+
+			for (auto [pos, val] : chunkPlayersNumber) {
+				if (val > 1) {
+					printf(" > 1: %2d %2d %2d\n", pos.x, pos.y, pos.z);
+				}
 			}
 
 			// for (std::shared_ptr<ClientHandler>& player : players) {
@@ -168,17 +224,17 @@ public:
 			// unloadRegions();
 		}
 	}
-
-	void requestChunk(shared_ptr<ClientHandler> client, glm::ivec3 chunkPosition) {
+	int sentChunks = 0;
+	void loadChunk(shared_ptr<ClientHandler> client, glm::ivec3 chunkPosition) {
 		// bool inVicinity = chunkPosition.y >= 0;//!glm::any(glm::bvec3(glm::greaterThanEqual(glm::abs(chunkPosition - playerChunkPosition), vecDrawDistance)));
 		if (client->chunkInRange(chunkPosition)) {
 			// 
 			if (!loader.getChunk(chunkPosition).second) {
 				// printf("loading: %2d %2d %2d\n", chunkPosition.x, chunkPosition.y, chunkPosition.z);
 				loader.loadChunk(chunkPosition);
+				loadedChunks.insert(chunkPosition);
 			}
 			// mutex here?
-			client->requestedChunks.insert(chunkPosition);
 
 			// std::pair<std::shared_ptr<ClientHandler>, glm::ivec3> req = {client, chunkPosition};
 			// pendingChunkRequests.push_back(req);
@@ -186,13 +242,17 @@ public:
 	}
 
 	void sendChunk(shared_ptr<ClientHandler> client, glm::ivec3 chunkPosition) {
-		auto [data, offset, generated] = provider->getChunkData(chunkPosition);
-		if (data != nullptr) {
-			client->loadedChunks.insert(chunkPosition);
+		// auto [data, offset, generated] = provider->getChunkData(chunkPosition);
+		auto [chunk, found] = loader.getChunk(chunkPosition);
+		if (found) {// data != nullptr) {
+			auto [data, offset] = chunk.giveData();
+			bool firstLoaded = client->loadedChunks.find(chunkPosition) == client->loadedChunks.end();
+			if (firstLoaded)
+				client->loadedChunks.insert(chunkPosition);
 
 			if (auto it = chunkPlayersNumber.find(chunkPosition); it == chunkPlayersNumber.end()) {
 				chunkPlayersNumber[chunkPosition] = 1;
-			} else {
+			} else if (firstLoaded) { // tu powinno być czy gracz jeszcze nie ma tego chunka załadowanego/ładuje go pierwszy raz.
 				it->second++;
 			}
 
@@ -209,7 +269,7 @@ public:
 			// printf("header, data: %d %d\n", msg.header.size, msg.data.size());
 			client->sendMessage(msg);
 		} else {
-			// printf("data at: %2d %2d %2d is nullptr\n", chunkPosition.x, chunkPosition.y, chunkPosition.z);
+			printf("data at: %2d %2d %2d is nullptr\n", chunkPosition.x, chunkPosition.y, chunkPosition.z);
 		}
 	}
 

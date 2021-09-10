@@ -69,26 +69,47 @@ bool ClientHandler::chunkInRange(glm::ivec3 chunkPosition) {
 	// return chunkPosition.y >= 0;
 }
 
+void ClientHandler::unloadChunks() {
+	if (chunkPosition != lastChunkPosition) {
+		int unloaded = 0;
+		bool flag = false;
+		unsigned long preLoadedSize = loadedChunks.size();
+		for (std::set<glm::ivec3>::iterator it = loadedChunks.begin(); it != loadedChunks.end(); ) {
+			if (!chunkInRange(*it)) {
+				flag = true;
+				unloaded++;
+				chunksToUnload.insert(*it);
+				requestedChunks.erase(*it);
+				it = loadedChunks.erase(it);
+			} else {
+				it++;
+			}
+		}
+
+		// printf("loaded diff: %2lu, unloaded: %2lu\n", preLoadedSize - loadedChunks.size(), unloaded);
+
+		// if (unloaded != chunksToUnload.size()) {
+		// 	printf("chunkPosition: %2d %2d %2d, lastChunkPosition: %2d %2d %2d\n", chunkPosition.x, chunkPosition.y, chunkPosition.z, lastChunkPosition.x, lastChunkPosition.y, lastChunkPosition.z);
+		// 	printf("unloaded int (%2d), set (%2d) size diff\n", unloaded, chunksToUnload.size());
+		// }
+
+		printf("Loaded chunks (clien): %d\n", loadedChunks.size());
+		// printf("")
+		lastChunkPosition = chunkPosition;
+	}
+}
+
 void ClientHandler::onMessage(Message msg) {
 	switch (msg.header.type) {
 		case MsgType::PlayerPosition:
 		{
 			playerPosition = msg.getData<glm::vec3>();
-			playerPosition.y = 32;
+			playerPosition.y = 5;
 			// IPosition = glm::floor(playerPosition);
 
 			auto [chunkPos, inChunk] = toChunkCoords(playerPosition, TerrainConfig::ChunkSize);
 			chunkPosition = chunkPos;
-			if (chunkPosition != lastChunkPosition) {
-				for (std::set<glm::ivec3>::iterator it = loadedChunks.begin(); it != loadedChunks.end(); ) {
-					if (!chunkInRange(*it)) {
-						chunksToUnload.insert(*it);
-						it = loadedChunks.erase(it);
-					} else {
-						it++;
-					}
-				}
-			}
+			
 			// glm::ivec3 amount_moved = IPosition - lastIPosition;
 			// lastIPosition = IPosition;
 			// moved += amount_moved;

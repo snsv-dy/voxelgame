@@ -117,7 +117,7 @@ std::tuple<region_dtype*, int, bool> LocalWorldProvider::getChunkData(glm::ivec3
 		auto [iterator, inserted] = regions.emplace(reg_pos, reg_pos); // was regions[reg_pos] = std::move(Region(reg_pos));
 		// printf("New region: %2d %2d %2d \n", reg_pos.x, reg_pos.y, reg_pos.z);
 		Region& region = iterator->second;
-		printf("regions len(++): %d\n", regions.size());
+		// printf("regions len(++): %d\n", regions.size());
 		auto [offset, generated] = region.getChunkOffset(position);
 		if (offset == -1) {
 			// printf("???\n");
@@ -135,13 +135,62 @@ std::tuple<region_dtype*, int, bool> LocalWorldProvider::getChunkData(glm::ivec3
 	return {nullptr, 0, false};
 }
 
+
+void LocalWorldProvider::printRegions() {
+	int min[3];
+	int max[3];
+	// min max initialization
+	for (int i = 0 ; i < 3; i++) {
+		min[i] = max[i] = regions.begin()->first[i];
+	}
+
+	// searching for position bounds
+	for (auto it = ++regions.begin(); it != regions.end(); it++) {
+		const glm::ivec3& pos = it->first;
+		for (int i = 0 ; i < 3; i++) {
+			if (pos[i] < min[i]) {
+				min[i] = pos[i];
+			} else if(pos[i] > max[i]) {
+				max[i] = pos[i];
+			}
+		}	
+	}
+
+	int w = abs(max[0] - min[0]) + 1;
+	int h = abs(max[1] - min[1]) + 1;
+	int d = abs(max[2] - min[2]) + 1;
+
+	glm::ivec3 cursor(min[0], min[1], min[2]);
+	printf("Regions bound: (%2d %2d %2d)-(%2d %2d %2d)\n", min[0], min[1], min[2], max[0], max[1], max[2]);
+	for (int x = 0; x < w; x++)
+		printf("-");
+	printf("\n");
+	for (int z = 0; z < d; z++) {
+		printf("|");
+		for (int x = 0; x < w; x++) {
+			if (regions.find(glm::ivec3(min[0] + x, 0, min[2] + z)) != regions.end()){
+				printf("X");
+			} else {
+				printf(" ");
+			}
+		}
+		printf("|\n");
+	}
+	for (int x = 0; x < w; x++)
+		printf("-");
+	printf("\n");
+
+	printf("\n");
+}
+
 void LocalWorldProvider::unloadChunk(const glm::ivec3& position) {
 	auto [reg_pos, chunk_pos] = toChunkCoords(position * chunkSize, regionSize);
 	chunk_pos /= TerrainConfig::ChunkSize;
 	if (auto it = regions.find(reg_pos); it != regions.end()) {
 		int loadedChunks = it->second.unloadChunk(chunk_pos);
 		if (loadedChunks == 0) {
-			printf("regions len(--): %d\n", regions.size());
+			// printf("regions len(--): %d\n", regions.size());
+			// printRegions();
 			regions.erase(reg_pos);
 		}
 	}

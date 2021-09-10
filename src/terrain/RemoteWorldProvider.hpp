@@ -32,6 +32,7 @@ class RemoteWorldProvider: public WorldProvider, public Connection {
 	inline static const std::string world_path = "../world2";
 	std::thread netThread;
 public:
+	int requests = 0;
 	// bool newChunks = false;
 	static const int chunkSize = TerrainConfig::ChunkSize;
 	static constexpr int regionN = Region::reg_size;

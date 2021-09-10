@@ -29,6 +29,7 @@ public:
 	
 	void update(glm::ivec3 pos);
 	std::tuple<region_dtype*, int, bool> getChunkData(glm::ivec3 position);
+	void printRegions();
 	void unloadChunk(const glm::ivec3& position);
 	void notifyChange(glm::ivec3 chunkPos);
 	void changeBlock(ChangedBlock& block);

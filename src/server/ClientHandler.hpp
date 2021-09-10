@@ -64,6 +64,7 @@ public:
 
 	// Overriden from connection.
 	void addToReceivedQueue();
+	void unloadChunks();
 	void onMessage(Message msg);
 	~ClientHandler();
 };
