@@ -59,6 +59,7 @@ public:
 	ClientHandler(asio::io_context& context, tcp::socket client, uint32_t id, TsQueue<OwnedMessage>* serverQueue, LocalWorldProvider& worldProvider);
 	void genSampleChunk();
 	void sendId();
+	virtual void closeRoutine();
 	void sendChunk(glm::ivec3 chunkPosition);
 	bool chunkInRange(glm::ivec3 chunkPosition);
 

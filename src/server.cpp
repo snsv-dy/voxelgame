@@ -49,7 +49,7 @@ class Server {
 
 	// TEMPORARY
 	// FOR DEBUGGING
-	std::set<glm::ivec3, compareVec3> loadedChunks;
+	// std::set<glm::ivec3, compareVec3> loadedChunks;
 	// REMOVE BEFORE PUSH
 public:
 	Server(asio::io_context& context): context{context}, acceptor{context, tcp::endpoint(tcp::v4(), 25013)}, provider{make_shared<LocalWorldProvider>()}, loader{provider}, light{loader} {
@@ -160,45 +160,36 @@ public:
 			}
 
 			bool something_happened = false;
-			for (std::shared_ptr<ClientHandler>& player : players) {
+			// for (std::shared_ptr<ClientHandler>& player : players) {
+			for (auto it = players.begin(); it != players.end(); ) {
+				std::shared_ptr<ClientHandler>& player = *it;
 				if (!player->chunksToUnload.empty()) {
-					unsigned long int toUnloadSize = player->chunksToUnload.size();
-					unsigned long int unloaded = 0;
+					// unsigned long int toUnloadSize = player->chunksToUnload.size();
+					// unsigned long int unloaded = 0;
 					for (const glm::ivec3& chunkPosition : player->chunksToUnload) {
-						if (player->requestedChunks.find(chunkPosition) != player->requestedChunks.end()) {
-							printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
-						}
 						int& nplayers = chunkPlayersNumber[chunkPosition];
 						nplayers -= 1;
-						// if(nplayers == 0) {
-						if(true) {
-							unloaded++;
+						if(nplayers == 0) {
+							// unloaded++;
 							something_happened = true;
 							chunkPlayersNumber.erase(chunkPosition);
-							// printf("chunk unloaded: %2d %2d %2d\n", chunkPosition.x, chunkPosition.y, chunkPosition.z);
-							// provider->unloadChunk(chunkPosition);
-							// printf("loaded chunks: %d\n", chunkPlayersNumber.size());
 							loader.removeChunk(chunkPosition);
-							loadedChunks.erase(chunkPosition);
 							// and somehow hint provider/loader to unload this chunk.
 						}
 					}
-
-					if (player->chunksToUnload.size() != unloaded) {
-						printf("player chunks to unload: %2lu, actually unloaded: %2lu\n", player->chunksToUnload.size(), unloaded);
-					}
-
-					// printf("to unload: %lu, unloaded: %lu\n", toUnloadSize, unloaded);
-					// if (something_happened) {
-					// 	printf("player loaded chunks: %d\n", player->loadedChunks.size());
-					// }
 					player->chunksToUnload.clear();
+				}
+
+				if (!player->isConnected()) {
+					it = players.erase(it);
+				} else {
+					it++;
 				}
 			}
 			
 			loader.disposeChunks();
 			if (something_happened) {
-				printf("Loaded chunks size: %d\n", loadedChunks.size());
+				printf("Loaded chunks size: %d\n", loader.getChunksSize());
 			}
 
 			for (auto [pos, val] : chunkPlayersNumber) {
@@ -232,7 +223,6 @@ public:
 			if (!loader.getChunk(chunkPosition).second) {
 				// printf("loading: %2d %2d %2d\n", chunkPosition.x, chunkPosition.y, chunkPosition.z);
 				loader.loadChunk(chunkPosition);
-				loadedChunks.insert(chunkPosition);
 			}
 			// mutex here?
 

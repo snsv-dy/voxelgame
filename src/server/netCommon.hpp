@@ -28,7 +28,8 @@ enum class MsgType : uint32_t {
 	ChunkRequest,
 	PlayerPosition,
 	PlayerChunkPosition,
-	BlockChange
+	BlockChange,
+	None
 };
 
 struct MsgHeader {
@@ -90,6 +91,21 @@ public:
 		);
 	}
 
+	bool isConnected() {
+		return socket.is_open();
+	}
+
+	virtual void Disconnect() {
+		if (isConnected()) {
+			asio::post(context, [this]() {
+				socket.close();
+				closeRoutine();
+			});
+		}
+	}
+
+	virtual void closeRoutine() {}
+
 	void sendMessage(const Message& msg) {
 		asio::post(context, [this, msg]() {
 			bool was_empty = sendQueue.empty();
@@ -116,6 +132,8 @@ public:
 						sendBody();
 					} else {
 						printf("sending header error: %s\n", err.message().c_str());
+						socket.close();
+						closeRoutine();
 						// printf("error header(type: %d, size: %d): %s\n", header.type, header.size, err.message().c_str());
 					}
 				}
@@ -135,6 +153,8 @@ public:
 					}
 				} else {
 					printf("sending body error: %s\n", err.message().c_str());
+					socket.close();
+					closeRoutine();
 					// printf("error header(type: %d, size: %d): %s\n", header.type, header.size, err.message().c_str());
 				}
 			}
@@ -150,6 +170,8 @@ public:
 					readBody();
 				} else {
 					printf("readHeader error: %s\n", err.message().c_str());
+					socket.close();
+					closeRoutine();
 				}
 			}
 		);
@@ -172,6 +194,8 @@ public:
 					readHeader();
 				} else {
 					printf("readBody error: %s\n", err.message().c_str());
+					socket.close();
+					closeRoutine();
 				}
 			}
 		);

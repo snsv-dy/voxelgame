@@ -29,6 +29,19 @@ void ClientHandler::sendId() {
 	sendMessage(msg);
 }
 
+void ClientHandler::closeRoutine() {
+	// printf("Eerr 山田　out!\n");
+	for (const glm::ivec3& pos : loadedChunks) {
+		chunksToUnload.insert(pos);
+	}
+
+	loadedChunks.clear();
+	Message msg;
+	msg.header.type = MsgType::None; // Or can be client disconnected.
+	msg.header.size = 0;
+	serverReceivedQueue->push({msg, shared_from_this()});
+}
+
 void ClientHandler::sendChunk(glm::ivec3 chunkPosition) {
 	Message msg;
 
@@ -70,7 +83,7 @@ bool ClientHandler::chunkInRange(glm::ivec3 chunkPosition) {
 }
 
 void ClientHandler::unloadChunks() {
-	if (chunkPosition != lastChunkPosition) {
+	if (isConnected() && chunkPosition != lastChunkPosition) {
 		int unloaded = 0;
 		bool flag = false;
 		unsigned long preLoadedSize = loadedChunks.size();
