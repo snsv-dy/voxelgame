@@ -93,8 +93,8 @@ struct LoopParams {
 };
 
 void main_loop(void* params);
-// void terrain_thread(WorldLoader& wl, Lighter& light, Player& player, bool& exitHamlet);
-void terrain_thread(WorldLoader& wl, Lighter& light, Player& player, bool& exitHamlet, std::shared_ptr<RemoteWorldProvider>& provider);
+void terrain_thread(WorldLoader& wl, Lighter& light, Player& player, bool& exitHamlet);
+// void terrain_thread(WorldLoader& wl, Lighter& light, Player& player, bool& exitHamlet, std::shared_ptr<RemoteWorldProvider>& provider);
 
 int main(void) {
 	GLFWwindow* window;
@@ -281,7 +281,7 @@ int opengl_context_scope(GLFWwindow *window) {
 
 	bool exitHamlet = false;
 
-	std::thread terrain_task {terrain_thread, std::ref(wl), std::ref(light), std::ref(player), std::ref(exitHamlet), std::ref(provider)};
+	std::thread terrain_task {terrain_thread, std::ref(wl), std::ref(light), std::ref(player), std::ref(exitHamlet)};
 
 	// hmm~~~~~~~~
 	// yeah don't hog the main thread.
@@ -312,8 +312,8 @@ int opengl_context_scope(GLFWwindow *window) {
     return 0;
 }
 
-// void terrain_thread(WorldLoader& wl, Lighter& light, Player& player, bool& exitHamlet) {
-void terrain_thread(WorldLoader& wl, Lighter& light, Player& player, bool& exitHamlet, std::shared_ptr<RemoteWorldProvider>& provider) {
+void terrain_thread(WorldLoader& wl, Lighter& light, Player& player, bool& exitHamlet) {
+// void terrain_thread(WorldLoader& wl, Lighter& light, Player& player, bool& exitHamlet, std::shared_ptr<RemoteWorldProvider>& provider) {
 	// wl.notified = false;
 	while(!exitHamlet) {
 		// printf("waiting for update\n");

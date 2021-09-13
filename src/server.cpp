@@ -46,15 +46,8 @@ class Server {
 	// But for now this will suffice. 
 	// 
 	bool running = true;
-
-	// TEMPORARY
-	// FOR DEBUGGING
-	// std::set<glm::ivec3, compareVec3> loadedChunks;
-	// REMOVE BEFORE PUSH
 public:
 	Server(asio::io_context& context): context{context}, acceptor{context, tcp::endpoint(tcp::v4(), 25013)}, provider{make_shared<LocalWorldProvider>()}, loader{provider}, light{loader} {
-		// someText = vector<char>(4);
-		// provider.update(glm::ivec3(0));
 		acceptClient();
 	}
 
@@ -71,7 +64,6 @@ public:
 					{
 						glm::ivec3 chunkPosition = omsg.msg.getData<glm::ivec3>();
 						omsg.owner->requestedChunks.insert(chunkPosition);
-						// requestChunk(omsg.owner, chunkPosition);
 					} break;
 
 					case MsgType::BlockChange:
