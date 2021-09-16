@@ -217,8 +217,9 @@ int opengl_context_scope(GLFWwindow *window) {
 	asio::ip::tcp::socket socket(ioContext);
 
 	// Provider initialization.
-	std::shared_ptr<RemoteWorldProvider> provider = std::make_shared<RemoteWorldProvider>(ioContext, std::move(socket), endpoints);
-	provider->sendPlayerPosition(player.getPosition());
+	// std::shared_ptr<RemoteWorldProvider> provider = std::make_shared<RemoteWorldProvider>(ioContext, std::move(socket), endpoints);
+	std::shared_ptr<LocalWorldProvider> provider = std::make_shared<LocalWorldProvider>();
+	// provider->sendPlayerPosition(player.getPosition()); // Client should receive position from server dont'cha think?
 	// end of internet initialization
 	// internet initialization end
 
@@ -270,8 +271,7 @@ int opengl_context_scope(GLFWwindow *window) {
 		.cursor = &cursor,
 		.projection = projection,
 		.playersView = playersView,
-		.hud = &hud,
-		.provider = provider.get()
+		.hud = &hud
 	};
 
 	player.noclip = true;
@@ -285,10 +285,10 @@ int opengl_context_scope(GLFWwindow *window) {
 
 	// hmm~~~~~~~~
 	// yeah don't hog the main thread.
-	std::thread netThread([&] () {
-		ioContext.run();
-		printf("\t\t\tioContext ended NO INTERNET!!!\n");
-	});
+	// std::thread netThread([&] () {
+	// 	ioContext.run();
+	// 	printf("\t\t\tioContext ended NO INTERNET!!!\n");
+	// });
 	// To send player position after connecting to server.
 	player.moved = true;
 
@@ -367,7 +367,6 @@ void main_loop(void* params) {
 	Cursor& cursor = *loopP->cursor;
 	glm::mat4& playersView = loopP->playersView;
 	Hud& hud = *loopP->hud;
-	RemoteWorldProvider* provider = loopP->provider;
 
 	const float dt = 1000.0f / 12 / 1000;
 	// float deltaTime = 0.0f;
@@ -378,7 +377,7 @@ void main_loop(void* params) {
 
 	wl.disposeChunks();
 	wl.updateGeometry();
-	provider->update(glm::ivec3(0));
+	// provider->update(glm::ivec3(0));
 	wl.checkForUpdate(player.positionFromHead);
 	
 	int debugkeys = processInput(window);
@@ -392,7 +391,7 @@ void main_loop(void* params) {
 	}
 	player.applyTranslation(dx);
 	if (player.moved) {
-		provider->sendPlayerPosition(player.getPosition());
+		// provider->sendPlayerPosition(player.getPosition());
 		player.moved = false;
 	}
 
@@ -431,7 +430,7 @@ void main_loop(void* params) {
 	sprintf(textBuffer, "playerOrdżin: x: %2d, y: %2d, z: %2d", playerBlockPos.x, playerBlockPos.y, playerBlockPos.z);
 	renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
 //		
-	sprintf(textBuffer, "cameraFront: x: %.02f, y: %.02f, z: %.02f", kameraFront.x, kameraFront.y, kameraFront.z);
+	sprintf(textBuffer, "cursor: x: %2d, y: %2d, z: %2d", controls.cursor_pos.x, controls.cursor_pos.y, controls.cursor_pos.z);
 	renderText(fontmesh1, std::string(textBuffer), 20, 20, 0.5);
 
 //		sprintf(textBuffer, "cursor  : x: %2d, y: %2d, z: %2d ", controls.cursor_pos.x, controls.cursor_pos.y, controls.cursor_pos.z);
@@ -442,7 +441,7 @@ void main_loop(void* params) {
 	
 	glm::ivec3 chpos;
 	std::tie(chpos, std::ignore) = toChunkCoords(controls.cursor_pos, TerrainConfig::ChunkSize);
-	sprintf(textBuffer, "chunk cursor: x: %2d, y: %2d, z: %2d ", chpos.x, chpos.y, chpos.z);
+	sprintf(textBuffer, "prev cursor: x: %2d, y: %2d, z: %2d ", controls.prev_cursor_pos.x, controls.prev_cursor_pos.y, controls.prev_cursor_pos.z);
 	renderText(fontmesh1, std::string(textBuffer), 20, 110, 0.5);
 	
 	glfwSwapBuffers(window);

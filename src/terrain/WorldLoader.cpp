@@ -56,45 +56,48 @@ std::tuple<glm::ivec3, glm::ivec3, region_dtype> WorldLoader::collideRay(const g
 	glm::ivec3 int_pos {0};
 	region_dtype last_block = 0;
 	for (int i = 0; i < n; i++, range_mul += 0.1f) {
-//		glm::ivec3 chunk_pos;
-//		std::tie(chunk_pos, std::ignore) = toChunkCoords(origin + direction * range_mul, WorldLoader::chunkSize);
 		glm::vec3 pos = origin + direction * range_mul;
-		int_pos = pos;
-		
+		glm::ivec3 chunk_pos, in_chunk_pos;
+		std::tie(chunk_pos, in_chunk_pos) = toChunkCoords(pos, WorldLoader::chunkSize);
+		// int_pos = glm::floor(pos);
+		block_position block_pos = block_position(in_chunk_pos, chunk_pos);
 //		int mx = (-value - 1);
 //		chunk_index = -(mx / chunkSize + 1);
-		if(pos.x < 0){
-			int_pos.x -= 1;
+		glm::ivec3 correct_vec = glm::ivec3(0);
+		for (int j = 0; j < 3; j++) {
+			if (pos[j] < 0) {
+				correct_vec[j] = -1;
+			}
 		}
-		if(pos.y < 0){
-			int_pos.y -= 1;
-		}
-		if(pos.z < 0){
-			int_pos.z -= 1;
-		}
+
+		block_pos += correct_vec;
+		// if(pos.x < 0){
+		// 	int_pos.x -= 1;
+		// }
+		// if(pos.y < 0){
+		// 	int_pos.y -= 1;
+		// }
+		// if(pos.z < 0){
+		// 	int_pos.z -= 1;
+		// }
 		
 		// last_block = provider->valueAt(int_pos.x, int_pos.y, int_pos.z);
 		
-		if (auto [block, found] = getBlock(pos); found) {
+		if (auto [block, found] = getBlock(block_pos); found) {
 			last_block = block;
 		} else {
 			last_block = 0;
 		}
 
-		if(block_type(last_block) != 0){
+		int_pos = block_pos.block + block_pos.chunk * TerrainConfig::ChunkSize;
+		if(block_type(last_block) != 0) {
+			// prev_pos = int_pos;
 			break;
 		}
-		
 		prev_pos = int_pos;
 	}
-
-	// if (block_type(last_block) == 0) {
-	// 	printf("no collision\n");
-	// } else {
-	// 	printf("eee, chiaki out!\n");
-	// }
 	
-	return std::make_tuple(int_pos, prev_pos, last_block);
+	return {int_pos, prev_pos, last_block};
 }
 
 void WorldLoader::updateTerrain(const int& block_type, const glm::ivec3 &pos, BlockAction action) {
@@ -253,6 +256,9 @@ void WorldLoader::update(glm::ivec3 change) {
 		
 //		printf("change: %d %d %d\n", change[0], change[1], change[2]);
 		
+		for (ChangedBlock& block : blocks_changed) {
+			chunks[block.position.chunk].changeBlock(block.type, block.position.block, block.placed ? BlockAction::PLACE : BlockAction::DESTROY);
+		}
 		
 		if (true) {
 			// printf("getting new Chunks\n");
@@ -334,7 +340,7 @@ void WorldLoader::prepareGeometry() {
 		prepareSetMutex.lock();
 		for(const glm::ivec3& c : chunks_to_update) {
 			prepared_chunks.insert(c);
-			provider->notifyChange(c);
+			// provider->notifyChange(c);
 		}
 		prepareSetMutex.unlock();
 

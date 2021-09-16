@@ -116,7 +116,7 @@ void Chunk::draw(){
 		this->mesh->draw();
 }
 
-void Chunk::changeBlock(const int& block_type, const glm::ivec3& data_pos, BlockAction& action){
+void Chunk::changeBlock(const int& block_type, const glm::ivec3& data_pos, BlockAction action){
 	int arr_index = data_pos.z * (size * size) + data_pos.y * size + data_pos.x;
 	
 	if(action == BlockAction::DESTROY){

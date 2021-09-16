@@ -9,6 +9,7 @@ int LocalWorldProvider::regions_size() {
 // Return chunk poses to remove
 // Pos position in chunk coordinates
 void LocalWorldProvider::update(glm::ivec3 pos) {
+	printf("shouldn't be printed\n");
 //	std::vector<glm::ivec3> update(glm::ivec3 pos){
 	
 //		std::vector<glm::ivec3> chunks_to_remove;
@@ -209,9 +210,9 @@ region_dtype LocalWorldProvider::valueAt(int x, int y, int z) {
 
 void LocalWorldProvider::notifyChange(glm::ivec3 chunkPos) {
 	auto [reg_pos, chunk_pos] = toChunkCoords(chunkPos, regionSize);
-	printf("Change: %2d %2d %2d\n", chunkPos.x, chunkPos.y, chunkPos.z);
+	// printf("Change: %2d %2d %2d\n", chunkPos.x, chunkPos.y, chunkPos.z);
 	if (auto it = regions.find(reg_pos); it != regions.end()) {
-		printf("found\n");
+		// printf("found\n");
 		it->second.modified = true;
 	}
 }

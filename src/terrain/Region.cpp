@@ -279,7 +279,8 @@ void Region::load() {
 		expandData(compressedLight, false);
 
 		iw.close();
-		printf("F loaded\n");
+		// printf("F loaded\n");
+		printf("position F loaded: %2d %2d %2d, chunks: %d\n", position.x, position.y, position.z, chunksNumber);
 	}else{
 		printf("F not good loaded\n");
 	}
@@ -359,7 +360,7 @@ std::pair<int, bool> Region::getChunkOffset(glm::ivec3 pos) {
 	int data_z = cz * (chunk_cubed * (reg_size * reg_size));
 	
 	int index = data_x + data_y + data_z;
-	if(index < 0 || index >= data_size) {
+	if(index < 0 || index >= data_size ) {
 //		if(print)
 //			printf("nochunk %02d %02d %02d, pos: %d\n", x, y, z, pos);
 		return {-1, false};
@@ -368,20 +369,25 @@ std::pair<int, bool> Region::getChunkOffset(glm::ivec3 pos) {
 	bool generated = false;
 
 	if(generatedChunks.find({cx, cy, cz}) == generatedChunks.end()) {
-		// return {-1, false};
-		// generate
-		// printf("[%2d %2d %2d] generating: %2d %2d %2d\n", position.x, position.y, position.z, pos.x, pos.y, pos.z);
-		// printf("generating: %2d %2d %2d\n", cx, cy, cz);
-		// printf("genChunk: %2d %2d %2d\n", pos.x, pos.y, pos.z);
-		// return {-1, false}; // This disables generation of new chunks.
-		genChunk(cx, cy, cz);		
-		generatedChunks.insert({cx, cy, cz});
-		// printf("[%2d %2d %2d] loaded chunks changed: \n", position.x, position.y, position.z);
-		// for (auto v : generatedChunks) {
-		// 	printf("%d %d %d\n", v.x, v.y, v.z);
-		// }
-		modified = true;
-		generated = true;
+		// printf("chunk not found: %2d %2d %2d\n", cx, cy, cz);
+		if (generateNewChunks) {
+			// return {-1, false};
+			// generate
+			// printf("[%2d %2d %2d] generating: %2d %2d %2d\n", position.x, position.y, position.z, pos.x, pos.y, pos.z);
+			// printf("generating: %2d %2d %2d\n", cx, cy, cz);
+			// printf("genChunk: %2d %2d %2d\n", pos.x, pos.y, pos.z);
+			// return {-1, false}; // This disables generation of new chunks.
+			genChunk(cx, cy, cz);		
+			generatedChunks.insert({cx, cy, cz});
+			// printf("[%2d %2d %2d] loaded chunks changed: \n", position.x, position.y, position.z);
+			// for (auto v : generatedChunks) {
+			// 	printf("%d %d %d\n", v.x, v.y, v.z);
+			// }
+			modified = true;
+			generated = true;
+		} else {
+			index = -1;
+		}
 	}
 		// modified = true;
 	

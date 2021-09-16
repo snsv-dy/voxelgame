@@ -87,7 +87,7 @@ public:
 	
 	void draw();
 	region_dtype valueAt(const glm::ivec3& pos);
-	void changeBlock(const int& block_type, const glm::ivec3& data_pos, BlockAction& action);
+	void changeBlock(const int& block_type, const glm::ivec3& data_pos, BlockAction action);
 	
 	std::list<propagateParam> getEmmitedLightFromSide(Direction side); // Returns list with lights to propagate outside of the chunk in the direction passed by param.
 	
