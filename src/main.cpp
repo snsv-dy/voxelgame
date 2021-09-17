@@ -406,8 +406,7 @@ void main_loop(void* params) {
 	glm::vec3 kameraPos = player.positionFromHead;
 	glm::vec3 playerPos = player.getPosition();
 	glm::vec3 kameraFront = player.orientation;
-	region_dtype block_under_cursor;
-	std::tie(controls.cursor_pos, controls.prev_cursor_pos, block_under_cursor) = wl.collideRay(kameraPos, kameraFront, 7);
+	std::tie(std::ignore, controls.cursor_pos, controls.prev_cursor_pos) = wl.fastRay(kameraPos, kameraFront, 10.0f);
 
 	// glm::ivec3 c_pos;
 	// controls.cursor_pos = c_pos;
@@ -419,7 +418,8 @@ void main_loop(void* params) {
 	// 2d drawing
 	hud.draw();
 
-	sprintf(textBuffer, "ground intersection: %.02f, y: %.02f, z: %.02f", dx.x, dx.y, dx.z);
+
+	sprintf(textBuffer, "kameraFront: %.02f, y: %.02f, z: %.02f", kameraFront.x, kameraFront.y, kameraFront.z);
 	renderText(fontmesh1, std::string(textBuffer), 20, 130, 0.5);
 	
 	sprintf(textBuffer, "playerPos: x: %.02f, y: %.02f, z: %.02f", playerPos.x, playerPos.y, playerPos.z);
@@ -427,7 +427,8 @@ void main_loop(void* params) {
 	
 	glm::ivec3 playerBlockPos = {floor(playerPos.x), floor(playerPos.y), floor(playerPos.z)};
 	std::tie(std::ignore, playerBlockPos) = toChunkCoordsReal(playerBlockPos, TerrainConfig::ChunkSize);
-	sprintf(textBuffer, "playerOrdżin: x: %2d, y: %2d, z: %2d", playerBlockPos.x, playerBlockPos.y, playerBlockPos.z);
+	
+	sprintf(textBuffer, "playerDir: x: %2.2f, y: %2.2f, z: %2.2f", kameraFront[0], kameraFront[1], kameraFront[2]);
 	renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
 //		
 	sprintf(textBuffer, "cursor: x: %2d, y: %2d, z: %2d", controls.cursor_pos.x, controls.cursor_pos.y, controls.cursor_pos.z);
@@ -436,6 +437,7 @@ void main_loop(void* params) {
 //		sprintf(textBuffer, "cursor  : x: %2d, y: %2d, z: %2d ", controls.cursor_pos.x, controls.cursor_pos.y, controls.cursor_pos.z);
 //		renderText(fontmesh1, std::string(textBuffer), 20, 70, 0.5);
 	
+	auto [block_under_cursor, found] = wl.getBlock(controls.cursor_pos);
 	sprintf(textBuffer, "block under cursor: [%d, %x]", block_under_cursor & 0xff, block_under_cursor >> 8);
 	renderText(fontmesh1, std::string(textBuffer), 20, 90, 0.5);
 	

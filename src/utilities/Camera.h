@@ -53,10 +53,10 @@ public:
 		yaw += x * sensitivity;
 		pitch += -y * sensitivity;
 		
-		if(pitch > 89.0f)
-			pitch = 89.0f;
-		if(pitch < -89.0f)
-			pitch = -89.0f;
+		if(pitch > 89.999f)
+			pitch = 89.999f;
+		if(pitch < -89.999f)
+			pitch = -89.999f;
 			
 		glm::vec3 direction;
 		direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));

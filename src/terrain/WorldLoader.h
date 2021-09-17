@@ -85,14 +85,13 @@ public:
 	
 	region_dtype valueAt(int x, int y, int z);
 	void draw(glm::vec3 cameraPos, const glm::mat4& view);
-	std::tuple<glm::ivec3, glm::ivec3, region_dtype> collideRay(const glm::vec3& origin, const glm::vec3& direction, const int& range);
 	void updateTerrain(const int& block_type, const glm::ivec3 &pos, BlockAction action);
 	std::pair<Chunk&, bool> getChunk(glm::ivec3 position);
 	std::pair<region_dtype&, bool> getBlock(const block_position& pos);
 	std::pair<region_dtype&, bool> getBlock(const glm::vec3& pos);
 	
 	glm::vec3 collideAABB(const AABB& aabb, glm::vec3& velocity, glm::vec3 dx);
-	float fastRay(glm::vec3 origin, glm::vec3 direction, float maxt, glm::vec3& penetration, int& collision_axis, glm::ivec3& hit);
+	std::tuple<float, glm::ivec3, glm::ivec3> fastRay(glm::vec3 origin, glm::vec3 direction, float maxRange);
 	float fastAABB(const AABB& origin, glm::vec3 direction, float maxt, int& collision_axis);
 	// ~WorldLoader();
 	// sweeep stuff

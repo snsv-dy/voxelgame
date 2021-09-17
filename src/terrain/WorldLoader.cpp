@@ -48,58 +48,6 @@ void WorldLoader::draw(glm::vec3 cameraPos, const glm::mat4& view) {
 	printCount++;
 }
 
-std::tuple<glm::ivec3, glm::ivec3, region_dtype> WorldLoader::collideRay(const glm::vec3& origin, const glm::vec3& direction, const int& range) {
-	float step = 0.1f;
-	float range_mul = step;
-	int n = (int)((float)range / step);
-	glm::ivec3 prev_pos {0};
-	glm::ivec3 int_pos {0};
-	region_dtype last_block = 0;
-	for (int i = 0; i < n; i++, range_mul += 0.1f) {
-		glm::vec3 pos = origin + direction * range_mul;
-		glm::ivec3 chunk_pos, in_chunk_pos;
-		std::tie(chunk_pos, in_chunk_pos) = toChunkCoords(pos, WorldLoader::chunkSize);
-		// int_pos = glm::floor(pos);
-		block_position block_pos = block_position(in_chunk_pos, chunk_pos);
-//		int mx = (-value - 1);
-//		chunk_index = -(mx / chunkSize + 1);
-		glm::ivec3 correct_vec = glm::ivec3(0);
-		for (int j = 0; j < 3; j++) {
-			if (pos[j] < 0) {
-				correct_vec[j] = -1;
-			}
-		}
-
-		block_pos += correct_vec;
-		// if(pos.x < 0){
-		// 	int_pos.x -= 1;
-		// }
-		// if(pos.y < 0){
-		// 	int_pos.y -= 1;
-		// }
-		// if(pos.z < 0){
-		// 	int_pos.z -= 1;
-		// }
-		
-		// last_block = provider->valueAt(int_pos.x, int_pos.y, int_pos.z);
-		
-		if (auto [block, found] = getBlock(block_pos); found) {
-			last_block = block;
-		} else {
-			last_block = 0;
-		}
-
-		int_pos = block_pos.block + block_pos.chunk * TerrainConfig::ChunkSize;
-		if(block_type(last_block) != 0) {
-			// prev_pos = int_pos;
-			break;
-		}
-		prev_pos = int_pos;
-	}
-	
-	return {int_pos, prev_pos, last_block};
-}
-
 void WorldLoader::updateTerrain(const int& block_type, const glm::ivec3 &pos, BlockAction action) {
 	glm::ivec3 chunk_pos, in_chunk_pos;
 	std::tie(chunk_pos, in_chunk_pos) = toChunkCoords(pos, WorldLoader::chunkSize);
@@ -540,27 +488,21 @@ float WorldLoader::fastAABB(const AABB& aabb, glm::vec3 direction, float maxt, i
 
 // http://www.cse.chalmers.se/edu/year/2010/course/TDA361/grid.pdf
 // https://github.com/andyhall/fast-voxel-raycast/blob/master/index.js
-float WorldLoader::fastRay(glm::vec3 origin, glm::vec3 direction, float maxt, glm::vec3& penetration, int& collision_axis, glm::ivec3& hit) {
-	penetration = glm::vec3(0.0f);
-	hit = glm::ivec3(0);
+std::tuple<float, glm::ivec3, glm::ivec3> WorldLoader::fastRay(glm::vec3 origin, glm::vec3 direction, float maxRange) {
 	glm::vec3 normalDirection = glm::normalize(direction);
 	
-	glm::ivec3 ipos {
-		floor(origin.x),
-		floor(origin.y),
-		floor(origin.z)
-	};
+	glm::ivec3 ipos = glm::floor(origin);
+	glm::ivec3 iprev_pos = ipos;
 	
 	int step[3]; // In which direction we are moving in each axis.
 	for (int i = 0; i < 3; i++) {
 		step[i] = direction[i] > 0 ? 1 : -1;//direction[i] < 0 ? -1 : 0;
 	}
-	
+
 	float scaling[3]; // How far along the ray we have to move to get to the next voxel.
-	scaling[0] = sqrt( 1 + pow(normalDirection.z / normalDirection.x, 2));
-	scaling[2] = sqrt( 1 + pow(normalDirection.x / normalDirection.z, 2));
-	float xz = sqrt(normalDirection.x * normalDirection.x + normalDirection.z * normalDirection.z);
-	scaling[1] = sqrt( 1 + pow(xz / normalDirection.y, 2));
+	scaling[0] = sqrt( 1 + pow(normalDirection.z / normalDirection.x, 2) + pow(normalDirection.y / normalDirection.x, 2));
+	scaling[1] = sqrt( 1 + pow(normalDirection.x / normalDirection.y, 2) + pow(normalDirection.z / normalDirection.y, 2));
+	scaling[2] = sqrt( 1 + pow(normalDirection.y / normalDirection.z, 2) + pow(normalDirection.x / normalDirection.z, 2));
 	
 	float tMax[3]; // Value of t where ray crosses the first voxel boundary in each axis.
 	for (int i = 0; i < 3; i++) {
@@ -574,59 +516,24 @@ float WorldLoader::fastRay(glm::vec3 origin, glm::vec3 direction, float maxt, gl
 	}
 	
 	float t = 0.0f;
-	bool collision = false;
-	while( t < maxt) {
+	while (t < maxRange) {
 		// check voxel
-		
 		auto [block, found] = getBlock(ipos);
 		if (found && getBlockType(block) != 0) {
-			penetration.x = origin.x + normalDirection.x * t;
-			penetration.y = origin.y + normalDirection.y * t;
-			penetration.z = origin.z + normalDirection.z * t;
-			
-			collision = true;
-			if (collision_axis == -1) {
-				collision_axis = tMax[0] < tMax[1] ?
-									tMax[0] < tMax[2] ? 0 : 2 :
-									tMax[1] < tMax[2] ? 1 : 2;
-			}
-			hit[collision_axis] = step[collision_axis];
-			return t;
+			break;
 		}
+
+		int axis = (tMax[0] < tMax[1]) ? 
+			(tMax[0] < tMax[2]) ? 0 : 2 : 
+			(tMax[1] < tMax[2]) ? 1 : 2;
 		
-		if (tMax[0] < tMax[1]) {
-			if (tMax[0] < tMax[2]) { 
-				t = tMax[0];
-				tMax[0] += scaling[0];
-				ipos[0] += step[0];
-				collision_axis = 0;
-			} else {
-				t = tMax[2];
-				tMax[2] += scaling[2];
-				ipos[2] += step[2];
-				collision_axis = 2;
-			}
-		} else {
-			if (tMax[1] < tMax[2]) {
-				t = tMax[1];
-				tMax[1] += scaling[1];
-				ipos[1] += step[1];
-				collision_axis = 1;
-			} else {
-				t = tMax[2];
-				tMax[2] += scaling[2];
-				ipos[2] += step[2];
-				collision_axis = 2;
-			}
-		}
+		iprev_pos = ipos;
+		t = tMax[axis];
+		tMax[axis] += scaling[axis];
+		ipos[axis] += step[axis];
 	}
-	
-	if (!collision) {
-		collision_axis = -1;
-		t = 0.0f;
-	}
-	
-	return t;
+
+	return {t, ipos, iprev_pos};
 }
 
 
